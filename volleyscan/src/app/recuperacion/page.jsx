@@ -55,14 +55,9 @@ export default function page() {
       {/* Header */}
       <header className="login-header">
         <div className="logo">
-         <Image
-                       src={Logo}
-                       alt="Logo"
-                       className="logo-1"
-                       width={40}
-                       height={40}
-                     />
-         
+          <Link href="/">
+            <Image src={Logo} alt="Logo" width={40} height={40} />
+          </Link>
           <h2>VolleyScan</h2>
         </div>
       </header>
@@ -122,11 +117,10 @@ export default function page() {
           {/* Volver */}
           <footer className="register">
             <p>
-              ¿Recordaste tu contraseña?{''}
+              <a href="../login">¿Recordaste tu contraseña?</a>
           
             </p>
           </footer>
-
         </section>
       </main>
 

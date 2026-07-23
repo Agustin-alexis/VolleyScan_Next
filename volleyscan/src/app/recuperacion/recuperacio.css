@@ -74,6 +74,7 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+  
 }
 
 .form-group label {
@@ -176,7 +177,8 @@
   text-align: center;
   margin-top: 20px;
   font-size: 14px;
-  color: #aaa;
+  color: blue;
+  margin-right: 240px;
 }
 
 .register a {

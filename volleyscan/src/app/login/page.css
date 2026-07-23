@@ -4,7 +4,6 @@ html, body {
  
 }
 
-
 .login-page {
   font-family: 'Poppins', sans-serif;
   background: linear-gradient(135deg, #0B1023 0%, #111A3A 50%, #050814 100%);
@@ -52,14 +51,20 @@ Image{
 
 /* ── Card ── */
 .login-container {
+  margin: 0;
+  margin-left: -40px;
+  justify-content: center;
   background: #050814;
   padding: 40px;
   border-radius: 20px;
   width: 100%;
   max-width: 420px;
   box-shadow: 0 15px 40px rgba(0,0,0,.3);
-  animation: fadeIn .6s ease-in-out;
+  animation: fadeIn .6s ease-in-out;  
 }
+
+
+
 
 .login-container h1 {
   text-align: center;
@@ -80,7 +85,7 @@ Image{
   margin-bottom: 18px;
   display: flex;
   flex-direction: column;
-  width: 100%;
+  width: 93%;
 }
 
 .form-group label {
