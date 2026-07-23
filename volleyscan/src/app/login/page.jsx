@@ -104,9 +104,17 @@ export default function LoginPage() {
     }, 1000)
   }
 
-  function handleSocial(provider) {
-    showToast(`Conectando con ${provider}…`, 'info')
+ function handleSocial(provider) {
+
+  if (provider === 'Google') {
+    window.location.href = 'https://accounts.google.com/';
   }
+
+  if (provider === 'Facebook') {
+    window.location.href = 'https://www.facebook.com/';
+  }
+
+}
 
   const toastColors = { success: '#22c55e', error: '#ef4444', info: '#3b82f6' }
 
