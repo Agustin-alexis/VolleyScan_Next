@@ -130,54 +130,7 @@ export default function Home() {
 
   const countersStarted = useRef(false)
 
-  /* ── CURSOR ── */
 
-  useEffect(() => {
-
-    const core = cursorCoreRef.current
-    const aura = cursorAuraRef.current
-
-    if (!core || !aura) return
-
-    let mx = 0
-    let my = 0
-    let ax = 0
-    let ay = 0
-
-    let rafId
-
-    const onMove = (e) => {
-
-      mx = e.clientX
-      my = e.clientY
-
-      core.style.left = mx + 'px'
-      core.style.top = my + 'px'
-    }
-
-    function animateCursor() {
-
-      ax += (mx - ax) * 0.12
-      ay += (my - ay) * 0.12
-
-      aura.style.left = ax - 60 + 'px'
-      aura.style.top = ay - 60 + 'px'
-
-      rafId = requestAnimationFrame(animateCursor)
-    }
-
-    document.addEventListener('mousemove', onMove)
-
-    rafId = requestAnimationFrame(animateCursor)
-
-    return () => {
-
-      document.removeEventListener('mousemove', onMove)
-
-      cancelAnimationFrame(rafId)
-    }
-
-  }, [])
 
   /* ── SCROLL ── */
 
@@ -696,47 +649,17 @@ export default function Home() {
             con inteligencia artificial.
           </p>
 
-          <nav className="socials">
+          <nav className="socals">
 
-            <a href="#">𝕏</a>
+            <a href="#">🔍</a>
 
             <a href="#">📸</a>
 
             <a href="#">in</a>
 
-          </nav>
+          </nav> 
 
         </section>
-
-        {FOOTER_LINKS.map((col) => (
-
-          <section
-            key={col.title}
-            className="footer-links"
-          >
-
-            <h4>{col.title}</h4>
-
-            <ul>
-
-              {col.links.map((link) => (
-
-                <li key={link}>
-
-                  <a href="#">
-                    {link}
-                  </a>
-
-                </li>
-
-              ))}
-
-            </ul>
-
-          </section>
-
-        ))}
-
       </footer>
 
     </div>
