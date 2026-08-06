@@ -1,5 +1,5 @@
 'use client';
-import './Analisis.css'
+import './Analisis.module.css'
 
 
 import { useState, useRef, useEffect } from 'react';
