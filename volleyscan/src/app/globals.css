@@ -1,1 +1,62 @@
+:root {
+    /* Colores */
+    --bg-base: #0b0f1a;
+    --bg-surface: #131929;
+    --bg-card: #1a2235;
+    --bg-card-hover: #222d46;
 
+    /* Texto */
+    --text-primary: #ffffff;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+
+    /* Bordes */
+    --border: rgba(255, 255, 255, .08);
+
+    /* Colores de acento */
+    --accent-blue: #3b82f6;
+    --accent-blue-glow: rgba(59, 130, 246, .20);
+
+    --accent-green: #22c55e;
+    --accent-green-glow: rgba(34, 197, 94, .20);
+
+    --accent-orange: #f97316;
+    --accent-purple: #a855f7;
+
+    /* Radios */
+    --radius-sm: 10px;
+    --radius-md: 16px;
+
+    /* Transiciones */
+    --transition: .25s ease;
+
+    /* Fuentes */
+    --font-head: "Segoe UI", sans-serif;
+    --font-body: "Segoe UI", sans-serif;
+
+    :root {
+        /* ...las que ya tienes... */
+
+        /* Sidebar */
+        --sidebar-w: 280px;
+        --bg-sidebar: #131929;
+
+        /* Transición */
+        --trans: .25s ease;
+    }
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body {
+    width: 100%;
+    min-height: 100%;
+    background: var(--bg-base);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+}

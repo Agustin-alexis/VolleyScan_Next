@@ -124,7 +124,7 @@ export default function LoginPage() {
       <header className="login-header">
         <div className="logo">
           <Link href="/">
-            <Image src={Logo} alt="Logo" width={40} height={40} />
+            <Image src={Logo} alt="Logo" className='img' width={50} />
           </Link>
           <h2>VolleyScan</h2>
         </div>

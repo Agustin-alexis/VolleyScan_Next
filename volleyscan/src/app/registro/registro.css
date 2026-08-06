@@ -28,8 +28,8 @@
   overflow-y: auto;
 }
 
-img{
-    width: 50px;
+.img{
+    border-radius: 10px;
 }
 
 .contenedor-registro {

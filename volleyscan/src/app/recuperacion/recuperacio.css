@@ -16,6 +16,10 @@
   margin-bottom: 20px;
 }
 
+.img{
+  border-radius: 10px;
+}
+
 .logo {
   display: flex;
   align-items: center;

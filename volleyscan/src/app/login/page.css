@@ -22,8 +22,7 @@ html, body {
   margin-bottom: 20px;
 }
 
-Image{
-  width: 50px;
+.img{
   border-radius: 10px;
 }
 

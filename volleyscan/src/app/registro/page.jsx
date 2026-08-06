@@ -95,7 +95,9 @@ export default function page() {
 
           <header className="encabezado-registro">
             <div className="contenedor-logo">
-              <Image src={Logo} alt="Logo"  width={50} />
+              <Link href='/'>
+                <Image src={Logo} alt="Logo" className='img' width={50} />
+              </Link>
               <h2>VolleyScan</h2>
             </div>
             <h1 id="tituloRegistro">Crear ID de atleta</h1>

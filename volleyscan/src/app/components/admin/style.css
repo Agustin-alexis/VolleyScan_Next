@@ -100,7 +100,6 @@ html, body {
   justify-content: space-between;
   gap: 48px;
  padding: 80px 48px 40px; 
-  max-width: 1200px;
   margin: 0 auto;
 
 }
@@ -155,7 +154,6 @@ html, body {
 /* ── Results ── */
 .results {
   padding: 80px 48px;
-  max-width: 1200px;
   margin: 0 auto;
   text-align: center;
 }
@@ -209,7 +207,6 @@ html, body {
 /* ── Tech ── */
 .tech {
   padding: 80px 48px;
-  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -244,7 +241,6 @@ html, body {
 /* ── Pricing ── */
 .pricing {
   padding: 80px 48px;
-  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -329,7 +325,6 @@ html, body {
   display: grid;
   grid-template-columns: 2fr ;
   padding: 60px;
-  max-width: 1200px;
   margin: 0 auto;
   border-top: 1px solid rgba(255,255,255,.06);
 }
@@ -348,8 +343,6 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  
-  
 }
 
 
