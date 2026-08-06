@@ -2,6 +2,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import './Sidebar.css';
+import Image from 'next/image';
+import logo from '@/app/public/img/Logo.VS.jpg'
 
 const nav = [
     {
@@ -33,7 +35,7 @@ export default function Sidebar() {
     return (
         <aside className="sidebar">
             <div className="sb-logo">
-                <img src="/Vollei.jpeg" alt="VolleyAI" className="sb-logo-icon" style={{ width: '42px', height: '42px', borderRadius: '12px', objectFit: 'cover' }} />
+                <Image src={logo} alt="VolleyAI" className="sb-logo-icon" style={{ width: '42px', height: '42px', borderRadius: '12px', objectFit: 'cover' }} />
                 <div>
                     <div className="sb-logo-name">VolleyAI</div>
                     <div className="sb-logo-role">Entrenador</div>
