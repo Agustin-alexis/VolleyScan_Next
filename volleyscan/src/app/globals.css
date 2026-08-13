@@ -60,3 +60,44 @@ body {
     color: var(--text-primary);
     font-family: var(--font-body);
 }
+
+/* Agregar esto UNA sola vez en globals.css, no en Perfil.css ni en ningún otro CSS de página */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --bg-deep: #0b0f1a;
+    --bg-card: #111827;
+    --bg-card2: #161e2e;
+    --bg-hover: #1e2a3d;
+    --border: rgba(255, 255, 255, 0.06);
+    --border2: rgba(255, 255, 255, 0.1);
+    --accent: #3b82f6;
+    --accent2: #60a5fa;
+    --accent-glow: rgba(59, 130, 246, 0.25);
+    --text-1: #f1f5f9;
+    --text-2: #94a3b8;
+    --text-3: #475569;
+    --sidebar-w: 230px;
+    --green: #22d3a5;
+    --red: #ef4444;
+    --radius: 14px;
+    --radius-sm: 9px;
+    --transition: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html {
+    height: 100%;
+    font-family: "Sora", sans-serif;
+}
+
+body {
+    background: var(--bg-deep);
+    color: var(--text-1);
+}

@@ -1,6 +1,6 @@
 'use client';
 import './Configuracion.css'
-
+import Link from 'next/link';
 import { useState, useEffect } from 'react';
 
 
@@ -159,10 +159,12 @@ export default function Configuracion() {
                                                     </label>
                                                 </div>
                                             ))}
+                                            <Link href = "/login">
                                             <button className="btn btn-danger" style={{ width: '100%', marginTop: '16px', justifyContent: 'center' }}
                                                 onClick={() => toast('👋', 'Sesión cerrada', 'var(--danger)')}>
                                                 Cerrar sesión
                                             </button>
+                                            </Link>
                                         </div>
                                     </div>
                                 </div>

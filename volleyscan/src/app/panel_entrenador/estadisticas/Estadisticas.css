@@ -1,4 +1,4 @@
-  :root {
+:root {
     --bg: #0d0f1a;
     --panel: #131629;
     --panel2: #181c30;
@@ -560,4 +560,3 @@
   ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
 
 .est-main { flex:1; padding:30px 32px; overflow-y:auto; overflow-x:hidden; }
-

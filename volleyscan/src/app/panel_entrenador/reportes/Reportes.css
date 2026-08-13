@@ -471,4 +471,3 @@ article.fp-stat{background:var(--card);border:1px solid var(--border);border-rad
 p.fp-stat-val{font-size:26px;font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--t1)}
 p.fp-stat-key{font-size:11px;color:var(--t2);margin-top:2px}
 .rep-main { flex:1; overflow-y:auto; background:var(--bg,#0d0f1a); padding:28px 32px; min-width:0; }
-

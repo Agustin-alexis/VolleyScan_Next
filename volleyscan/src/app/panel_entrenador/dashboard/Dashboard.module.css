@@ -1,4 +1,5 @@
-:root {
+/* Variables scopeadas SOLO a este dashboard (ya no usan :root global) */
+.dash-main {
   --bg-primary: #0a0d1a;
   --bg-secondary: #0f1425;
   --bg-card: #131829;
@@ -16,225 +17,12 @@
   --border-active: rgba(79, 110, 247, 0.4);
   --glow-blue: rgba(79, 110, 247, 0.15);
   --glow-purple: rgba(124, 58, 237, 0.15);
-  --sidebar-w: 230px;
   --radius: 14px;
   --radius-sm: 9px;
   --trans: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
-}
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-body {
-  font-family: "DM Sans", sans-serif;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  height: 100vh;
-  display: flex;
-  overflow: hidden;
-}
-
-/* ========== SIDEBAR ========== */
-.sidebar {
-  width: var(--sidebar-w);
-  min-width: var(--sidebar-w);
-  background: var(--bg-sidebar);
-  border-right: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  z-index: 30;
-}
-
-.sidebar::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 1px;
-  background: linear-gradient(
-    180deg,
-    transparent,
-    var(--accent-blue),
-    transparent
-  );
-  opacity: 0.3;
-}
-
-/* Logo */
-.sb-logo {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 22px 18px 20px;
-  border-bottom: 1px solid var(--border);
-}
-
-.sb-logo-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  flex-shrink: 0;
-  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  box-shadow: 0 0 22px rgba(79, 110, 247, 0.45);
-}
-
-.sb-logo-name {
-  font-size: 16px;
-  font-weight: 800;
-  color: var(--text-primary);
-  letter-spacing: -0.02em;
-}
-
-.sb-logo-role {
-  font-size: 11px;
-  color: var(--text-secondary);
-  margin-top: 2px;
-}
-
-/* Navegación */
-.sb-nav {
   flex: 1;
-  padding: 16px 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  overflow-y: auto;
-}
-
-.sb-nav::-webkit-scrollbar {
-  width: 0;
-}
-
-.sb-group-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  padding: 12px 10px 6px;
-}
-
-.nav-item {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
-  font-size: 13px;
-  font-weight: 500;
-  text-decoration: none;
-  transition: var(--trans);
-  position: relative;
-  overflow: hidden;
-}
-
-.nav-item i {
-  width: 16px;
-  text-align: center;
-  font-size: 13px;
-  flex-shrink: 0;
-}
-
-.nav-item:hover {
-  background: var(--bg-card-hover);
-  color: var(--text-primary);
-}
-
-.nav-item.active {
-  background: linear-gradient(
-    90deg,
-    rgba(79, 110, 247, 0.22) 0%,
-    rgba(79, 110, 247, 0.04) 100%
-  );
-  color: var(--text-primary);
-  font-weight: 700;
-  border-left: 2.5px solid var(--accent-purple);
-  padding-left: 10px;
-  box-shadow: inset 0 0 20px rgba(79, 110, 247, 0.08);
-}
-
-.nav-item.active::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    ellipse at left center,
-    rgba(79, 110, 247, 0.1),
-    transparent 70%
-  );
-  pointer-events: none;
-}
-
-.nav-item.active i {
-  color: var(--accent-purple);
-}
-
-/* Footer del sidebar */
-.sb-footer {
-  padding: 14px 14px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  cursor: pointer;
-  transition: var(--trans);
-  position: relative;
-}
-
-.sb-footer:hover {
-  background: var(--bg-card-hover);
-}
-
-.sb-avatar {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  font-weight: 800;
-  color: #fff;
-  box-shadow: 0 0 14px rgba(79, 110, 247, 0.35);
-}
-
-.sb-foot-name {
-  font-size: 12.5px;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.sb-foot-role {
-  font-size: 10.5px;
-  color: var(--text-secondary);
-  margin-top: 1px;
-}
-
-.sb-online-dot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--accent-green);
-  margin-left: auto;
-  flex-shrink: 0;
-  box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
-}
-
-/* ========== MAIN CONTENT ========== */
-.main {
-  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -359,9 +147,11 @@ body {
   flex: 1;
   padding: 24px 28px;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
   gap: 22px;
+  min-width: 0;
 }
 
 /* KPI Grid */
@@ -369,6 +159,7 @@ body {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 16px;
+  min-width: 0;
 }
 
 .kpi-card {
@@ -403,35 +194,19 @@ body {
 }
 
 .kpi-card.blue::before {
-  background: radial-gradient(
-    circle at 10% 50%,
-    rgba(79, 110, 247, 0.08),
-    transparent 60%
-  );
+  background: radial-gradient(circle at 10% 50%, rgba(79, 110, 247, 0.08), transparent 60%);
 }
 
 .kpi-card.teal::before {
-  background: radial-gradient(
-    circle at 10% 50%,
-    rgba(15, 184, 160, 0.08),
-    transparent 60%
-  );
+  background: radial-gradient(circle at 10% 50%, rgba(15, 184, 160, 0.08), transparent 60%);
 }
 
 .kpi-card.green::before {
-  background: radial-gradient(
-    circle at 10% 50%,
-    rgba(34, 197, 94, 0.08),
-    transparent 60%
-  );
+  background: radial-gradient(circle at 10% 50%, rgba(34, 197, 94, 0.08), transparent 60%);
 }
 
 .kpi-card.gold::before {
-  background: radial-gradient(
-    circle at 10% 50%,
-    rgba(245, 158, 11, 0.08),
-    transparent 60%
-  );
+  background: radial-gradient(circle at 10% 50%, rgba(245, 158, 11, 0.08), transparent 60%);
 }
 
 .kpi-icon {
@@ -445,25 +220,12 @@ body {
   flex-shrink: 0;
 }
 
-.kpi-icon.blue {
-  background: rgba(79, 110, 247, 0.15);
-}
+.kpi-icon.blue { background: rgba(79, 110, 247, 0.15); }
+.kpi-icon.teal { background: rgba(15, 184, 160, 0.15); }
+.kpi-icon.green { background: rgba(34, 197, 94, 0.15); }
+.kpi-icon.gold { background: rgba(245, 158, 11, 0.15); }
 
-.kpi-icon.teal {
-  background: rgba(15, 184, 160, 0.15);
-}
-
-.kpi-icon.green {
-  background: rgba(34, 197, 94, 0.15);
-}
-
-.kpi-icon.gold {
-  background: rgba(245, 158, 11, 0.15);
-}
-
-.kpi-data {
-  flex: 1;
-}
+.kpi-data { flex: 1; }
 
 .kpi-label {
   font-size: 12px;
@@ -495,13 +257,8 @@ body {
   gap: 3px;
 }
 
-.kpi-delta.positive {
-  color: var(--accent-green);
-}
-
-.kpi-delta.negative {
-  color: #ef4444;
-}
+.kpi-delta.positive { color: var(--accent-green); }
+.kpi-delta.negative { color: #ef4444; }
 
 /* Bottom Grid */
 .bottom-grid {
@@ -510,6 +267,7 @@ body {
   gap: 16px;
   flex: 1;
   min-height: 0;
+  min-width: 0;
 }
 
 .panel {
@@ -521,6 +279,7 @@ body {
   flex-direction: column;
   gap: 16px;
   overflow: hidden;
+  min-width: 0;
 }
 
 .panel-title {
@@ -543,7 +302,7 @@ body {
   min-height: 160px;
 }
 
-canvas#performanceChart {
+.performanceChart {
   width: 100% !important;
   height: 100% !important;
 }
@@ -652,10 +411,7 @@ canvas#performanceChart {
   overflow: hidden;
 }
 
-.activity-info {
-  flex: 1;
-  min-width: 0;
-}
+.activity-info { flex: 1; min-width: 0; }
 
 .activity-name {
   font-size: 13px;
@@ -688,9 +444,7 @@ canvas#performanceChart {
   padding-top: 4px;
 }
 
-.see-all:hover {
-  gap: 8px;
-}
+.see-all:hover { gap: 8px; }
 
 /* Modal */
 .modal-overlay {
@@ -704,9 +458,7 @@ canvas#performanceChart {
   justify-content: center;
 }
 
-.modal-overlay.open {
-  display: flex;
-}
+.modal-overlay.open { display: flex; }
 
 .modal {
   background: var(--bg-card);
@@ -720,14 +472,8 @@ canvas#performanceChart {
 }
 
 @keyframes modalIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .modal-header {
@@ -763,9 +509,7 @@ canvas#performanceChart {
   color: var(--text-primary);
 }
 
-.form-group {
-  margin-bottom: 16px;
-}
+.form-group { margin-bottom: 16px; }
 
 .form-label {
   font-size: 12px;
@@ -777,8 +521,7 @@ canvas#performanceChart {
   letter-spacing: 0.05em;
 }
 
-.form-input,
-.form-select {
+.form-input, .form-select {
   width: 100%;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
@@ -791,14 +534,9 @@ canvas#performanceChart {
   transition: border-color 0.2s;
 }
 
-.form-input:focus,
-.form-select:focus {
-  border-color: var(--accent-blue);
-}
+.form-input:focus, .form-select:focus { border-color: var(--accent-blue); }
 
-.form-select option {
-  background: var(--bg-card);
-}
+.form-select option { background: var(--bg-card); }
 
 .form-row {
   display: grid;
@@ -873,35 +611,11 @@ canvas#performanceChart {
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
-.toast.show {
-  transform: translateY(0);
-  opacity: 1;
-}
+.toast.show { transform: translateY(0); opacity: 1; }
 
-.toast-icon {
-  color: var(--accent-green);
-  font-size: 16px;
-}
+.toast-icon { color: var(--accent-green); font-size: 16px; }
 
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 5px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-/* Chart Tooltip */
+/* Chart Tooltip (usado por chart.js si aplica) */
 .chart-tooltip {
   position: absolute;
   background: var(--bg-card);
@@ -922,43 +636,4 @@ canvas#performanceChart {
   font-weight: 700;
   font-size: 14px;
   color: var(--accent-blue);
-}
-
-.dash-main {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  background: var(--bg-secondary);
-}
-
-.dash-main .content {
-  flex: 1;
-  padding: 24px 28px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
-  min-width: 0;
-}
-
-.dash-main .kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-  min-width: 0;
-}
-
-.dash-main .bottom-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 16px;
-  min-width: 0;
-}
-
-.dash-main .panel {
-  min-width: 0;
-  overflow: hidden;
 }

@@ -1,7 +1,5 @@
 'use client'
-import './Dashboard.css'
-
-
+import styles from './Dashboard.module.css'
 
 import { useEffect, useRef, useState } from 'react';
 
@@ -105,83 +103,83 @@ export default function Dashboard() {
 
     return (
         <>
-            <main className="dash-main">
-                <header className="topbar">
-                    <section className="page-title-block">
-                        <h1 className="page-title">Dashboard</h1>
-                        <p className="page-subtitle">Resumen general de tu equipo</p>
+            <div className={styles['dash-main']}>
+                <header className={styles.topbar}>
+                    <section className={styles['page-title-block']}>
+                        <h1 className={styles['page-title']}>Dashboard</h1>
+                        <p className={styles['page-subtitle']}>Resumen general de tu equipo</p>
                     </section>
-                    <section className="topbar-actions">
-                        <div className="date-picker" onClick={() => setDateDropdown(d => !d)}>
+                    <section className={styles['topbar-actions']}>
+                        <div className={styles['date-picker']} onClick={() => setDateDropdown(d => !d)}>
                             <span>{dateLabel}</span> ▾
                             {dateDropdown && (
-                                <div className="date-dropdown open">
+                                <div className={`${styles['date-dropdown']} ${styles.open}`}>
                                     {['12 - 18 Mayo, 2025', '5 - 11 Mayo, 2025', '28 Abr - 4 Mayo, 2025', 'Abril 2025', 'Mayo 2025'].map(d => (
-                                        <button key={d} className="date-option" onClick={e => { e.stopPropagation(); setDateLabel(d); setDateDropdown(false); showToast(`Período: ${d}`); }}>{d}</button>
+                                        <button key={d} className={styles['date-option']} onClick={e => { e.stopPropagation(); setDateLabel(d); setDateDropdown(false); showToast(`Período: ${d}`); }}>{d}</button>
                                     ))}
                                 </div>
                             )}
                         </div>
-                        <button className="btn-new-session" onClick={() => setModal(true)}>Nueva sesión</button>
+                        <button className={styles['btn-new-session']} onClick={() => setModal(true)}>Nueva sesión</button>
                     </section>
                 </header>
 
-                <section className="content">
-                    <section className="kpi-grid">
+                <section className={styles.content}>
+                    <section className={styles['kpi-grid']}>
                         {[
                             { color: 'blue', icon: '👥', label: 'Total Deportistas', value: kpiDeportistas, sub: 'Activos' },
                             { color: 'teal', icon: '✅', label: 'Sesiones esta semana', value: sessionCount, sub: 'Completadas' },
                             { color: 'green', icon: '⏱', label: 'Asistencia promedio', value: kpiAsistencia, delta: '▲ +5% vs semana pasada' },
                             { color: 'gold', icon: '📈', label: 'Rendimiento promedio', value: kpiRendimiento, delta: '▲ +8% vs semana pasada' },
                         ].map((k, i) => (
-                            <article key={i} className={`kpi-card ${k.color}`}>
-                                <span className={`kpi-icon ${k.color}`}>{k.icon}</span>
-                                <section className="kpi-data">
-                                    <p className="kpi-label">{k.label}</p>
-                                    <strong className="kpi-value">{k.value}</strong>
-                                    {k.sub && <p className="kpi-sublabel">{k.sub}</p>}
-                                    {k.delta && <p className="kpi-delta positive">{k.delta}</p>}
+                            <article key={i} className={`${styles['kpi-card']} ${styles[k.color]}`}>
+                                <span className={`${styles['kpi-icon']} ${styles[k.color]}`}>{k.icon}</span>
+                                <section className={styles['kpi-data']}>
+                                    <p className={styles['kpi-label']}>{k.label}</p>
+                                    <strong className={styles['kpi-value']}>{k.value}</strong>
+                                    {k.sub && <p className={styles['kpi-sublabel']}>{k.sub}</p>}
+                                    {k.delta && <p className={`${styles['kpi-delta']} ${styles.positive}`}>{k.delta}</p>}
                                 </section>
                             </article>
                         ))}
                     </section>
 
-                    <section className="bottom-grid">
-                        <article className="panel">
-                            <h3 className="panel-title">Rendimiento por semana</h3>
-                            <section className="chart-container">
-                                <canvas ref={chartRef} id="performanceChart"></canvas>
+                    <section className={styles['bottom-grid']}>
+                        <article className={styles.panel}>
+                            <h3 className={styles['panel-title']}>Rendimiento por semana</h3>
+                            <section className={styles['chart-container']}>
+                                <canvas ref={chartRef} id="performanceChart" className={styles.performanceChart}></canvas>
                             </section>
                         </article>
 
-                        <article className="panel">
-                            <span className="panel-title">Comparativa de jugadores</span>
-                            <section className="player-list">
+                        <article className={styles.panel}>
+                            <span className={styles['panel-title']}>Comparativa de jugadores</span>
+                            <section className={styles['player-list']}>
                                 {players.map((p, i) => (
-                                    <div key={i} className="player-row" onClick={() => showToast(`Ver estadísticas de ${p.name}`)}>
-                                        <div className="player-rank">{i + 1}</div>
-                                        <div className="player-avatar" style={{ background: p.bg, color: '#fff' }}>{p.initials}</div>
-                                        <div className="player-name">{p.name}</div>
-                                        <div className="player-bar-wrap">
-                                            <div className="player-bar" style={{ width: p.pct + '%', background: p.color }}></div>
+                                    <div key={i} className={styles['player-row']} onClick={() => showToast(`Ver estadísticas de ${p.name}`)}>
+                                        <div className={styles['player-rank']}>{i + 1}</div>
+                                        <div className={styles['player-avatar']} style={{ background: p.bg, color: '#fff' }}>{p.initials}</div>
+                                        <div className={styles['player-name']}>{p.name}</div>
+                                        <div className={styles['player-bar-wrap']}>
+                                            <div className={styles['player-bar']} style={{ width: p.pct + '%', background: p.color }}></div>
                                         </div>
-                                        <div className="player-pct" style={{ color: p.color }}>{p.pct}%</div>
+                                        <div className={styles['player-pct']} style={{ color: p.color }}>{p.pct}%</div>
                                     </div>
                                 ))}
                             </section>
                         </article>
 
-                        <article className="panel">
-                            <h3 className="panel-title">Actividad reciente</h3>
-                            <section className="activity-list">
+                        <article className={styles.panel}>
+                            <h3 className={styles['panel-title']}>Actividad reciente</h3>
+                            <section className={styles['activity-list']}>
                                 {activities.map((a, i) => (
-                                    <div key={i} className="activity-item">
-                                        <div className="activity-avatar" style={{ background: a.bg, color: '#fff', fontSize: a.icon ? '18px' : '13px' }}>{a.initials}</div>
-                                        <div className="activity-info">
-                                            <div className="activity-name">{a.name}</div>
-                                            <div className="activity-action">{a.action}</div>
+                                    <div key={i} className={styles['activity-item']}>
+                                        <div className={styles['activity-avatar']} style={{ background: a.bg, color: '#fff', fontSize: a.icon ? '18px' : '13px' }}>{a.initials}</div>
+                                        <div className={styles['activity-info']}>
+                                            <div className={styles['activity-name']}>{a.name}</div>
+                                            <div className={styles['activity-action']}>{a.action}</div>
                                         </div>
-                                        <div className="activity-time">{a.time}</div>
+                                        <div className={styles['activity-time']}>{a.time}</div>
                                     </div>
                                 ))}
                             </section>
@@ -191,50 +189,50 @@ export default function Dashboard() {
 
                 {/* Modal */}
                 {modal && (
-                    <section className="modal-overlay open" onClick={e => e.target === e.currentTarget && setModal(false)}>
-                        <section className="modal">
-                            <header className="modal-header">
-                                <h3 className="modal-title">Nueva Sesión</h3>
-                                <button className="modal-close" onClick={() => setModal(false)}>✕</button>
+                    <section className={`${styles['modal-overlay']} ${styles.open}`} onClick={e => e.target === e.currentTarget && setModal(false)}>
+                        <section className={styles.modal}>
+                            <header className={styles['modal-header']}>
+                                <h3 className={styles['modal-title']}>Nueva Sesión</h3>
+                                <button className={styles['modal-close']} onClick={() => setModal(false)}>✕</button>
                             </header>
-                            <section className="form-group">
-                                <label className="form-label">Tipo de sesión</label>
-                                <select className="form-select" value={sessionType} onChange={e => setSessionType(e.target.value)}>
+                            <section className={styles['form-group']}>
+                                <label className={styles['form-label']}>Tipo de sesión</label>
+                                <select className={styles['form-select']} value={sessionType} onChange={e => setSessionType(e.target.value)}>
                                     {['Entrenamiento general', 'Entrenamiento de defensa', 'Entrenamiento de ataque', 'Entrenamiento de saque', 'Partido amistoso', 'Análisis táctico'].map(o => <option key={o}>{o}</option>)}
                                 </select>
                             </section>
-                            <section className="form-row">
-                                <section className="form-group">
-                                    <label className="form-label">Fecha</label>
-                                    <input className="form-input" type="date" value={sessionDate} onChange={e => setSessionDate(e.target.value)} />
+                            <section className={styles['form-row']}>
+                                <section className={styles['form-group']}>
+                                    <label className={styles['form-label']}>Fecha</label>
+                                    <input className={styles['form-input']} type="date" value={sessionDate} onChange={e => setSessionDate(e.target.value)} />
                                 </section>
-                                <section className="form-group">
-                                    <label className="form-label">Hora</label>
-                                    <input className="form-input" type="time" value={sessionTime} onChange={e => setSessionTime(e.target.value)} />
+                                <section className={styles['form-group']}>
+                                    <label className={styles['form-label']}>Hora</label>
+                                    <input className={styles['form-input']} type="time" value={sessionTime} onChange={e => setSessionTime(e.target.value)} />
                                 </section>
                             </section>
-                            <section className="form-group">
-                                <label className="form-label">Duración (minutos)</label>
-                                <input className="form-input" type="number" value={sessionDuration} onChange={e => setSessionDuration(e.target.value)} />
+                            <section className={styles['form-group']}>
+                                <label className={styles['form-label']}>Duración (minutos)</label>
+                                <input className={styles['form-input']} type="number" value={sessionDuration} onChange={e => setSessionDuration(e.target.value)} />
                             </section>
-                            <section className="form-group">
-                                <label className="form-label">Notas</label>
-                                <input className="form-input" type="text" value={sessionNotes} onChange={e => setSessionNotes(e.target.value)} />
+                            <section className={styles['form-group']}>
+                                <label className={styles['form-label']}>Notas</label>
+                                <input className={styles['form-input']} type="text" value={sessionNotes} onChange={e => setSessionNotes(e.target.value)} />
                             </section>
-                            <footer className="modal-actions">
-                                <button className="btn-cancel" onClick={() => setModal(false)}>Cancelar</button>
-                                <button className="btn-save" onClick={saveSession}>Crear sesión</button>
+                            <footer className={styles['modal-actions']}>
+                                <button className={styles['btn-cancel']} onClick={() => setModal(false)}>Cancelar</button>
+                                <button className={styles['btn-save']} onClick={saveSession}>Crear sesión</button>
                             </footer>
                         </section>
                     </section>
                 )}
 
                 {/* Toast */}
-                <aside className={`toast ${toastVisible ? 'show' : ''}`}>
-                    <span className="toast-icon">✓</span>
+                <aside className={`${styles.toast} ${toastVisible ? styles.show : ''}`}>
+                    <span className={styles['toast-icon']}>✓</span>
                     <span>{toast}</span>
                 </aside>
-            </main>
+            </div>
 
         </>
     );

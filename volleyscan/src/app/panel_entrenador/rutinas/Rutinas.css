@@ -627,4 +627,3 @@ body::before {
 .day-dot.has-routine { background: var(--accent); box-shadow: 0 0 6px var(--accent-glow); }
 .day-dot.today { outline: 2px solid var(--accent4); outline-offset: 2px; }
 .rut-main { flex:1; overflow-y:auto; overflow-x:hidden; padding:20px; min-width:0; background:var(--bg,#0d0f1a); }
-

@@ -1,144 +1,314 @@
 'use client';
 import './Analisis.css'
+import { enviarMensaje } from '@/app/services/api'
 
+import { useState, useRef, useEffect, useId, useMemo } from 'react';
 
-import { useState, useRef, useEffect } from 'react';
+const PERFIL_DEPORTISTA = [
+    { clave: 'Posición', valor: 'Armador' },
+    { clave: 'Nivel', valor: 'Intermedio' },
+    { clave: 'Objetivo', valor: 'Mejorar salto' },
+];
 
-const WELCOME = `¡Hola! 👋 Soy tu entrenador personal de voleibol basado en IA.\n\nBasado en tu perfil actual:\n• Posición: **Armador**\n• Nivel: **Intermedio**\n• Objetivo: **Mejorar salto**\n\nPuedo ayudarte con:\n✅ Rutinas de entrenamiento personalizadas\n✅ Análisis técnico por posición\n✅ Recomendaciones para mejorar rendimiento\n✅ Respuesta a dudas tácticas\n\n¿En qué puedo ayudarte hoy? 🏐`;
+const WELCOME = `¡Hola! 👋 Soy tu entrenador personal de voleibol basado en IA.
 
-const SIMULATED = {
-    salto: `## 🦿 Rutina para mejorar el salto vertical\n\n### ✅ Recomendación principal\nEnfócate en ejercicios pliométricos y fortalecimiento de piernas 3 veces por semana.\n\n### 📋 Ejercicios específicos\n1. **Sentadillas con salto** - 4 series de 8 reps\n2. **Saltos al cajón** (40-50cm) - 3 series de 6 reps\n3. **Zancadas búlgaras** - 3 series de 10 por pierna\n4. **Saltos continuos en red** - 3 series de 10 toques\n5. **Pesos muertos** - 3 series de 6 reps\n\n### ⚠️ Errores comunes\n- ❌ Caer con las rodillas bloqueadas\n- ❌ No usar los brazos para impulsarse\n- ❌ Entrenar en superficies duras sin amortiguación\n\n### 📈 Métricas de progreso\nMide tu alcance máximo en red cada semana. Busca aumentar 2-3cm por mes.\n\n💪 *¡El salto se construye desde las piernas y el core! Sigue así.*`,
-    recepción: `## 🏐 Técnica de recepción\n\n### ✅ Puntos clave\n- Posición base: pies separados al ancho de hombros, rodillas flexionadas\n- Brazos extendidos y firmes, manos entrelazadas\n- Contacto en la parte media del antebrazo\n\n### 📋 Ejercicios prácticos\n1. **Recepción contra pared** - 100 repeticiones diarias\n2. **Recepciones con balón medicinal** (2kg) - 3x15 repeticiones\n3. **Ejercicio del triángulo** (3 jugadores en rotación)\n4. **Recepción de servicio dirigido** - 50 servicios diarios\n\n### ⚠️ Errores comunes\n- ❌ Balancear los brazos\n- ❌ Mirar el balón después del contacto\n- ❌ Posición de piernas muy rígida\n\n🎯 *La recepción es el 80% concentración y 20% técnica. ¡Confía en tus manos!*`,
-    remate: `## 💪 Mejora tu remate\n\n### ✅ Fases del remate perfecto\n1. **Carrera de aproximación** (3-4 pasos)\n2. **Batida** (pies juntos al saltar)\n3. **Armado de arco** (brazo dominante atrás)\n4. **Contacto al punto más alto**\n5. **Muñequeo** (golpe seco)\n\n### 📋 Ejercicios para esta semana\n- **Día 1**: Remates sin red: 50 repeticiones\n- **Día 3**: Remates con balón más pesado (+15%)\n- **Día 5**: Remates dirigidos a zonas (1,5,6)\n\n🎯 *Un gran rematador se hace en el gimnasio y se perfecciona en la cancha. ¡Dale con todo!*`,
-    default: `## 🤔 Excelente pregunta sobre voleibol\n\nComo tu entrenador IA, analizaré tu consulta basándome en tu perfil:\n\n- **Posición**: Armador\n- **Nivel**: Intermedio\n- **Objetivo**: Mejorar salto\n\n### 💡 Recomendación general\nPara mejorar en voleibol, te sugiero enfocarte en:\n\n1. **Técnica específica por posición** - Cada rol tiene demandas únicas\n2. **Preparación física dirigida** - Fortalece patrones de movimiento específicos\n3. **Análisis táctico** - Estudia 15 minutos diarios de video\n\n¿Puedes ser más específico? Dime exactamente qué aspecto del voleibol te interesa mejorar.\n\n🏐 *¡El conocimiento es el primer paso hacia la maestría!*`
-};
+Puedo ayudarte con:
+✅ Rutinas de entrenamiento personalizadas
+✅ Análisis técnico por posición
+✅ Recomendaciones para mejorar rendimiento
+✅ Respuesta a dudas tácticas
 
-function getSimulated(msg) {
-    const m = msg.toLowerCase();
-    if (m.includes('salto') || m.includes('saltar')) return SIMULATED.salto;
-    if (m.includes('recepción') || m.includes('pase')) return SIMULATED.recepción;
-    if (m.includes('remate') || m.includes('ataque')) return SIMULATED.remate;
-    return SIMULATED.default;
+¿En qué puedo ayudarte hoy? 🏐`;
+
+const SUGERENCIAS = [
+    { glifo: '01', texto: 'Rutina de salto' },
+    { glifo: '02', texto: 'Mejorar recepción' },
+    { glifo: '03', texto: 'Plan semanal' },
+    { glifo: '04', texto: 'Errores en remate' },
+];
+
+const MAX_CARACTERES = 600;
+
+function renderMarkdown(texto) {
+    return texto
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/### (.*)/g, '<h4>$1</h4>')
+        .replace(/## (.*)/g, '<h3>$1</h3>')
+        .split(/\n{2,}/)
+        .map((parrafo) => `<p>${parrafo.replace(/\n/g, '<br/>')}</p>`)
+        .join('');
 }
 
-function renderMd(text) {
-    return text
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/### (.*)/g, '<h4 style="margin:.8em 0 .3em;font-size:.95em;color:#f0f3ff">$1</h4>')
-        .replace(/## (.*)/g, '<h3 style="margin:.5em 0 .4em;font-size:1.05em;color:#f0f3ff">$1</h3>')
-        .replace(/\n/g, '<br/>');
+function horaActual() {
+    const ahora = new Date();
+    return `${ahora.getHours().toString().padStart(2, '0')}:${ahora
+        .getMinutes()
+        .toString()
+        .padStart(2, '0')}`;
+}
+
+function generarCodigoSesion() {
+    return Math.random().toString(16).slice(2, 6).toUpperCase();
 }
 
 export default function Analisis() {
-    const [messages, setMessages] = useState([{ role: 'ai', text: WELCOME, time: 'Ahora' }]);
-    const [input, setInput] = useState('');
-    const [typing, setTyping] = useState(false);
-    const bottomRef = useRef(null);
+    const [mensajes, setMensajes] = useState([
+        { rol: 'coach', texto: WELCOME, hora: 'Ahora' },
+    ]);
+    const [entrada, setEntrada] = useState('');
+    const [escribiendo, setEscribiendo] = useState(false);
+    const [copiadoIndex, setCopiadoIndex] = useState(null);
+
+    const finRef = useRef(null);
     const textareaRef = useRef(null);
+    const inputId = useId();
 
-    useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, typing]);
+    const codigoSesion = useMemo(generarCodigoSesion, []);
+    const intercambios = Math.floor(mensajes.length / 2);
+    const ultimoMensajeUsuario = [...mensajes].reverse().find((m) => m.rol === 'user')?.texto;
+    const ultimoEsCoach = mensajes[mensajes.length - 1]?.rol === 'coach' && mensajes.length > 1;
 
-    async function send(msg) {
-        if (!msg.trim()) return;
-        const now = new Date();
-        const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-        setMessages(prev => [...prev, { role: 'user', text: msg, time: timeStr }]);
-        setInput('');
-        setTyping(true);
+    useEffect(() => {
+        finRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [mensajes, escribiendo]);
+
+    async function enviar(texto) {
+        const mensaje = texto.trim();
+        if (!mensaje) return;
+
+        const hora = horaActual();
+        setMensajes((prev) => [...prev, { rol: 'user', texto: mensaje, hora }]);
+        setEntrada('');
+        setEscribiendo(true);
+        if (textareaRef.current) textareaRef.current.style.height = 'auto';
+        textareaRef.current?.focus();
 
         try {
-            const res = await fetch('https://api.anthropic.com/v1/messages', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    model: 'claude-sonnet-4-20250514',
-                    max_tokens: 1000,
-                    system: 'Eres "VolleyAI Coach", un asistente experto en voleibol profesional. El deportista es un Armador de nivel Intermedio que quiere mejorar su salto. Responde en español de forma estructurada, usando emojis y formato claro. Sé específico con ejercicios, series y repeticiones.',
-                    messages: [{ role: 'user', content: msg }]
-                })
-            });
-            const data = await res.json();
-            const reply = data.content?.[0]?.text || getSimulated(msg);
-            setMessages(prev => [...prev, { role: 'ai', text: reply, time: timeStr }]);
-        } catch {
-            setMessages(prev => [...prev, { role: 'ai', text: getSimulated(msg), time: timeStr }]);
+            const data = await enviarMensaje(mensaje);
+            setMensajes((prev) => [
+                ...prev,
+                { rol: 'coach', texto: data.respuesta, hora: horaActual() },
+            ]);
+        } catch (error) {
+            console.error(error);
+            setMensajes((prev) => [
+                ...prev,
+                {
+                    rol: 'coach',
+                    texto: '⚠️ No fue posible conectar con VolleyScan AI.',
+                    hora: horaActual(),
+                },
+            ]);
         } finally {
-            setTyping(false);
+            setEscribiendo(false);
         }
     }
 
-    function handleKey(e) {
-        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(input); }
+    function handleSubmit(e) {
+        e.preventDefault();
+        enviar(entrada);
+    }
+
+    function handleKeyDown(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            enviar(entrada);
+        }
+    }
+
+    function handleChangeEntrada(e) {
+        setEntrada(e.target.value.slice(0, MAX_CARACTERES));
+        e.target.style.height = 'auto';
+        e.target.style.height = `${Math.min(e.target.scrollHeight, 160)}px`;
+    }
+
+    async function copiarTexto(texto, index) {
+        try {
+            await navigator.clipboard.writeText(texto.replace(/\*\*/g, ''));
+            setCopiadoIndex(index);
+            setTimeout(() => setCopiadoIndex((actual) => (actual === index ? null : actual)), 1800);
+        } catch (error) {
+            console.error('No fue posible copiar el mensaje', error);
+        }
+    }
+
+    function regenerar() {
+        if (ultimoMensajeUsuario) {
+            setMensajes((prev) => prev.slice(0, -1));
+            enviar(ultimoMensajeUsuario);
+        }
     }
 
     return (
-        <>
-
-            <main className="anal-main">
-                <header className="chat-header">
-                    <div className="chat-header-content">
-                        <i className="fa-solid fa-microchip"></i>
-                        <div className="chat-header-text">
+        <main className="ai-panel">
+            <header className="ai-header">
+                <section className="ai-header-top">
+                    <hgroup className="ai-header-identity">
+                        <p className="ai-header-icon hud-frame" aria-hidden="true">
+                            <i className="fa-solid fa-microchip"></i>
+                        </p>
+                        <span className="ai-header-text">
                             <h1>Análisis IA</h1>
                             <p>Entrenador virtual especializado en voleibol</p>
-                        </div>
-                    </div>
-                    <div className="chat-status">
-                        <span className="status-dot online"></span>
-                        <span>IA Conectada</span>
-                    </div>
-                </header>
+                        </span>
+                    </hgroup>
 
-                <section className="chat-messages">
-                    {messages.map((m, i) => (
-                        <div key={i} className={`message ${m.role === 'ai' ? 'ai-message' : 'user-message'}`}>
-                            <div className="message-avatar">
-                                <i className={`fa-solid ${m.role === 'ai' ? 'fa-microchip' : 'fa-user'}`}></i>
-                            </div>
-                            <div className="message-content">
-                                <div className="message-sender">{m.role === 'ai' ? 'VolleyAI Coach' : 'Tú'}</div>
-                                <div className="message-text" dangerouslySetInnerHTML={{ __html: renderMd(m.text) }}></div>
-                                <div className="message-time">{m.time}</div>
-                            </div>
-                        </div>
-                    ))}
-                    {typing && (
-                        <div className="message ai-message">
-                            <div className="message-avatar"><i className="fa-solid fa-microchip"></i></div>
-                            <div className="message-content">
-                                <div className="message-sender">VolleyAI Coach</div>
-                                <div className="typing-dots"><span></span><span></span><span></span></div>
-                            </div>
-                        </div>
-                    )}
-                    <div ref={bottomRef}></div>
+                    <span className="ai-telemetry">
+                        <p className="ai-status">
+                            <span className="ai-status-dot" aria-hidden="true"></span>
+                            IA conectada
+                        </p>
+                        
+                    </span>
                 </section>
 
-                <footer className="chat-input-area">
-                    <div className="input-container">
-                        <textarea
-                            ref={textareaRef}
-                            id="message-input"
-                            placeholder="Escribe tu pregunta aquí... Ej: 'Cómo mejorar mi recepción'"
-                            rows="1"
-                            value={input}
-                            onChange={e => setInput(e.target.value)}
-                            onKeyDown={handleKey}
-                        ></textarea>
-                        <button className="send-btn" onClick={() => send(input)} disabled={typing}>
-                            <i className="fa-solid fa-paper-plane"></i>
-                        </button>
-                    </div>
-                    <div className="input-suggestions">
-                        {[['🦿', 'Rutina de salto'], ['🏐', 'Mejorar recepción'], ['📅', 'Plan semanal'], ['⚠️', 'Errores en remate']].map(([icon, label]) => (
-                            <button key={label} className="suggestion-chip" onClick={() => send(`${label}`)}>
-                                {icon} {label}
-                            </button>
-                        ))}
-                    </div>
-                </footer>
-            </main>
+                <section className="ai-context" aria-label="Contexto del deportista activo">
+                    <p className="ai-context-label">
+                        <i className="fa-solid fa-user-check" aria-hidden="true"></i>
+                        Perfil activo
+                    </p>
+                    {PERFIL_DEPORTISTA.map((item) => (
+                        <p className="ai-chip" key={item.clave}>
+                            <span className="ai-chip-key">{item.clave}</span>
+                            <span className="ai-chip-value">{item.valor}</span>
+                        </p>
+                    ))}
+                </section>
+            </header>
 
-        </>
+            <section
+                className="ai-messages"
+                aria-live="polite"
+                aria-label="Historial de la conversación"
+            >
+                <ul className="ai-messages-list">
+                    {mensajes.map((m, i) => {
+                        const esCoach = m.rol === 'coach';
+                        const esUltimoCoach = esCoach && i === mensajes.length - 1 && mensajes.length > 1;
+
+                        return (
+                            <li key={i}>
+                                <article className={`ai-message ${esCoach ? 'ai-message--coach' : 'ai-message--user'}`}>
+                                    <p className="ai-avatar" aria-hidden="true">
+                                        <i className={`fa-solid ${esCoach ? 'fa-microchip' : 'fa-user'}`}></i>
+                                    </p>
+                                    <span className="ai-bubble-column">
+                                        <span className="ai-sender">
+                                            {esCoach ? (
+                                                <>
+                                                    VolleyAI Coach
+                                                    <span className="ai-sender-badge">IA</span>
+                                                </>
+                                            ) : (
+                                                'Tú'
+                                            )}
+                                        </span>
+
+                                        <span className={`ai-bubble-wrap ${esCoach ? 'hud-frame' : ''}`}>
+                                            <span
+                                                className="ai-bubble"
+                                                dangerouslySetInnerHTML={{ __html: renderMarkdown(m.texto) }}
+                                            ></span>
+
+                                            {esCoach && (
+                                                <span className="ai-bubble-actions">
+                                                    <button
+                                                        type="button"
+                                                        className={`ai-action-btn ${copiadoIndex === i ? 'is-confirmed' : ''}`}
+                                                        onClick={() => copiarTexto(m.texto, i)}
+                                                        aria-label="Copiar respuesta"
+                                                        title="Copiar"
+                                                    >
+                                                        <i className={`fa-solid ${copiadoIndex === i ? 'fa-check' : 'fa-copy'}`}></i>
+                                                    </button>
+                                                    {esUltimoCoach && !escribiendo && (
+                                                        <button
+                                                            type="button"
+                                                            className="ai-action-btn"
+                                                            onClick={regenerar}
+                                                            aria-label="Regenerar respuesta"
+                                                            title="Regenerar"
+                                                        >
+                                                            <i className="fa-solid fa-rotate"></i>
+                                                        </button>
+                                                    )}
+                                                </span>
+                                            )}
+                                        </span>
+
+                                        <span className="ai-bubble-footer">
+                                            <time className="ai-timestamp">{m.hora}</time>
+                                        </span>
+                                    </span>
+                                </article>
+                            </li>
+                        );
+                    })}
+
+                    {escribiendo && (
+                        <li>
+                            <article className="ai-message ai-message--coach">
+                                <p className="ai-avatar" aria-hidden="true">
+                                    <i className="fa-solid fa-microchip"></i>
+                                </p>
+                                <span className="ai-bubble-column">
+                                    <span className="ai-sender">
+                                        VolleyAI Coach
+                                        <span className="ai-sender-badge">IA</span>
+                                    </span>
+                                    <span className="ai-thinking" role="status" aria-label="El coach está escribiendo">
+                                        <span className="ai-thinking-label">Analizando</span>
+                                        <span className="ai-thinking-bar" aria-hidden="true"></span>
+                                    </span>
+                                </span>
+                            </article>
+                        </li>
+                    )}
+                </ul>
+                <span ref={finRef}></span>
+            </section>
+
+            <footer className="ai-footer">
+                <form className="ai-input-form hud-frame" onSubmit={handleSubmit}>
+                    <span className="ai-prompt-glyph" aria-hidden="true">›</span>
+                    <label htmlFor={inputId}>Escribe tu pregunta para el coach</label>
+                    <textarea
+                        id={inputId}
+                        ref={textareaRef}
+                        placeholder="Escribe tu pregunta aquí... Ej: 'Cómo mejorar mi recepción'"
+                        rows="1"
+                        value={entrada}
+                        onChange={handleChangeEntrada}
+                        onKeyDown={handleKeyDown}
+                        maxLength={MAX_CARACTERES}
+                    ></textarea>
+                    <button className="ai-send-btn" type="submit" disabled={escribiendo || !entrada.trim()}>
+                        <i className="fa-solid fa-paper-plane"></i>
+                        <span
+                            style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}
+                        >
+                            Enviar mensaje
+                        </span>
+                    </button>
+                </form>
+
+                <p className="ai-input-meta">
+                    <output htmlFor={inputId} className="ai-char-count">
+                        {entrada.length}/{MAX_CARACTERES}
+                    </output>
+                </p>
+
+                <ul className="ai-suggestions">
+                    {SUGERENCIAS.map((s) => (
+                        <li key={s.texto}>
+                            <button className="ai-suggestion-btn" type="button" onClick={() => enviar(s.texto)}>
+                                <span className="ai-suggestion-glyph" aria-hidden="true">{s.glifo}</span>
+                                {s.texto}
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            </footer>
+        </main>
     );
 }
