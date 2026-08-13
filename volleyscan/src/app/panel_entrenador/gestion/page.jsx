@@ -1,7 +1,17 @@
 'use client';
 
 import './Gestion.css'
-
+import {
+    FiEye,
+    FiEdit2,
+    FiTrash2,
+    FiSearch,
+    FiPlus,
+    FiUserX,
+    FiAlertTriangle,
+    FiCheckCircle,
+    FiXCircle
+} from 'react-icons/fi';
 
 
 
@@ -116,9 +126,29 @@ export default function Gestion() {
                                                 <td><span className={`badge ${a.estado === 'Activo' ? 'active' : 'inactive'}`}>{a.estado}</span></td>
                                                 <td>
                                                     <span className="actions">
-                                                        <button className="action-btn view" onClick={e => { e.stopPropagation(); setSelectedId(a.id); }}><i className="fa-solid fa-eye"></i></button>
-                                                        <button className="action-btn edit" onClick={e => openEdit(a, e)}><i className="fa-solid fa-pen"></i></button>
-                                                        <button className="action-btn del" onClick={e => askDelete(a.id, e)}><i className="fa-solid fa-trash"></i></button>
+                                                        <button
+                                                            className="action-btn view"
+                                                            onClick={e => {
+                                                                e.stopPropagation();
+                                                                setSelectedId(a.id);
+                                                            }}
+                                                        >
+                                                            <FiEye />
+                                                        </button>
+
+                                                        <button
+                                                            className="action-btn edit"
+                                                            onClick={e => openEdit(a, e)}
+                                                        >
+                                                            <FiEdit2 />
+                                                        </button>
+
+                                                        <button
+                                                            className="action-btn del"
+                                                            onClick={e => askDelete(a.id, e)}
+                                                        >
+                                                            <FiTrash2 />
+                                                        </button>
                                                     </span>
                                                 </td>
                                             </tr>

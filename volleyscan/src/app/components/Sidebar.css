@@ -6,8 +6,11 @@
   border-right: 1px solid rgba(255, 255, 255, 0.07);
   display: flex;
   flex-direction: column;
-  position: relative;
-  z-index: 30;
+  position: fixed;
+  left: 0;
+  top: 0;
+  overflow-y: auto;
+  z-index: 300;
   height: 100vh;
 }
 
@@ -70,7 +73,7 @@
 .nav-item {
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 14px;
   padding: 10px 12px;
   border-radius: 9px;
   color: #8892b0;
@@ -81,6 +84,10 @@
   position: relative;
   overflow: hidden;
 }
+
+
+
+
 
 .nav-item i {
   width: 16px;
@@ -106,6 +113,13 @@
   padding-left: 10px;
   box-shadow: inset 0 0 20px rgba(79, 110, 247, 0.08);
 }
+
+.nav-icon {
+  width: 15px;
+  flex-shrink: 0;
+}
+
+
 
 .nav-item.active i {
   color: #7c3aed;
