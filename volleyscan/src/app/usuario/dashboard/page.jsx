@@ -5,39 +5,48 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import './Dashboard.css'
 
+import {
+    FaBell,
+    FaBullseye,
+    FaCamera,
+    Fafire,
+    FaDumbbell,
+} from 'react-icons/fa';
+import { FaArrowTrendUp, FaFire, FaClockRotateLeft, FaCalendarCheck } from 'react-icons/fa6';
+
 const STATS = [
     {
         label: 'Progreso general',
         value: '78%',
         delta: '↑ 12%',
         compare: 'vs. semana pasada',
-        icon: 'fa-arrow-trend-up',
         color: 'stat-icon--blue',
         sparkline: true,
+        icon: FaArrowTrendUp,
     },
     {
         label: 'Sesiones completadas',
         value: '12',
         delta: '↑ 2',
         compare: 'esta semana',
-        icon: 'fa-bullseye',
         color: 'stat-icon--green',
+        icon: FaBullseye,
     },
     {
         label: 'Racha actual',
         value: '5 días',
         delta: null,
         compare: '¡Sigue así!',
-        icon: 'fa-fire',
         color: 'stat-icon--orange',
+        icon: FaFire,
     },
 ]
 
 const QUICK_BTNS = [
-    { label: 'Iniciar análisis', icon: 'fa-camera', className: 'quick-btn--blue', to: '/usuario/analisis' },
-    { label: 'Ver historial', icon: 'fa-clock-rotate-left', className: 'quick-btn--dark', to: '/usuario/historial' },
-    { label: 'Rutina del día', icon: 'fa-calendar-check', className: 'quick-btn--green', to: '/usuario/rutinas' },
-    { label: 'Ejercicios', icon: 'fa-dumbbell', className: 'quick-btn--purple', to: '/usuario/contenido' },
+    { label: 'Iniciar análisis', icon: FaCamera, className: 'quick-btn--blue', to: '/usuario/analisis' },
+    { label: 'Ver historial', icon: FaClockRotateLeft, className: 'quick-btn--dark', to: '/usuario/historial' },
+    { label: 'Rutina del día', icon: FaCalendarCheck, className: 'quick-btn--green', to: '/usuario/rutinas' },
+    { label: 'Ejercicios', icon: FaDumbbell, className: 'quick-btn--purple', to: '/usuario/contenido' },
 ]
 
 export default function Dashboard() {
@@ -111,33 +120,38 @@ export default function Dashboard() {
                 </div>
                 <button className="btn-notification" aria-label="Ver notificaciones"
                     onClick={() => { setNotifVisible(false); router.push('/usuario/notificaciones') }}>
-                    <i className="fa-solid fa-bell" aria-hidden="true" />
+                    <FaBell />
+
                     {notifVisible && <span className="notification-dot" aria-hidden="true">3</span>}
                 </button>
             </header>
 
             {/* Stats */}
             <section className="stats-grid" aria-label="Estadísticas principales">
-                {STATS.map(stat => (
-                    <article className="stat-card" key={stat.label}>
-                        <div className={`stat-card__icon ${stat.color}`} aria-hidden="true">
-                            <i className={`fa-solid ${stat.icon}`} />
-                        </div>
-                        <div className="stat-card__info">
-                            <p className="stat-card__label">{stat.label}</p>
-                            <p className="stat-card__value">
-                                {stat.value}
-                                {stat.delta && <span className="stat-card__delta stat-card__delta--up">{stat.delta}</span>}
-                            </p>
-                            <p className="stat-card__compare">{stat.compare}</p>
-                            {stat.sparkline && (
-                                <figure className="stat-card__sparkline" aria-label="Gráfica de tendencia">
-                                    <canvas ref={sparkRef} width="120" height="30" />
-                                </figure>
-                            )}
-                        </div>
-                    </article>
-                ))}
+                {STATS.map(stat => {
+                    const Icon = stat.icon;
+
+                    return (
+                        <article className="stat-card" key={stat.label}>
+                            <div className={`stat-card__icon ${stat.color}`} aria-hidden="true">
+                                {Icon && <Icon size={22} />}
+                            </div>
+                            <div className="stat-card__info">
+                                <p className="stat-card__label">{stat.label}</p>
+                                <p className="stat-card__value">
+                                    {stat.value}
+                                    {stat.delta && <span className="stat-card__delta stat-card__delta--up">{stat.delta}</span>}
+                                </p>
+                                <p className="stat-card__compare">{stat.compare}</p>
+                                {stat.sparkline && (
+                                    <figure className="stat-card__sparkline" aria-label="Gráfica de tendencia">
+                                        <canvas ref={sparkRef} width="120" height="30" />
+                                    </figure>
+                                )}
+                            </div>
+                        </article>
+                    );
+                })}
             </section>
 
             {/* Mid row */}
@@ -197,18 +211,22 @@ export default function Dashboard() {
             <section className="quick-access" aria-label="Accesos rápidos">
                 <h2 className="quick-access__title">Accesos rápidos</h2>
                 <div className="quick-access__grid">
-                    {QUICK_BTNS.map(btn => (
-                        <button
-                            key={btn.label}
-                            className={`quick-btn ${btn.className}`}
-                            type="button"
-                            aria-label={btn.label}
-                            onClick={() => { showToast(`Abriendo: ${btn.label}`); router.push(btn.to) }}
-                        >
-                            <i className={`fa-solid ${btn.icon}`} aria-hidden="true" />
-                            <span>{btn.label}</span>
-                        </button>
-                    ))}
+                    {QUICK_BTNS.map(btn => {
+                        const QuickIcon = btn.icon;
+
+                        return (
+                            <button
+                                key={btn.label}
+                                className={`quick-btn ${btn.className}`}
+                                type="button"
+                                aria-label={btn.label}
+                                onClick={() => { showToast(`Abriendo: ${btn.label}`); router.push(btn.to) }}
+                            >
+                                <QuickIcon size={22} aria-hidden="true" />
+                                <span>{btn.label}</span>
+                            </button>
+                        );
+                    })}
                 </div>
             </section>
 

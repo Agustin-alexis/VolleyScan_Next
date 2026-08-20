@@ -4,6 +4,13 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image';
 import './perfil.css'
+import {
+    FaUserCircle,
+    FaBullseye,
+    FaSlidersH,
+    FaLock,
+    FaChevronDown,
+} from 'react-icons/fa';
 
 /* ── Íconos SVG para toggle contraseña ── */
 const IconEye = () => (
@@ -23,10 +30,10 @@ const IconEyeOff = () => (
 
 /* ── Secciones del perfil ── */
 const PROFILE_SECTIONS = [
-    { id: 'personal', icon: 'fa-user-circle', label: 'Información personal' },
-    { id: 'objetivos', icon: 'fa-bullseye', label: 'Objetivos' },
-    { id: 'preferencias', icon: 'fa-sliders', label: 'Preferencias' },
-    { id: 'seguridad', icon: 'fa-lock', label: 'Cuenta y seguridad' },
+    { id: 'personal', icon: FaUserCircle, label: 'Información personal' },
+    { id: 'objetivos', icon: FaBullseye, label: 'Objetivos' },
+    { id: 'preferencias', icon: FaSlidersH, label: 'Preferencias' },
+    { id: 'seguridad', icon: FaLock, label: 'Cuenta y seguridad' },
 ]
 
 export default function Perfil() {
@@ -193,12 +200,12 @@ export default function Perfil() {
                     {/* Nav de secciones */}
                     <nav className="profile-nav" aria-label="Secciones del perfil">
                         <ul className="profile-nav__list">
-                            {PROFILE_SECTIONS.map(s => (
-                                <li key={s.id}
-                                    className={`profile-nav__item${activeSection === s.id ? ' profile-nav__item--active' : ''}`}>
-                                    <button className="profile-nav__btn" type="button" onClick={() => setActiveSection(s.id)}>
-                                        <i className={`fa-solid ${s.icon}`} />
-                                        <span>{s.label}</span>
+                            {PROFILE_SECTIONS.map(({ id, icon: Icon, label }) => (
+                                <li key={id}
+                                    className={`profile-nav__item${activeSection === id ? ' profile-nav__item--active' : ''}`}>
+                                    <button className="profile-nav__btn" type="button" onClick={() => setActiveSection(id)}>
+                                        <Icon size={18} />
+                                        <span>{label}</span>
                                     </button>
                                 </li>
                             ))}
@@ -336,7 +343,7 @@ export default function Perfil() {
                                             <option value="velocidad">Mejorar velocidad de reacción</option>
                                             <option value="consistencia">Consistencia en recepción</option>
                                         </select>
-                                        <i className="fa-solid fa-chevron-down select-icon" />
+                                        <FaChevronDown className="fa-solid select-icon" />
                                     </div>
                                 </div>
 

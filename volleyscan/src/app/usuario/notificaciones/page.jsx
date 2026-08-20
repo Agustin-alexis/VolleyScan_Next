@@ -3,6 +3,20 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import './notificaciones.css'
+import {
+    FaBell,
+    FaTrophy,
+    FaStar,
+    FaFire,
+    FaLock,
+    FaBolt,
+    FaCheckDouble,
+    FaBellSlash,
+    FaClock,
+    FaCheck,
+    FaArrowRight,
+} from 'react-icons/fa'
+import { FaTrashCan, FaXmark } from 'react-icons/fa6';
 
 /* ── Datos ── */
 const INITIAL_NOTIFICATIONS = [
@@ -21,11 +35,11 @@ const RECOMMENDATIONS = [
 ]
 
 const ICONS = {
-    logro: 'fa-trophy',
-    rutina: 'fa-star',
-    racha: 'fa-fire',
-    recordatorio: 'fa-lock',
-    analisis: 'fa-bolt',
+    logro: FaTrophy,
+    rutina: FaStar,
+    racha: FaFire,
+    recordatorio: FaLock,
+    analisis: FaBolt,
 }
 
 const FILTERS = [
@@ -123,10 +137,10 @@ export default function Notificaciones() {
                         </h2>
                         <div className="notif-panel__actions">
                             <button className="btn-text" type="button" onClick={markAllRead}>
-                                <i className="fa-solid fa-check-double" /> Marcar todas como leídas
+                                <FaCheckDouble /> Marcar todas como leídas
                             </button>
                             <button className="btn-text btn-text--danger" type="button" onClick={clearAll}>
-                                <i className="fa-solid fa-trash-can" /> Limpiar
+                                <FaTrashCan /> Limpiar
                             </button>
                         </div>
                     </div>
@@ -148,7 +162,7 @@ export default function Notificaciones() {
                     {/* Lista */}
                     {filtered.length === 0 ? (
                         <div className="empty-state">
-                            <i className="fa-solid fa-bell-slash" />
+                            <FaBellSlash />
                             <p>No hay notificaciones aquí.</p>
                         </div>
                     ) : (
@@ -161,13 +175,16 @@ export default function Notificaciones() {
                                     onClick={() => { if (notif.unread) markAsRead(notif.id) }}
                                 >
                                     <div className={`notif-icon notif-icon--${notif.type}`} aria-hidden="true">
-                                        <i className={`fa-solid ${ICONS[notif.type] ?? 'fa-bell'}`} />
+                                        {(() => {
+                                            const Icon = ICONS[notif.type] ?? FaBell;
+                                            return <Icon size={22} />;
+                                        })}
                                     </div>
                                     <div className="notif-body">
                                         <p className="notif-body__title">{notif.title}</p>
                                         <p className="notif-body__msg">{notif.msg}</p>
                                         <p className="notif-body__time">
-                                            <i className="fa-regular fa-clock" aria-hidden="true" /> {notif.time}
+                                            <FaClock aria-hidden="true" /> {notif.time}
                                         </p>
                                     </div>
                                     <div className="notif-item__actions">
@@ -176,14 +193,14 @@ export default function Notificaciones() {
                                                 title="Marcar como leída"
                                                 aria-label="Marcar como leída"
                                                 onClick={e => { e.stopPropagation(); markAsRead(notif.id) }}>
-                                                <i className="fa-solid fa-check" />
+                                                <FaCheck />
                                             </button>
                                         )}
                                         <button className="btn-icon btn-icon--delete" type="button"
                                             title="Eliminar"
                                             aria-label="Eliminar notificación"
                                             onClick={e => { e.stopPropagation(); dismissNotif(notif.id) }}>
-                                            <i className="fa-solid fa-xmark" />
+                                            <FaXmark />
                                         </button>
                                     </div>
                                 </li>
@@ -204,7 +221,7 @@ export default function Notificaciones() {
                                     <p className="rec-item__title">{rec.title}</p>
                                     <p className="rec-item__desc">{rec.desc}</p>
                                     <Link className="rec-item__link" href={rec.link}>
-                                        Ver ejercicios <i className="fa-solid fa-arrow-right" />
+                                        Ver ejercicios <FaArrowRight />
                                     </Link>
                                 </div>
                             </li>

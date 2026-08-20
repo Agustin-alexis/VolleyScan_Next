@@ -4,6 +4,10 @@ import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation';
 import './configuracion.css'
 import Link from 'next/link'
+import { FaBell, FaBook, FaBug, FaCamera, FaChevronRight, FaCircle, FaEnvelope, FaLaptop, FaLock } from 'react-icons/fa'
+import { FaChevronDown, FaCircleInfo, FaCircleQuestion, FaDisplay, FaGear, FaMobileScreenButton, FaTabletScreenButton } from 'react-icons/fa6';
+
+
 
 /* ── Estado inicial ── */
 const INITIAL_STATE = {
@@ -23,18 +27,18 @@ const INITIAL_STATE = {
 
 /* ── Dispositivos iniciales ── */
 const INITIAL_DEVICES = [
-    { id: 1, name: 'iPhone 14 Pro', icon: 'fa-mobile-screen-button', meta: 'Hoy, 10:32 a.m. · Bogotá, CO', current: true },
-    { id: 2, name: 'MacBook Pro', icon: 'fa-laptop', meta: 'Ayer, 08:15 p.m. · Cali, CO', current: false },
-    { id: 3, name: 'iPad Air', icon: 'fa-tablet-screen-button', meta: 'Hace 3 días · Medellín, CO', current: false },
+    { id: 1, name: 'iPhone 14 Pro', icon: FaMobileScreenButton, meta: 'Hoy, 10:32 a.m. · Bogotá, CO', current: true },
+    { id: 2, name: 'MacBook Pro', icon: FaLaptop, meta: 'Ayer, 08:15 p.m. · Cali, CO', current: false },
+    { id: 3, name: 'iPad Air', icon: FaTabletScreenButton, meta: 'Hace 3 días · Medellín, CO', current: false },
 ]
 
 const CONFIG_NAV = [
-    { id: 'general', icon: 'fa-gear', label: 'General' },
-    { id: 'analisis', icon: 'fa-camera', label: 'Análisis' },
-    { id: 'notificaciones', icon: 'fa-bell', label: 'Notificaciones' },
-    { id: 'privacidad', icon: 'fa-lock', label: 'Privacidad' },
-    { id: 'dispositivos', icon: 'fa-display', label: 'Dispositivos' },
-    { id: 'ayuda', icon: 'fa-circle-question', label: 'Ayuda' },
+    { id: 'general', icon: FaGear, label: 'General' },
+    { id: 'analisis', icon: FaCamera, label: 'Análisis' },
+    { id: 'notificaciones', icon: FaBell, label: 'Notificaciones' },
+    { id: 'privacidad', icon: FaLock, label: 'Privacidad' },
+    { id: 'dispositivos', icon: FaDisplay, label: 'Dispositivos' },
+    { id: 'ayuda', icon: FaCircleQuestion, label: 'Ayuda' },
 ]
 
 export default function Configuracion() {
@@ -122,16 +126,16 @@ export default function Configuracion() {
                 <aside className="config-sidebar">
                     <p className="config-sidebar__label">Configuración</p>
                     <ul className="config-nav__list">
-                        {CONFIG_NAV.map(item => (
-                            <li key={item.id}
-                                className={`config-nav__item${activeSection === item.id ? ' config-nav__item--active' : ''}`}>
+                        {CONFIG_NAV.map(({ id, icon: Icon, label }) => (
+                            <li key={id}
+                                className={`config-nav__item${activeSection === id ? ' config-nav__item--active' : ''}`}>
                                 <button
                                     className="config-nav__btn"
                                     type="button"
-                                    onClick={() => setActiveSection(item.id)}
+                                    onClick={() => setActiveSection(id)}
                                 >
-                                    <i className={`fa-solid ${item.icon}`} aria-hidden="true" />
-                                    <span>{item.label}</span>
+                                    <Icon size={18} aria-hidden="true" />
+                                    <span>{label}</span>
                                 </button>
                             </li>
                         ))}
@@ -202,7 +206,7 @@ export default function Configuracion() {
                                                 <option value="equipo">Mi equipo</option>
                                                 <option value="todos">Todos</option>
                                             </select>
-                                            <i className="fa-solid fa-chevron-down select-icon" aria-hidden="true" />
+                                            < FaChevronDown className="fa-solid select-icon" aria-hidden="true" />
                                         </div>
                                     </div>
 
@@ -291,16 +295,18 @@ export default function Configuracion() {
                         <section className="config-section active">
                             <h2 className="config-section__title">Dispositivos conectados</h2>
                             <ul className="device-list">
-                                {devices.map(device => (
-                                    <li key={device.id} className="device-item">
-                                        <div className="device-item__icon"><i className={`fa-solid ${device.icon}`} /></div>
-                                        <div className="device-item__info">
-                                            <p className="device-item__name">{device.name}</p>
-                                            <p className="device-item__meta">Último acceso: {device.meta}</p>
+                                {devices.map(({ id, icon: Icon, name, meta, current }) => (
+                                    <li key={id} className="device-item">
+                                        <div className="device-item__icon">
+                                            <Icon size={22} />
                                         </div>
-                                        {device.current
+                                        <div className="device-item__info">
+                                            <p className="device-item__name">{name}</p>
+                                            <p className="device-item__meta">Último acceso: {meta}</p>
+                                        </div>
+                                        {current
                                             ? <span className="device-badge">Este dispositivo</span>
-                                            : <button className="btn btn--danger-outline btn--sm" type="button" onClick={() => handleDeviceLogout(device)}>Cerrar sesión</button>
+                                            : <button className="btn btn--danger-outline btn--sm" type="button" onClick={() => handleDeviceLogout({ id, name, meta, current })}>Cerrar sesión</button>
                                         }
                                     </li>
                                 ))}
@@ -319,20 +325,24 @@ export default function Configuracion() {
                             <h2 className="config-section__title">Ayuda y soporte</h2>
                             <ul className="help-list">
                                 {[
-                                    { icon: 'fa-book', title: 'Centro de ayuda', desc: 'Guías y preguntas frecuentes' },
-                                    { icon: 'fa-envelope', title: 'Contactar soporte', desc: 'soporte@volleyscan.app' },
-                                    { icon: 'fa-bug', title: 'Reportar un problema', desc: 'Cuéntanos qué no funciona' },
-                                    { icon: 'fa-circle-info', title: 'Versión de la app', desc: 'VolleyScan v2.4.1 · Build 241' },
-                                ].map(item => (
+                                    { icon: FaBook, title: 'Centro de ayuda', desc: 'Guías y preguntas frecuentes' },
+                                    { icon: FaEnvelope, title: 'Contactar soporte', desc: 'soporte@volleyscan.app' },
+                                    { icon: FaBug, title: 'Reportar un problema', desc: 'Cuéntanos qué no funciona' },
+                                    { icon: FaCircleInfo, title: 'Versión de la app', desc: 'VolleyScan v2.4.1 · Build 241' },
+                                ].map(item => {
+                                    const Icon = item.icon;
                                     <li key={item.title} className="help-item" onClick={() => showToast(`Abriendo: ${item.title}…`, 'info')}>
                                         <div className="help-item__icon"><i className={`fa-solid ${item.icon}`} /></div>
                                         <div className="help-item__info">
                                             <p className="help-item__title">{item.title}</p>
                                             <p className="help-item__desc">{item.desc}</p>
                                         </div>
-                                        <i className="fa-solid fa-chevron-right help-item__arrow" />
+                                        <FaChevronRight
+                                            className="help-item__arrow"
+                                            size={16}
+                                        />
                                     </li>
-                                ))}
+                                })}
                             </ul>
                         </section>
                     )}
@@ -377,7 +387,7 @@ function SettingSelect({ label, id, value, onChange, options, small }) {
                     onChange={e => onChange(e.target.value)}>
                     {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
-                <i className="fa-solid fa-chevron-down select-icon" aria-hidden="true" />
+                <FaChevronDown className="fa-solid select-icon" aria-hidden="true" />
             </div>
         </div>
     )

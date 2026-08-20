@@ -1,7 +1,8 @@
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
- 
+
 }
 
 .login-page {
@@ -22,7 +23,7 @@ html, body {
   margin-bottom: 20px;
 }
 
-.img{
+.img {
   border-radius: 10px;
 }
 
@@ -57,9 +58,10 @@ html, body {
   padding: 40px;
   border-radius: 20px;
   width: 130%;
-  max-width: 500px;   /* antes: 420px */
-  box-shadow: 0 15px 40px rgba(0,0,0,.3);
-  animation: fadeIn .6s ease-in-out;  
+  max-width: 500px;
+  /* antes: 420px */
+  box-shadow: 0 15px 40px rgba(0, 0, 0, .3);
+  animation: fadeIn .6s ease-in-out;
 }
 
 
@@ -111,12 +113,12 @@ html, body {
 
 .form-group input:focus {
   border-color: #0d6efd;
-  box-shadow: 0 0 0 3px rgba(13,110,253,.2);
+  box-shadow: 0 0 0 3px rgba(13, 110, 253, .2);
 }
 
 .input-error {
   border-color: #ef4444 !important;
-  box-shadow: 0 0 0 3px rgba(239,68,68,.2) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, .2) !important;
 }
 
 .field-error-msg {
@@ -134,12 +136,12 @@ html, body {
 }
 
 .password-container input {
-  padding-right: 46px;
+  padding-right: px;
 }
 
 .toggle-pass {
   position: absolute;
-  right: 12px;
+  right: 0px;
   top: 13px;
   background: none;
   border: none;
@@ -155,13 +157,20 @@ html, body {
   top: 13px;
 }
 
-.toggle-pass:hover { color: #fff; }
+.toggle-pass:hover {
+  color: #fff;
+}
 
 /* Ocultar iconos nativos del navegador */
 input[type="password"]::-ms-reveal,
-input[type="password"]::-ms-clear { display: none; }
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
 input[type="password"]::-webkit-contacts-auto-fill-button,
-input[type="password"]::-webkit-credentials-auto-fill-button { visibility: hidden; }
+input[type="password"]::-webkit-credentials-auto-fill-button {
+  visibility: hidden;
+}
 
 /* ── Opciones ── */
 .options {
@@ -182,14 +191,19 @@ input[type="password"]::-webkit-credentials-auto-fill-button { visibility: hidde
   font-size: 13px;
 }
 
-.remember input { accent-color: #0d6efd; }
+.remember input {
+  accent-color: #0d6efd;
+}
 
 .forgot-password {
   color: #0d6efd;
   text-decoration: none;
   font-size: 13px;
 }
-.forgot-password:hover { text-decoration: underline; }
+
+.forgot-password:hover {
+  text-decoration: underline;
+}
 
 /* ── Botón login ── */
 .btn-login {
@@ -206,11 +220,16 @@ input[type="password"]::-webkit-credentials-auto-fill-button { visibility: hidde
   letter-spacing: .03em;
   transition: transform .3s, box-shadow .3s, opacity .3s;
 }
+
 .btn-login:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(13,110,253,.4);
+  box-shadow: 0 8px 20px rgba(13, 110, 253, .4);
 }
-.btn-login:disabled { opacity: .7; cursor: not-allowed; }
+
+.btn-login:disabled {
+  opacity: .7;
+  cursor: not-allowed;
+}
 
 /* ── Divider ── */
 .divider {
@@ -220,6 +239,7 @@ input[type="password"]::-webkit-credentials-auto-fill-button { visibility: hidde
   color: #aaa;
   position: relative;
 }
+
 .divider::before,
 .divider::after {
   content: '';
@@ -229,8 +249,14 @@ input[type="password"]::-webkit-credentials-auto-fill-button { visibility: hidde
   height: 1px;
   background: #333;
 }
-.divider::before { left: 0; }
-.divider::after  { right: 0; }
+
+.divider::before {
+  left: 0;
+}
+
+.divider::after {
+  right: 0;
+}
 
 /* ── Social ── */
 .social-buttons {
@@ -252,12 +278,21 @@ input[type="password"]::-webkit-credentials-auto-fill-button { visibility: hidde
   font-weight: 500;
   font-size: 13px;
   cursor: pointer;
-  font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   flex: 1;
   transition: background .2s, transform .2s;
 }
-.social-btn img { width: 18px; height: 18px; object-fit: contain; }
-.social-btn:hover { background: #1a2340; transform: translateY(-2px); }
+
+.social-btn img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.social-btn:hover {
+  background: #1a2340;
+  transform: translateY(-2px);
+}
 
 /* ── Register ── */
 .register {
@@ -266,8 +301,16 @@ input[type="password"]::-webkit-credentials-auto-fill-button { visibility: hidde
   font-size: 14px;
   color: #aaa;
 }
-.register a { color: #0d6efd; text-decoration: none; font-weight: 500; }
-.register a:hover { text-decoration: underline; }
+
+.register a {
+  color: #0d6efd;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.register a:hover {
+  text-decoration: underline;
+}
 
 /* ── Toast ── */
 .toast {
@@ -281,7 +324,7 @@ input[type="password"]::-webkit-credentials-auto-fill-button { visibility: hidde
   padding: 12px 20px;
   font-size: .85rem;
   font-weight: 500;
-  box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
   z-index: 9999;
   max-width: 320px;
   animation: slideUp .25s ease;
@@ -289,17 +332,36 @@ input[type="password"]::-webkit-credentials-auto-fill-button { visibility: hidde
 
 /* ── Animaciones ── */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(15px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ── Responsive ── */
 @media (max-width: 480px) {
-  .login-container { padding: 25px; }
-  .social-buttons  { flex-direction: column; }
+  .login-container {
+    padding: 25px;
+  }
+
+  .social-buttons {
+    flex-direction: column;
+  }
 }

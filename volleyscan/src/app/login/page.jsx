@@ -212,7 +212,7 @@ export default function LoginPage() {
 
           <footer className="register">
             <p>¿Aún no tienes cuenta?
-              <Link href="/registro"> ¡ Regístrate Gratis !</Link></p>
+              <Link href="/registro">  ¡Regístrate Gratis!</Link></p>
           </footer>
 
         </section>
