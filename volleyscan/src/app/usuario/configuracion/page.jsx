@@ -331,8 +331,8 @@ export default function Configuracion() {
                                     { icon: FaCircleInfo, title: 'Versión de la app', desc: 'VolleyScan v2.4.1 · Build 241' },
                                 ].map(item => {
                                     const Icon = item.icon;
-                                    <li key={item.title} className="help-item" onClick={() => showToast(`Abriendo: ${item.title}…`, 'info')}>
-                                        <div className="help-item__icon"><i className={`fa-solid ${item.icon}`} /></div>
+                                    return (<li key={item.title} className="help-item" onClick={() => showToast(`Abriendo: ${item.title}…`, 'info')}>
+                                        <div className="help-item__icon"><Icon size={22} aria-hidden="true" /></div>
                                         <div className="help-item__info">
                                             <p className="help-item__title">{item.title}</p>
                                             <p className="help-item__desc">{item.desc}</p>
@@ -340,8 +340,10 @@ export default function Configuracion() {
                                         <FaChevronRight
                                             className="help-item__arrow"
                                             size={16}
+                                            aria-hidden="true"
                                         />
                                     </li>
+                                    );
                                 })}
                             </ul>
                         </section>

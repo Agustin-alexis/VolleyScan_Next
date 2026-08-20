@@ -16,6 +16,8 @@ import {
     FaCircleExclamation,
     FaCircleCheck,
 } from "react-icons/fa6";
+import Image from "next/image";
+import voleibol from '@/app/public/img/voleibol.jpg'
 
 import "./analisis.css";
 
@@ -56,9 +58,9 @@ export default function Analisis() {
 
                                 <div className="video-player__screen">
 
-                                    <img
-                                        src=""
-                                        alt=""
+                                    <Image
+                                        src={voleibol}
+                                        alt="analisis"
                                         className="video-player__img"
                                     />
 

@@ -3,13 +3,13 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import voleibol from '@/app/public/img/voleibol.jpg'
 import './Dashboard.css'
 
 import {
     FaBell,
     FaBullseye,
     FaCamera,
-    Fafire,
     FaDumbbell,
 } from 'react-icons/fa';
 import { FaArrowTrendUp, FaFire, FaClockRotateLeft, FaCalendarCheck } from 'react-icons/fa6';
@@ -167,7 +167,7 @@ export default function Dashboard() {
                             <p className="analysis__time">Hace 2 horas</p>
                             <figure className="analysis__image">
                                 <Image
-                                    src=""
+                                    src={voleibol}
                                     alt="Remate de voleibol zona 4"
                                     width={250}
                                 />

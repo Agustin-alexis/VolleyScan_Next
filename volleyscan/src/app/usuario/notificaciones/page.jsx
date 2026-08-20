@@ -178,7 +178,7 @@ export default function Notificaciones() {
                                         {(() => {
                                             const Icon = ICONS[notif.type] ?? FaBell;
                                             return <Icon size={22} />;
-                                        })}
+                                        })()}
                                     </div>
                                     <div className="notif-body">
                                         <p className="notif-body__title">{notif.title}</p>
