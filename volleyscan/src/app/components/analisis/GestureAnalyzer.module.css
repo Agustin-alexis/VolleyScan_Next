@@ -1,0 +1,819 @@
+/* ─────────────────────────────────────────────────────────────
+   GestureAnalyzer.module.css — Análisis de gestos (VolleyScan)
+
+   ───────────────────────────────────────────────────────────── */
+
+.root {
+    /* ── Paleta (medida desde el dashboard) ─────────────────── */
+    --bg: #0b0f1a;
+    --card: #111827;
+    --border: #1f2634;
+    --inner: #0b0f1a;
+
+    --text: #ffffff;
+    --text-2: #cbd5e1;
+    --muted: #94a3b8;
+    --faint: #475569;
+
+    --blue: #3b82f6;
+    --blue-dark: #2563eb;
+    --blue-lite: #60a5fa;
+    --blue-soft: rgba(59, 130, 246, 0.28);
+    --green: #22c55e;
+    --orange: #f97316;
+
+    /* ── Medidas ─────────────────────────────────────────────── */
+    /* Espacio vertical que ocupa lo que está FUERA de este componente
+    (padding del layout, barra superior...). Si ves scroll de página,
+    súbelo; si sobra espacio abajo, bájalo. Se puede definir desde el
+     layout como --analisis-offset. */
+    --offset: var(--analisis-offset, 96px);
+    --radius: 20px;
+    --panel-w: clamp(330px, 27vw, 410px);
+
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    height: calc(100vh - var(--offset));
+    height: calc(100dvh - var(--offset));
+    min-height: 500px;
+    color: var(--text);
+    font-family: inherit;
+    line-height: 1.45;
+}
+
+.root *,
+.root *::before,
+.root *::after {
+    box-sizing: inherit;
+}
+
+.srOnly {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ── Encabezado ────────────────────────────────────────────── */
+.header {
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.heading {
+    min-width: 0;
+}
+
+.title {
+    margin: 0;
+    font-size: clamp(1.4rem, 2.1vw, 1.85rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+}
+
+.subtitle {
+    margin: 4px 0 0;
+    max-width: 62ch;
+    color: var(--text-2);
+    font-size: 0.95rem;
+}
+
+.actions {
+    display: flex;
+    flex: none;
+    gap: 10px;
+}
+
+/* ── Botones ───────────────────────────────────────────────── */
+.btnPrimary,
+.btnGhost,
+.btnText {
+    font: inherit;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease,
+        transform 0.1s ease;
+}
+
+.btnPrimary,
+.btnGhost {
+    min-height: 44px;
+    padding: 0 20px;
+    border-radius: 12px;
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+.btnPrimary {
+    border: 1px solid var(--blue);
+    background: var(--blue);
+    color: #fff;
+}
+
+.btnPrimary:hover:not(:disabled) {
+    border-color: var(--blue-dark);
+    background: var(--blue-dark);
+}
+
+.btnPrimary:disabled {
+    opacity: 0.65;
+    cursor: progress;
+}
+
+.btnGhost {
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--text);
+}
+
+.btnGhost:hover {
+    border-color: var(--blue);
+    color: var(--blue-lite);
+}
+
+.btnPrimary:active:not(:disabled),
+.btnGhost:active {
+    transform: translateY(1px);
+}
+
+.btnText {
+    padding: 6px 2px;
+    border: 0;
+    background: none;
+    color: var(--blue-lite);
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.btnText:hover:not(:disabled) {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.btnText:disabled {
+    color: var(--faint);
+    cursor: default;
+}
+
+.btnPrimary:focus-visible,
+.btnGhost:focus-visible,
+.btnText:focus-visible,
+.layer:focus-visible {
+    outline: 3px solid var(--blue-lite);
+    outline-offset: 3px;
+}
+
+/* ── Distribución: cámara | panel ──────────────────────────── */
+.split {
+    display: grid;
+    flex: 1;
+    grid-template-columns: minmax(0, 1fr) var(--panel-w);
+    gap: 16px;
+    min-height: 0;
+}
+
+.split>* {
+    min-height: 0;
+}
+
+/* ── Escenario (cámara) ────────────────────────────────────── */
+.stage {
+    --bracket: rgba(148, 163, 184, 0.45);
+
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--inner);
+}
+
+.stage[data-framing='ok'] {
+    --bracket: var(--green);
+}
+
+.stage[data-framing='partial'] {
+    --bracket: var(--orange);
+}
+
+.stage[data-framing='none'] {
+    --bracket: rgba(255, 255, 255, 0.65);
+}
+
+/* "contain" y no "cover": lo que ves es exactamente lo que se analiza.
+   Con "cover" el borde del video quedaría recortado y el cuerpo podría
+   salirse del cuadro sin que lo notes. */
+.video,
+.canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.mirrored {
+    transform: scaleX(-1);
+}
+
+.canvas {
+    pointer-events: none;
+}
+
+/* Visor con esquinas: cambian de color según el encuadre */
+.frame {
+    position: absolute;
+    inset: 12px;
+    pointer-events: none;
+}
+
+.stage[data-live='true'] .frame {
+    animation: lock 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.corner {
+    position: absolute;
+    width: 26px;
+    height: 26px;
+    border: 0 solid var(--bracket);
+    transition: border-color 0.3s ease;
+}
+
+.corner[data-pos='tl'] {
+    top: 0;
+    left: 0;
+    border-top-width: 3px;
+    border-left-width: 3px;
+    border-top-left-radius: 10px;
+}
+
+.corner[data-pos='tr'] {
+    top: 0;
+    right: 0;
+    border-top-width: 3px;
+    border-right-width: 3px;
+    border-top-right-radius: 10px;
+}
+
+.corner[data-pos='bl'] {
+    bottom: 0;
+    left: 0;
+    border-bottom-width: 3px;
+    border-left-width: 3px;
+    border-bottom-left-radius: 10px;
+}
+
+.corner[data-pos='br'] {
+    right: 0;
+    bottom: 0;
+    border-right-width: 3px;
+    border-bottom-width: 3px;
+    border-bottom-right-radius: 10px;
+}
+
+@keyframes lock {
+    from {
+        opacity: 0.25;
+        transform: scale(1.06);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* HUD superior izquierdo */
+.hud {
+    position: absolute;
+    top: 24px;
+    left: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    background: rgba(11, 15, 26, 0.74);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: var(--text);
+    font-size: 0.8rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.liveDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55);
+    }
+
+    50% {
+        box-shadow: 0 0 0 6px rgba(34, 197, 94, 0);
+    }
+}
+
+.metrics {
+    gap: 12px;
+    color: var(--text-2);
+    font-weight: 500;
+}
+
+.metric+.metric {
+    padding-left: 12px;
+    border-left: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+/* Capas (arriba a la derecha) */
+.layers {
+    position: absolute;
+    top: 24px;
+    right: 24px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+}
+
+.layer {
+    min-height: 32px;
+    padding: 0 14px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    background: rgba(11, 15, 26, 0.66);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: var(--text-2);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.layer:hover {
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.layer[aria-pressed='true'] {
+    border-color: var(--blue);
+    background: var(--blue);
+    color: #fff;
+}
+
+/* Aviso de encuadre */
+.banner {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    max-width: calc(100% - 48px);
+    padding: 8px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+    background: rgba(11, 15, 26, 0.8);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    color: var(--text);
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-align: center;
+    transform: translateX(-50%);
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.banner[data-state='ok'] {
+    border-color: var(--green);
+    background: var(--green);
+    color: #052e16;
+}
+
+.banner[data-state='partial'] {
+    border-color: var(--orange);
+    background: var(--orange);
+    color: #1c0a00;
+}
+
+/* Estado apagado / cargando / error */
+.overlay {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 24px;
+    padding: clamp(28px, 6%, 64px);
+    background: linear-gradient(105deg, rgba(11, 15, 26, 0.98) 45%, rgba(11, 15, 26, 0.8));
+}
+
+.overlayCopy {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.overlayTitle {
+    margin: 0;
+    max-width: 22ch;
+    font-size: clamp(1.4rem, 2.6vw, 2.1rem);
+    font-weight: 800;
+    line-height: 1.12;
+    letter-spacing: -0.01em;
+}
+
+.overlayText {
+    margin: 0;
+    max-width: 46ch;
+    color: var(--text-2);
+}
+
+.tips {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--text-2);
+    font-size: 0.95rem;
+}
+
+.tips li {
+    position: relative;
+    padding-left: 24px;
+}
+
+.tips li::before {
+    content: '';
+    position: absolute;
+    top: 0.45em;
+    left: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--blue);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+.overlayNote {
+    margin: 4px 0 0;
+    max-width: 46ch;
+    color: var(--muted);
+    font-size: 0.82rem;
+}
+
+/* Silueta guía */
+.guide {
+    width: clamp(72px, 12vw, 132px);
+    height: auto;
+}
+
+.guideFrame {
+    fill: none;
+    stroke: rgba(148, 163, 184, 0.4);
+    stroke-width: 1.5;
+    stroke-dasharray: 5 5;
+}
+
+.guideBody line {
+    stroke: rgba(226, 232, 240, 0.9);
+    stroke-width: 3;
+    stroke-linecap: round;
+}
+
+.guideHead {
+    fill: none;
+    stroke: var(--green);
+    stroke-width: 3;
+}
+
+/* ── Panel de medición ─────────────────────────────────────── */
+.panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 18px 18px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--card);
+}
+
+.panelHead {
+    flex: none;
+    padding-bottom: 12px;
+}
+
+.panelTitle {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.panelNote {
+    margin: 4px 0 0;
+    color: var(--muted);
+    font-size: 0.82rem;
+}
+
+/* Las filas se reparten TODO el alto disponible: sin scroll.
+   El scroll interno solo aparece en ventanas muy bajas. */
+.rows {
+    display: grid;
+    flex: 1;
+    grid-auto-rows: minmax(54px, 1fr);
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 4.6rem minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 14px;
+    border-top: 1px solid var(--border);
+}
+
+.rowTitle {
+    margin: 0;
+    color: var(--text);
+    font-size: clamp(0.85rem, 1.7vh, 1rem);
+    font-weight: 600;
+}
+
+/* Medidor de un ángulo (lo usa AngleGauge.jsx) */
+.meter {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(4px, 0.8vh, 8px);
+    min-width: 0;
+}
+
+.meterWide {
+    grid-column: 2 / -1;
+}
+
+.meterTop {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.side {
+    overflow: hidden;
+    color: var(--muted);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-overflow: ellipsis;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.value {
+    font-size: clamp(1.05rem, 2.3vh, 1.5rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+}
+
+.valueOff {
+    color: var(--faint);
+    font-weight: 600;
+}
+
+.track {
+    position: relative;
+    height: clamp(7px, 1vh, 10px);
+    overflow: hidden;
+    border-radius: 999px;
+    background: var(--inner);
+    box-shadow: inset 0 0 0 1px var(--border);
+}
+
+/* Referencia de 90° en la escala de 180° */
+.track[data-scale='180']::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 1px;
+    background: rgba(148, 163, 184, 0.5);
+}
+
+.range {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-radius: 999px;
+    background: var(--blue-soft);
+    transition: left 0.16s linear, width 0.16s linear;
+}
+
+.fill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--blue-dark), var(--blue) 60%, var(--blue-lite));
+    transition: width 0.12s linear;
+}
+
+.panelFoot {
+    display: flex;
+    flex: none;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px 16px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+}
+
+.legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--muted);
+    font-size: 0.76rem;
+}
+
+.legend li {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.swatchNow,
+.swatchRange {
+    width: 16px;
+    height: 6px;
+    border-radius: 999px;
+}
+
+.swatchNow {
+    background: var(--blue);
+}
+
+.swatchRange {
+    background: var(--blue-soft);
+}
+
+/* ── Ventanas bajas (laptops): más compacto, sigue sin scroll ─ */
+@media (max-height: 780px) {
+    .root {
+        gap: 12px;
+    }
+
+    .subtitle,
+    .panelNote {
+        display: none;
+    }
+
+    .btnPrimary,
+    .btnGhost {
+        min-height: 40px;
+    }
+
+    .panel {
+        padding: 14px 16px 10px;
+    }
+
+    .panelHead {
+        padding-bottom: 8px;
+    }
+}
+
+/* ── Pantallas medianas: panel un poco más angosto ─────────── */
+@media (max-width: 1180px) {
+    .root {
+        --panel-w: 310px;
+    }
+
+    .row {
+        grid-template-columns: 3.9rem minmax(0, 1fr) minmax(0, 1fr);
+        gap: 10px;
+    }
+}
+
+/* ── Tablet y celular: se apila (aquí sí puede haber scroll) ─ */
+@media (max-width: 900px) {
+    .root {
+        height: auto;
+        min-height: 0;
+    }
+
+    .split {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .stage {
+        height: min(66dvh, 600px);
+        min-height: 340px;
+    }
+
+    .rows {
+        grid-auto-rows: minmax(64px, auto);
+        overflow: visible;
+    }
+}
+
+@media (max-width: 640px) {
+    .header {
+        flex-wrap: wrap;
+    }
+
+    .subtitle {
+        display: block;
+    }
+
+    .frame {
+        inset: 10px;
+    }
+
+    .hud {
+        top: 20px;
+        left: 20px;
+    }
+
+    .metrics {
+        display: none;
+    }
+
+    /* Las capas bajan debajo del HUD para que no choquen */
+    .layers {
+        top: 58px;
+        right: auto;
+        left: 20px;
+        justify-content: flex-start;
+    }
+
+    .banner {
+        bottom: 20px;
+        max-width: calc(100% - 40px);
+    }
+
+    .overlay {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 16px;
+        padding: 28px 24px;
+    }
+
+    .guide {
+        display: none;
+    }
+}
+
+/* Accesibilidad: sin animaciones si el usuario lo pide */
+@media (prefers-reduced-motion: reduce) {
+
+    .stage[data-live='true'] .frame,
+    .liveDot {
+        animation: none;
+    }
+
+    .corner,
+    .banner,
+    .layer,
+    .btnPrimary,
+    .btnGhost,
+    .btnText,
+    .fill,
+    .range {
+        transition: none;
+    }
+}
