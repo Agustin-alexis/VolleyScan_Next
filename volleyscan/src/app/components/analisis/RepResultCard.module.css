@@ -1,0 +1,249 @@
+/* ─────────────────────────────────────────────────────────────
+   RepResultCard.module.css — Resultado de un remate
+
+   Misma paleta del dashboard del usuario. El anillo del score replica
+   el de "Último análisis": verde cuando es alto; azul y naranja para
+   los scores medio y bajo.
+   La tipografía se hereda de la app.
+   ───────────────────────────────────────────────────────────── */
+
+.card {
+    --card: rgba(17, 24, 39, 0.94);
+    --border: #1f2634;
+    --text: #ffffff;
+    --text-2: #cbd5e1;
+    --muted: #94a3b8;
+    --blue: #3b82f6;
+    --blue-lite: #60a5fa;
+    --green: #22c55e;
+    --orange: #f97316;
+
+    position: absolute;
+    top: 68px;
+    right: 24px;
+    z-index: 3;
+    width: min(340px, calc(100% - 48px));
+    padding: 16px 18px 18px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: var(--card);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--text);
+    font-family: inherit;
+    line-height: 1.4;
+    animation: enter 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.card *,
+.card *::before,
+.card *::after {
+    box-sizing: border-box;
+}
+
+@keyframes enter {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.close {
+    position: absolute;
+    top: 8px;
+    right: 10px;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
+}
+
+.close:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text);
+}
+
+.close:focus-visible {
+    outline: 3px solid var(--blue-lite);
+    outline-offset: 2px;
+}
+
+.head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-right: 22px;
+    margin-bottom: 14px;
+}
+
+.title {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.sub {
+    margin: 2px 0 0;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.motivo {
+    margin: 10px 0 0;
+    color: var(--text-2);
+    font-size: 0.9rem;
+}
+
+/* ── Anillo del score ──────────────────────────────────────── */
+.ring {
+    --tone: var(--green);
+
+    position: relative;
+    flex: none;
+    width: 78px;
+    height: 78px;
+}
+
+.ring[data-tone="medio"] {
+    --tone: var(--blue);
+}
+
+.ring[data-tone="bajo"] {
+    --tone: var(--orange);
+}
+
+.ring svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.ringTrack,
+.ringFill {
+    fill: none;
+    stroke-width: 7;
+}
+
+.ringTrack {
+    stroke: var(--border);
+}
+
+.ringFill {
+    stroke: var(--tone);
+    stroke-linecap: round;
+    transition: stroke-dasharray 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.ringText {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.score {
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.outOf {
+    margin-top: 2px;
+    color: var(--muted);
+    font-size: 0.68rem;
+    line-height: 1;
+}
+
+/* ── Lista de correcciones / fortalezas ────────────────────── */
+.label {
+    margin: 0 0 8px;
+    color: var(--muted);
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.item {
+    position: relative;
+    padding-left: 18px;
+    color: var(--text-2);
+    font-size: 0.88rem;
+}
+
+.item::before {
+    content: "";
+    position: absolute;
+    top: 0.45em;
+    left: 0;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--muted);
+}
+
+.item[data-tipo="alta"]::before {
+    background: var(--orange);
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
+}
+
+.item[data-tipo="media"]::before {
+    background: var(--blue);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.item[data-tipo="bien"]::before {
+    background: var(--green);
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+/* En pantallas angostas la tarjeta baja a la parte inferior del video */
+@media (max-width: 640px) {
+    .card {
+        top: auto;
+        right: 20px;
+        bottom: 76px;
+        left: 20px;
+        width: auto;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .card {
+        animation: none;
+    }
+
+    .ringFill,
+    .close {
+        transition: none;
+    }
+}
