@@ -1,33 +1,14 @@
 'use client';
 
 
-import { Barlow_Condensed, Public_Sans } from 'next/font/google';
+import { useMemo } from 'react';
 import { usePoseCamera } from '@/hooks/usePoseCamera';
+import { resumirSesion } from '@/lib/engine/session';
 import { ANGLES, ANGLE_ROWS, TRUNK } from '@/lib/pose/geometry';
+import { REMATE } from '@/lib/movimientos/remate';
 import AngleGauge from './AngleGauge';
 import styles from './GestureAnalyzer.module.css';
-
-// Tipografía: condensada de marcador para títulos y cifras,
-// humanista y legible para el texto corrido.
-
-// ─────────────────────────────────────────────────────────────
-// GestureAnalyzer.jsx — Análisis de gestos (VolleyScan)
-//
-// Pantalla dividida:
-//   · Izquierda — escenario: cámara en vivo con esqueleto, ángulos y
-//     estela de las muñecas, más un HUD de telestrador (estado, fps,
-//     latencia, resolución, capas y guía de encuadre).
-//   · Derecha — instrumentos: medidores 3D de codo, hombro, cadera,
-//     rodilla y tobillo, más la inclinación del tronco, cada uno con el
-//     rango recorrido en la sesión.
-//
-// La corrección técnica del remate (reglas y score) llega en las
-// fases siguientes; esta pantalla ya mide todo lo que necesitan.
-// ─────────────────────────────────────────────────────────────
-
-
-// Tipografía: condensada de marcador para títulos y cifras,
-// humanista y legible para el texto corrido.
+import RepResultCard from './RepResultCard';
 
 const STATUS_TEXT = {
     idle: 'Cámara apagada',
@@ -36,6 +17,8 @@ const STATUS_TEXT = {
     error: 'No se pudo iniciar el análisis',
 };
 
+const PHASE_LABEL = Object.fromEntries(REMATE.fases.map((f) => [f.id, f.nombre]));
+
 const LAYER_OPTIONS = [
     { key: 'skeleton', label: 'Esqueleto' },
     { key: 'angles', label: 'Ángulos' },
@@ -43,9 +26,9 @@ const LAYER_OPTIONS = [
 ];
 
 const TIPS = [
-    'A 2 o 3 metros de la cámara',
+    'Cámara fija, de lado o en diagonal',
     'Cuerpo completo dentro del marco',
-    'Luz de frente, sin contraluz',
+    'A 3 o 4 metros, con luz de frente',
 ];
 
 export default function GestureAnalyzer() {
@@ -58,6 +41,8 @@ export default function GestureAnalyzer() {
         camera,
         layers,
         mirrored,
+        phase,
+        reps,
         start,
         stop,
         switchCamera,
@@ -70,14 +55,17 @@ export default function GestureAnalyzer() {
     const framing = live.framing;
     const resolution = camera?.width && camera?.height ? `${camera.width}×${camera.height}` : null;
 
+    const resumen = useMemo(() => resumirSesion(reps), [reps]);
+    const lastRep = reps?.length ? reps[reps.length - 1] : null;
+
     return (
         <section className={styles.root} aria-label="Análisis de gestos con IA">
             <header className={styles.header}>
                 <div className={styles.heading}>
                     <h1 className={styles.title}>Análisis de remate</h1>
                     <p className={styles.subtitle}>
-                        Ponte de cuerpo completo frente a la cámara y ejecuta el gesto. La IA mide cada
-                        ángulo en 3D mientras te mueves.
+                        Ejecuta el remate completo: carga, salto, golpeo y caída. Al aterrizar verás tu score y
+                        qué corregir.
                     </p>
                 </div>
 
@@ -134,6 +122,13 @@ export default function GestureAnalyzer() {
                                     <span className={styles.liveDot} aria-hidden="true" />
                                     En vivo
                                 </span>
+                                <span className={styles.pill}>Fase · {PHASE_LABEL[phase]}</span>
+                                {resumen.validas > 0 && (
+                                    <span className={styles.pill}>
+                                        {resumen.validas} {resumen.validas === 1 ? 'remate' : 'remates'} · prom.{' '}
+                                        {resumen.scorePromedio}
+                                    </span>
+                                )}
                                 <span className={`${styles.pill} ${styles.metrics}`}>
                                     <span className={styles.metric}>{live.fps} fps</span>
                                     <span className={styles.metric}>{live.latency} ms</span>
@@ -158,6 +153,8 @@ export default function GestureAnalyzer() {
                             <div className={styles.banner} data-state={framing.status}>
                                 {framing.hint}
                             </div>
+
+                            <RepResultCard rep={lastRep} numero={reps?.length ?? 0} />
                         </>
                     )}
 
@@ -205,7 +202,7 @@ export default function GestureAnalyzer() {
                 <aside className={styles.panel} aria-label="Medición en vivo">
                     <div className={styles.panelHead}>
                         <h2 className={styles.panelTitle}>Medición en vivo</h2>
-                        <p className={styles.panelNote}>Ángulos en 3D. El score técnico llega en las próximas fases.</p>
+                        <p className={styles.panelNote}>Ángulos en 3D, en tiempo real.</p>
                     </div>
 
                     <div className={styles.rows}>
