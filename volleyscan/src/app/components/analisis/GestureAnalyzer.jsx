@@ -1,19 +1,40 @@
 'use client';
 
+// ─────────────────────────────────────────────────────────────
+// GestureAnalyzer.jsx — Análisis de gestos (VolleyScan)
+//
+// Una sola pantalla, sin scroll:
+//   · Izquierda — cámara en vivo que ocupa todo el alto disponible, con
+//     esqueleto, ángulos y estela de las muñecas, más un HUD (estado,
+//     fase del remate, remates y promedio, fps, latencia, capas y
+//     encuadre). Al terminar cada remate aparece su resultado.
+//   · Derecha — panel de medición con los ángulos 3D de codo, hombro,
+//     cadera, rodilla y tobillo, más la inclinación del tronco, cada uno
+//     con el rango recorrido en la sesión.
+//
+// La tipografía y los colores salen del CSS y de la app: este componente
+// no carga fuentes propias.
+//
+// Guardado en el historial: cada remate que termina el motor (`onRep`) se
+// suma a la sesión; al pulsar "Detener" la sesión se envía al servidor
+// (lib/historial/sesionAnalisis.js). Si no se puede enviar, queda en el
+// navegador y se reintenta sola.
+// ─────────────────────────────────────────────────────────────
 
-import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePoseCamera } from '@/hooks/usePoseCamera';
 import { resumirSesion } from '@/lib/engine/session';
+import {
+    agregarRemate,
+    cerrarYEnviar,
+    crearSesion,
+    reenviarPendientes,
+} from '@/lib/historial/sesionAnalisis';
 import { ANGLES, ANGLE_ROWS, TRUNK } from '@/lib/pose/geometry';
 import { REMATE } from '@/lib/movimientos/remate';
-import { HistorialError, guardarSesion } from '@/app/services/historialService';
 import AngleGauge from './AngleGauge';
 import styles from './GestureAnalyzer.module.css';
 import RepResultCard from './RepResultCard';
-
-// Debe coincidir con el nombre real de la carpeta del historial en src/app/usuario
-const RUTA_HISTORIAL = '/usuario/histtrial';
 
 const STATUS_TEXT = {
     idle: 'Cámara apagada',
@@ -36,14 +57,23 @@ const TIPS = [
     'A 3 o 4 metros, con luz de frente',
 ];
 
-const AVISO_STYLE = {
-    margin: 0,
-    padding: '0.75rem 1rem',
-    border: '1px solid currentColor',
-    borderRadius: 8,
+const MENSAJE_GUARDADO = {
+    guardando: 'Guardando la sesión en tu historial…',
+    enviada: 'Sesión guardada en tu historial.',
+    pendiente: 'Sesión guardada en este dispositivo. Se enviará a tu historial cuando haya conexión.',
+    rechazada: 'No se pudo guardar la sesión: los datos no son válidos.',
 };
 
 export default function GestureAnalyzer() {
+    // Sesión de práctica en curso: vive en un ref para no re-renderizar en cada remate
+    const sesionRef = useRef(null);
+    const [guardado, setGuardado] = useState(null);
+
+    const alTerminarRemate = useCallback((rep) => {
+        if (!sesionRef.current) sesionRef.current = crearSesion();
+        agregarRemate(sesionRef.current, rep);
+    }, []);
+
     const {
         videoRef,
         canvasRef,
@@ -60,11 +90,39 @@ export default function GestureAnalyzer() {
         switchCamera,
         toggleLayer,
         resetRanges,
-    } = usePoseCamera({ model: 'lite', targetFps: 60 });
+    } = usePoseCamera({ model: 'full', targetFps: 60, onRep: alTerminarRemate });
 
-    const [aviso, setAviso] = useState(null);
-    const inicioRef = useRef(null);
-    const guardandoRef = useRef(false);
+    // Cierra la sesión en curso y la envía; si no hubo remates, no hace nada
+    const guardarSesion = useCallback(async () => {
+        const sesion = sesionRef.current;
+        sesionRef.current = null;
+        if (!sesion?.repeticiones.length) return;
+        setGuardado('guardando');
+        const { estado } = await cerrarYEnviar(sesion);
+        setGuardado(estado);
+    }, []);
+
+    const iniciar = () => {
+        setGuardado(null);
+        sesionRef.current = crearSesion();
+        start();
+    };
+
+    const detener = () => {
+        stop();
+        guardarSesion();
+    };
+
+    // Al abrir la pantalla: reintenta las sesiones que quedaron sin enviar.
+    // Al salir de la pantalla con la cámara encendida: no se pierde la sesión.
+    useEffect(() => {
+        reenviarPendientes();
+        return () => {
+            const sesion = sesionRef.current;
+            sesionRef.current = null;
+            if (sesion?.repeticiones.length) cerrarYEnviar(sesion);
+        };
+    }, []);
 
     const running = status === 'running';
     const loading = status === 'loading';
@@ -72,62 +130,7 @@ export default function GestureAnalyzer() {
     const resolution = camera?.width && camera?.height ? `${camera.width}×${camera.height}` : null;
 
     const resumen = useMemo(() => resumirSesion(reps), [reps]);
-    const lastRep = reps?.length ? reps[reps.length - 1] : null;
-
-    // Marca el inicio real de la sesión: cuando la cámara ya está analizando
-    useEffect(() => {
-        if (status === 'running' && inicioRef.current === null) {
-            inicioRef.current = Date.now();
-        }
-    }, [status]);
-
-    const handleStart = useCallback(() => {
-        setAviso(null);
-        start();
-    }, [start]);
-
-    // Detener = terminar la sesión: se guarda en el historial y se apaga la cámara.
-    const handleStop = useCallback(async () => {
-        if (guardandoRef.current) return;
-        guardandoRef.current = true;
-
-        // Se captura ANTES de detener, por si stop() limpia las repeticiones.
-        const validas = (reps ?? []).filter((r) => r?.valida && typeof r.score === 'number');
-        const duracionSeg = inicioRef.current ? (Date.now() - inicioRef.current) / 1000 : 0;
-        inicioRef.current = null;
-
-        stop();
-
-        try {
-            if (validas.length === 0) {
-                setAviso({ tipo: 'vacio', texto: 'No se guardó la sesión: no hubo remates válidos.' });
-                return;
-            }
-
-            await guardarSesion({
-                gesto: 'remate',
-                duracionSeg,
-                repeticiones: validas.map((r) => ({
-                    puntaje: r.score,
-                    brazo: r.brazo,
-                    errores: r.errores,
-                    puntosClave: r.puntosClave,
-                })),
-            });
-
-            setAviso({
-                tipo: 'ok',
-                texto: `Sesión guardada: ${validas.length} ${validas.length === 1 ? 'remate' : 'remates'}.`,
-            });
-        } catch (e) {
-            setAviso({
-                tipo: 'error',
-                texto: e instanceof HistorialError ? e.message : 'No se pudo guardar la sesión.',
-            });
-        } finally {
-            guardandoRef.current = false;
-        }
-    }, [reps, stop]);
+    const lastRep = reps.length ? reps[reps.length - 1] : null;
 
     return (
         <section className={styles.root} aria-label="Análisis de gestos con IA">
@@ -147,28 +150,27 @@ export default function GestureAnalyzer() {
                         </button>
                     )}
                     {running ? (
-                        <button type="button" className={styles.btnGhost} onClick={handleStop}>
-                            Detener y guardar
+                        <button type="button" className={styles.btnGhost} onClick={detener}>
+                            Detener
                         </button>
                     ) : (
-                        <button type="button" className={styles.btnPrimary} onClick={handleStart} disabled={loading}>
+                        <button type="button" className={styles.btnPrimary} onClick={iniciar} disabled={loading}>
                             {loading ? 'Cargando…' : 'Activar cámara'}
                         </button>
                     )}
                 </div>
             </header>
 
-            {aviso && (
-                <p role="status" aria-live="polite" style={AVISO_STYLE}>
-                    {aviso.texto}{' '}
-                    {aviso.tipo === 'ok' && <Link href={RUTA_HISTORIAL}>Ver historial</Link>}
-                </p>
-            )}
-
             <p className={styles.srOnly} role="status" aria-live="polite">
                 {STATUS_TEXT[status]}
                 {running ? `. ${framing.hint}` : ''}
             </p>
+
+            {guardado && (
+                <p className={styles.subtitle} role="status" aria-live="polite">
+                    {MENSAJE_GUARDADO[guardado]}
+                </p>
+            )}
 
             <div className={styles.split}>
                 {/* ── Cámara ────────────────────────────────────── */}
@@ -232,7 +234,7 @@ export default function GestureAnalyzer() {
                                 {framing.hint}
                             </div>
 
-                            <RepResultCard rep={lastRep} numero={reps?.length ?? 0} />
+                            <RepResultCard rep={lastRep} numero={reps.length} />
                         </>
                     )}
 
