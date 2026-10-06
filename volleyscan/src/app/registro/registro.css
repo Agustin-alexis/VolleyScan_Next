@@ -1,11 +1,118 @@
-/* =============================================
-   VOLLEYSCAN – Registro.css
-   ============================================= */
-* {
-  margin: 0;
+/* ── Ojo de contraseña ── */
+.input-password {
+  position: relative;
+}
+
+.input-password input {
+  padding-right: 44px;
+}
+
+.boton-ojo {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px;
+  transition: color .2s;
+}
+
+.boton-ojo:hover {
+  color: #22d3ee;
+}
+
+/* ── Selector de rol ── */
+.selector-rol {
+  border: none;
   padding: 0;
-  box-sizing: border-box;
-  font-family: 'Poppins', sans-serif; /* ← agregar aquí */
+  margin: 0;
+  min-width: 0;
+}
+
+.selector-rol legend {
+  font-size: 12px;
+  font-weight: 500;
+  color: #cbd5e1;
+  margin-bottom: 5px;
+  padding: 0;
+}
+
+.opciones-rol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.opcion-rol {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 13px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, .05);
+  border: 1px solid rgba(255, 255, 255, .1);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: .3s ease;
+}
+
+.opcion-rol:hover {
+  border-color: rgba(34, 211, 238, .5);
+}
+
+/* Mismo grosor de borde (1px) para que no cambie el tamaño al seleccionar */
+.opcion-rol.activa {
+  border-color: #22d3ee;
+  background: rgba(34, 211, 238, .08);
+  box-shadow: 0 0 0 2px rgba(34, 211, 238, .15);
+}
+
+.opcion-rol svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* Ocultamos el radio nativo y dibujamos el propio */
+.opcion-rol input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.radio-custom {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, .4);
+  border-radius: 50%;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.opcion-rol.activa .radio-custom {
+  border-color: #22d3ee;
+}
+
+.opcion-rol.activa .radio-custom::after {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: #22d3ee;
+}
+
+.opcion-rol:has(input:focus-visible) {
+  outline: 2px solid #22d3ee;
+  outline-offset: 2px;
 }
 
 /* ── Layout dividido ── */

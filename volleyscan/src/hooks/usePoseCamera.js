@@ -342,7 +342,7 @@ export function usePoseCamera({ model = "full", targetFps = 60 } = {}) {
 
     const fail = useCallback(
         (err) => {
-            console.error("[usePoseCamera]", err);
+            console.error("[usePoseCamara]", err);
             runningRef.current = false;
             cancelFrame();
             stopStream();
