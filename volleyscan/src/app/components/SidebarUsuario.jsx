@@ -35,6 +35,7 @@ const nav = [
         group: 'Analisis', items: [
             { to: '/usuario/progreso', icon: FaChartLine, label: 'Progreso' },
             { to: '/usuario/analisis', icon: FaCamera, label: 'Analisis IA' },
+            { to: '/usuario/histtrial', icon: FaCamera, label: 'Historial de IA' },
             { to: '/usuario/notificaciones', icon: FaBell, label: 'Notificaciones' },
         ]
     },

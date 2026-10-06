@@ -1,14 +1,19 @@
 'use client';
 
 
-import { useMemo } from 'react';
+import Link from 'next/link';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePoseCamera } from '@/hooks/usePoseCamera';
 import { resumirSesion } from '@/lib/engine/session';
 import { ANGLES, ANGLE_ROWS, TRUNK } from '@/lib/pose/geometry';
 import { REMATE } from '@/lib/movimientos/remate';
+import { HistorialError, guardarSesion } from '@/app/services/historialService';
 import AngleGauge from './AngleGauge';
 import styles from './GestureAnalyzer.module.css';
 import RepResultCard from './RepResultCard';
+
+// Debe coincidir con el nombre real de la carpeta del historial en src/app/usuario
+const RUTA_HISTORIAL = '/usuario/histtrial';
 
 const STATUS_TEXT = {
     idle: 'Cámara apagada',
@@ -31,6 +36,13 @@ const TIPS = [
     'A 3 o 4 metros, con luz de frente',
 ];
 
+const AVISO_STYLE = {
+    margin: 0,
+    padding: '0.75rem 1rem',
+    border: '1px solid currentColor',
+    borderRadius: 8,
+};
+
 export default function GestureAnalyzer() {
     const {
         videoRef,
@@ -48,7 +60,11 @@ export default function GestureAnalyzer() {
         switchCamera,
         toggleLayer,
         resetRanges,
-    } = usePoseCamera({ model: 'full', targetFps: 60 });
+    } = usePoseCamera({ model: 'lite', targetFps: 60 });
+
+    const [aviso, setAviso] = useState(null);
+    const inicioRef = useRef(null);
+    const guardandoRef = useRef(false);
 
     const running = status === 'running';
     const loading = status === 'loading';
@@ -57,6 +73,61 @@ export default function GestureAnalyzer() {
 
     const resumen = useMemo(() => resumirSesion(reps), [reps]);
     const lastRep = reps?.length ? reps[reps.length - 1] : null;
+
+    // Marca el inicio real de la sesión: cuando la cámara ya está analizando
+    useEffect(() => {
+        if (status === 'running' && inicioRef.current === null) {
+            inicioRef.current = Date.now();
+        }
+    }, [status]);
+
+    const handleStart = useCallback(() => {
+        setAviso(null);
+        start();
+    }, [start]);
+
+    // Detener = terminar la sesión: se guarda en el historial y se apaga la cámara.
+    const handleStop = useCallback(async () => {
+        if (guardandoRef.current) return;
+        guardandoRef.current = true;
+
+        // Se captura ANTES de detener, por si stop() limpia las repeticiones.
+        const validas = (reps ?? []).filter((r) => r?.valida && typeof r.score === 'number');
+        const duracionSeg = inicioRef.current ? (Date.now() - inicioRef.current) / 1000 : 0;
+        inicioRef.current = null;
+
+        stop();
+
+        try {
+            if (validas.length === 0) {
+                setAviso({ tipo: 'vacio', texto: 'No se guardó la sesión: no hubo remates válidos.' });
+                return;
+            }
+
+            await guardarSesion({
+                gesto: 'remate',
+                duracionSeg,
+                repeticiones: validas.map((r) => ({
+                    puntaje: r.score,
+                    brazo: r.brazo,
+                    errores: r.errores,
+                    puntosClave: r.puntosClave,
+                })),
+            });
+
+            setAviso({
+                tipo: 'ok',
+                texto: `Sesión guardada: ${validas.length} ${validas.length === 1 ? 'remate' : 'remates'}.`,
+            });
+        } catch (e) {
+            setAviso({
+                tipo: 'error',
+                texto: e instanceof HistorialError ? e.message : 'No se pudo guardar la sesión.',
+            });
+        } finally {
+            guardandoRef.current = false;
+        }
+    }, [reps, stop]);
 
     return (
         <section className={styles.root} aria-label="Análisis de gestos con IA">
@@ -76,16 +147,23 @@ export default function GestureAnalyzer() {
                         </button>
                     )}
                     {running ? (
-                        <button type="button" className={styles.btnGhost} onClick={stop}>
-                            Detener
+                        <button type="button" className={styles.btnGhost} onClick={handleStop}>
+                            Detener y guardar
                         </button>
                     ) : (
-                        <button type="button" className={styles.btnPrimary} onClick={start} disabled={loading}>
+                        <button type="button" className={styles.btnPrimary} onClick={handleStart} disabled={loading}>
                             {loading ? 'Cargando…' : 'Activar cámara'}
                         </button>
                     )}
                 </div>
             </header>
+
+            {aviso && (
+                <p role="status" aria-live="polite" style={AVISO_STYLE}>
+                    {aviso.texto}{' '}
+                    {aviso.tipo === 'ok' && <Link href={RUTA_HISTORIAL}>Ver historial</Link>}
+                </p>
+            )}
 
             <p className={styles.srOnly} role="status" aria-live="polite">
                 {STATUS_TEXT[status]}
