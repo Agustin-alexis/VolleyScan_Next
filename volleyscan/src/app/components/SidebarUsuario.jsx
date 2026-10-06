@@ -1,4 +1,5 @@
 'use client';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import './SidebarUsuario.css';
@@ -13,7 +14,7 @@ import {
     FaBell,
 } from 'react-icons/fa';
 import {
-    FaDumbbell, FaFileLines, FaGear,
+    FaDumbbell, FaFileLines, FaGear, FaBars, FaXmark,
 } from 'react-icons/fa6';
 
 const nav = [
@@ -47,20 +48,49 @@ const nav = [
 
 export default function SidebarUsuario() {
     const pathname = usePathname();
+    const [open, setOpen] = useState(false);
+
+    // Cierra el menú al cambiar de página
+    useEffect(() => {
+        setOpen(false);
+    }, [pathname]);
 
     return (
-        <aside className="sidebar">
-            <div className="sb-logo">
-                <Image src={Logo} alt="VolleyAI" className="sb-logo-icon" style={{ width: '42px', height: '42px', borderRadius: '12px', objectFit: 'cover' }} />
-                <div>
-                    <div className="sb-logo-name">VolleyAI</div>
-                    <div className="sb-logo-role">Deportista/Usuario</div>
-                </div>
-            </div>
+        <>
+            <button
+                className="sb-toggle"
+                onClick={() => setOpen(true)}
+                aria-label="Abrir menú"
+            >
+                <FaBars size={18} />
+            </button>
 
-            <nav className="sb-nav">
-                {nav.map(({ group, items }) => {
-                    return (
+            {open && <div className="sb-overlay" onClick={() => setOpen(false)} />}
+
+            <aside className={open ? 'sidebar sidebar--open' : 'sidebar'}>
+                <button
+                    className="sb-close"
+                    onClick={() => setOpen(false)}
+                    aria-label="Cerrar menú"
+                >
+                    <FaXmark size={18} />
+                </button>
+
+                <div className="sb-logo">
+                    <Image
+                        src={Logo}
+                        alt="VolleyAI"
+                        className="sb-logo-icon"
+                        style={{ width: '42px', height: '42px', borderRadius: '12px', objectFit: 'cover' }}
+                    />
+                    <div>
+                        <div className="sb-logo-name">VolleyAI</div>
+                        <div className="sb-logo-role">Deportista/Usuario</div>
+                    </div>
+                </div>
+
+                <nav className="sb-nav">
+                    {nav.map(({ group, items }) => (
                         <div key={group}>
                             <div className="sb-group-label">{group}</div>
                             {items.map(({ to, icon: Icon, label }) => (
@@ -74,18 +104,18 @@ export default function SidebarUsuario() {
                                 </Link>
                             ))}
                         </div>
-                    )
-                })}
-            </nav>
+                    ))}
+                </nav>
 
-            <div className="sb-footer">
-                <div className="sb-avatar">JP</div>
-                <div className="sb-foot-info">
-                    <div className="sb-foot-name">Juan Perez</div>
-                    <div className="sb-foot-role">usuario</div>
+                <div className="sb-footer">
+                    <div className="sb-avatar">JP</div>
+                    <div className="sb-foot-info">
+                        <div className="sb-foot-name">Juan Perez</div>
+                        <div className="sb-foot-role">usuario</div>
+                    </div>
+                    <span className="sb-online-dot"></span>
                 </div>
-                <span className="sb-online-dot"></span>
-            </div>
-        </aside>
+            </aside>
+        </>
     );
 }
