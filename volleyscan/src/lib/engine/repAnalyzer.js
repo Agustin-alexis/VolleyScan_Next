@@ -24,17 +24,17 @@
 // JavaScript puro: se prueba en Node sin cámara ni navegador.
 // ─────────────────────────────────────────────────────────────
 
-import { LM, MIN_VISIBILITY } from "../geometry";
-import { evaluarRepeticion } from "./scorer";
+import { LM, MIN_VISIBILITY } from '@/lib/pose/geometry';
+import { evaluarRepeticion } from './scorer';
 
 const BUFFER_MS = 3500; // historial reciente que se conserva para mirar atrás
-const SIDES = ["L", "R"];
+const SIDES = ['L', 'R'];
 const WRIST = { L: LM.L_WRIST, R: LM.R_WRIST };
 const SHOULDER = { L: LM.L_SHOULDER, R: LM.R_SHOULDER };
 
 // Factor de una media móvil exponencial con constante de tiempo tauMs
 const emaAlpha = (dt, tauMs) => 1 - Math.exp(-dt / tauMs);
-const isNum = (v) => typeof v === "number" && Number.isFinite(v);
+const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
 const seen = (p) => Boolean(p) && p.v >= MIN_VISIBILITY;
 const mean = (arr) => arr.reduce((acc, n) => acc + n, 0) / arr.length;
 
@@ -48,10 +48,7 @@ function readBody(pts) {
     const ankleR = pts[LM.R_ANKLE];
     if (![sL, sR, hL, hR, ankleL, ankleR].every(seen)) return null;
 
-    const torso = Math.hypot(
-        (sL.x + sR.x - hL.x - hR.x) / 2,
-        (sL.y + sR.y - hL.y - hR.y) / 2,
-    );
+    const torso = Math.hypot((sL.x + sR.x - hL.x - hR.x) / 2, (sL.y + sR.y - hL.y - hR.y) / 2);
     if (torso < 1) return null;
 
     const nose = pts[LM.NOSE];
@@ -71,7 +68,7 @@ export function createRepAnalyzer(standard) {
     let s;
 
     const fresh = () => ({
-        phase: "sin_cuerpo",
+        phase: 'sin_cuerpo',
         lastT: null,
         lostSince: null,
         groundY: null, // altura de los pies en el suelo (px)
@@ -115,8 +112,7 @@ export function createRepAnalyzer(standard) {
                 movimiento: standard.id,
                 version: standard.version,
                 valida: false,
-                motivo:
-                    "No se detectó el golpeo. Lleva el brazo por encima del hombro con un movimiento rápido.",
+                motivo: 'No se detectó el golpeo. Lleva el brazo por encima del hombro con un movimiento rápido.',
                 score: null,
                 medidas: [],
                 errores: [],
@@ -127,7 +123,7 @@ export function createRepAnalyzer(standard) {
         }
 
         const side = a.contact.side;
-        const k = side === "R" ? "D" : "I";
+        const k = side === 'R' ? 'D' : 'I';
 
         // Instante de contacto. El pico de velocidad solo sirve para saber QUÉ
         // brazo golpea: al armar el brazo también hay mucha velocidad. El
@@ -136,16 +132,14 @@ export function createRepAnalyzer(standard) {
         const rapido = a.contact.speed * 0.5;
         const altura = (x) => x.shoulderY[side] - x.wristY[side];
         const candidatos = inWindow(a.takeoffT, land.tLand).filter(
-            (x) =>
-                x.wristY[side] !== null && altura(x) > 0 && x.speed[side] >= rapido,
+            (x) => x.wristY[side] !== null && altura(x) > 0 && x.speed[side] >= rapido,
         );
         const contactT = candidatos.length
-            ? candidatos.reduce((mejor, x) => (altura(x) > altura(mejor) ? x : mejor))
-                .t
+            ? candidatos.reduce((mejor, x) => (altura(x) > altura(mejor) ? x : mejor)).t
             : a.contact.t;
 
-        // Golpeo: se toma el mejor valor alrededor del contacto (±80 ms)
-        const hitWin = inWindow(contactT - 80, contactT + 80);
+        // Golpeo: se toma el mejor valor alrededor del contacto (± ventanaContactoMs)
+        const hitWin = inWindow(contactT - cfg.ventanaContactoMs, contactT + cfg.ventanaContactoMs);
         const maxOf = (fn) => {
             const vals = hitWin.map(fn).filter(isNum);
             return vals.length ? Math.max(...vals) : null;
@@ -159,16 +153,10 @@ export function createRepAnalyzer(standard) {
         // Carga: instante de máxima flexión de rodillas antes del despegue
         const cargaSample = inWindow(a.takeoffT - cfg.ventanaCargaMs, a.takeoffT)
             .filter((x) => x.kneeMean !== null)
-            .reduce(
-                (best, x) => (!best || x.kneeMean < best.kneeMean ? x : best),
-                null,
-            );
+            .reduce((best, x) => (!best || x.kneeMean < best.kneeMean ? x : best), null);
 
         // Caída: rodilla más flexionada al aterrizar y simetría de los pies
-        const landVals = inWindow(
-            land.tLand,
-            land.tLand + cfg.ventanaAmortiguacionMs,
-        )
+        const landVals = inWindow(land.tLand, land.tLand + cfg.ventanaAmortiguacionMs)
             .map((x) => x.kneeMean)
             .filter(isNum);
         const symVals = inWindow(land.tLand, land.tLand + 150).map(
@@ -182,9 +170,7 @@ export function createRepAnalyzer(standard) {
             extensionCodoContacto: maxOf((x) => x.angles[`codo${k}`]),
             elevacionBrazoContacto: maxOf((x) => x.angles[`hombro${k}`]),
             alturaContacto: maxOf((x) =>
-                x.noseY !== null && x.wristY[side] !== null
-                    ? (x.noseY - x.wristY[side]) / a.torso
-                    : null,
+                x.noseY !== null && x.wristY[side] !== null ? (x.noseY - x.wristY[side]) / a.torso : null,
             ),
             amortiguacionRodilla: landVals.length ? Math.min(...landVals) : null,
             simetriaAterrizaje: symVals.length ? mean(symVals) : null,
@@ -192,7 +178,7 @@ export function createRepAnalyzer(standard) {
 
         return evaluarRepeticion(valores, standard, {
             ...extras,
-            brazo: side === "R" ? "derecho" : "izquierdo",
+            brazo: side === 'R' ? 'derecho' : 'izquierdo',
             velocidadMuneca: a.contact.speed, // torsos/s
         });
     }
@@ -209,7 +195,7 @@ export function createRepAnalyzer(standard) {
             if (s.lostSince === null) s.lostSince = t;
             const busy = Boolean(s.airborne || s.landing);
             if (busy && t - s.lostSince > cfg.perdidaMaxMs) abort(t);
-            if (!s.airborne && !s.landing) s.phase = "sin_cuerpo";
+            if (!s.airborne && !s.landing) s.phase = 'sin_cuerpo';
             return { phase: s.phase, rep: null };
         }
         s.lostSince = null;
@@ -227,16 +213,14 @@ export function createRepAnalyzer(standard) {
         const lowest = Math.max(body.ankleL.y, body.ankleR.y); // el pie más cercano al suelo
         if (s.groundY === null) s.groundY = lowest;
         const lift = (s.groundY - lowest) / torso;
-        if (!busy && lift < 0.05)
-            s.groundY += (lowest - s.groundY) * emaAlpha(dt, 1500);
+        if (!busy && lift < 0.05) s.groundY += (lowest - s.groundY) * emaAlpha(dt, 1500);
 
         // Velocidad de cada muñeca, en torsos por segundo
         for (const side of SIDES) {
             const p = pts[WRIST[side]];
             const prev = s.prevWrist[side];
             if (seen(p) && prev && dt > 0) {
-                const inst =
-                    ((Math.hypot(p.x - prev.x, p.y - prev.y) / dt) * 1000) / torso;
+                const inst = ((Math.hypot(p.x - prev.x, p.y - prev.y) / dt) * 1000) / torso;
                 s.speed[side] = s.speed[side] * 0.4 + inst * 0.6;
             } else {
                 s.speed[side] = 0;
@@ -247,8 +231,7 @@ export function createRepAnalyzer(standard) {
         // Rodilla media (si solo se ve una pierna, se usa esa)
         const knees = [angles?.rodillaD, angles?.rodillaI].filter(isNum);
         const kneeMean = knees.length ? mean(knees) : null;
-        if (kneeMean !== null && kneeMean < cfg.cargaRodillaMax)
-            s.cargaUntil = t + 400;
+        if (kneeMean !== null && kneeMean < cfg.cargaRodillaMax) s.cargaUntil = t + 400;
 
         const wristY = {};
         const shoulderY = {};
@@ -274,19 +257,8 @@ export function createRepAnalyzer(standard) {
         while (s.buffer.length && t - s.buffer[0].t > BUFFER_MS) s.buffer.shift();
 
         // ── Despegue ───────────────────────────────────────────
-        if (
-            !s.airborne &&
-            !s.landing &&
-            t >= s.refractoryUntil &&
-            lift > cfg.saltoMinTorsos
-        ) {
-            s.airborne = {
-                t0: t,
-                takeoffT: findTakeoff(s.buffer, t),
-                maxLift: lift,
-                contact: null,
-                torso,
-            };
+        if (!s.airborne && !s.landing && t >= s.refractoryUntil && lift > cfg.saltoMinTorsos) {
+            s.airborne = { t0: t, takeoffT: findTakeoff(s.buffer, t), maxLift: lift, contact: null, torso };
             s.hitUntil = 0;
         }
 
@@ -330,9 +302,9 @@ export function createRepAnalyzer(standard) {
         }
 
         // ── Fase en vivo, para mostrar en pantalla ─────────────
-        if (s.landing) s.phase = "caida";
-        else if (s.airborne) s.phase = t < s.hitUntil ? "golpeo" : "vuelo";
-        else s.phase = t < s.cargaUntil ? "carga" : "preparacion";
+        if (s.landing) s.phase = 'caida';
+        else if (s.airborne) s.phase = t < s.hitUntil ? 'golpeo' : 'vuelo';
+        else s.phase = t < s.cargaUntil ? 'carga' : 'preparacion';
 
         return { phase: s.phase, rep };
     }
