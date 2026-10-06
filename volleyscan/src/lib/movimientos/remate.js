@@ -42,7 +42,7 @@ export const REMATE = {
         cargaRodillaMax: 135, // rodilla por debajo de esto = fase de carga
         vueloMinMs: 150, // un "salto" más corto es ruido
         vueloMaxMs: 1500, // un vuelo más largo es un error de seguimiento
-        ventanaContactoMs: 40, // ± alrededor del contacto para medir codo, hombro y altura
+        ventanaContactoMs: 80, // ± alrededor del contacto para medir codo, hombro y altura
         ventanaCargaMs: 900, // cuánto antes del despegue se busca la máxima flexión
         ventanaAmortiguacionMs: 500, // cuánto después de aterrizar se mide la amortiguación
         refractarioMs: 800, // pausa antes de aceptar otro remate
