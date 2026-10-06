@@ -5,7 +5,7 @@ export default function PanelLayout({ children }) {
     <div
       style={{
         display: "flex",
-        width: "100vw",
+        width: "100%",
         minHeight: "100vh",
       }}
     >
@@ -14,9 +14,10 @@ export default function PanelLayout({ children }) {
       <main
         style={{
           flex: 1,
-          width: "100%",
           minWidth: 0,
-          padding: 20,
+          minHeight: "100vh",
+          padding: "20px",
+          boxSizing: "border-box",
         }}
       >
         {children}
