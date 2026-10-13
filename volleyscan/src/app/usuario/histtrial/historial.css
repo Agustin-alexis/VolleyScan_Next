@@ -1,0 +1,394 @@
+/* ─────────────────────────────────────────────────────────────
+   Historial — tema oscuro azul, coherente con el resto de VolleyAI.
+   Todo está acotado bajo .hist para no afectar otras pantallas.
+   ───────────────────────────────────────────────────────────── */
+
+.hist {
+    --h-panel: #0d1322;
+    --h-panel-2: #111a2f;
+    --h-linea: #1e2a44;
+    --h-linea-fuerte: #2c3d62;
+    --h-tinta: #e6ebf5;
+    --h-suave: #8a97b0;
+    --h-azul: #2f6fed;
+    --h-azul-claro: #60a5fa;
+    --h-azul-tenue: rgba(59, 130, 246, 0.14);
+    --h-foco: #7db0ff;
+    --h-ok: #34d399;
+    --h-medio: #fbbf24;
+    --h-mal: #f87171;
+    --h-mal-fondo: #dc2626;
+
+    display: grid;
+    gap: 1.5rem;
+    min-height: 100%;
+    padding: clamp(1rem, 3vw, 2rem);
+    color: var(--h-tinta);
+    background: transparent;
+    line-height: 1.5;
+}
+
+.hist h1,
+.hist h2,
+.hist h3,
+.hist p,
+.hist ul,
+.hist dl,
+.hist dd,
+.hist figure {
+    margin: 0;
+}
+
+.hist ul {
+    padding: 0;
+    list-style: none;
+}
+
+.hist__cabecera {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-end;
+    justify-content: space-between;
+}
+
+.hist__cabecera h1 {
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 800;
+    line-height: 1.2;
+}
+
+.hist__cabecera p,
+.hist__suave {
+    color: var(--h-suave);
+}
+
+/* ── Botones ── */
+.hist__btn {
+    padding: 0.6rem 1.1rem;
+    border: 1px solid var(--h-linea-fuerte);
+    border-radius: 10px;
+    color: var(--h-tinta);
+    background: transparent;
+    font: inherit;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.hist__btn:hover {
+    border-color: var(--h-azul-claro);
+    background: var(--h-azul-tenue);
+}
+
+.hist__btn--primario {
+    border-color: var(--h-azul);
+    color: #fff;
+    background: var(--h-azul);
+}
+
+.hist__btn--primario:hover {
+    border-color: var(--h-azul-claro);
+    background: #4a82f2;
+}
+
+.hist__btn--peligro {
+    border-color: var(--h-mal-fondo);
+    color: #fff;
+    background: var(--h-mal-fondo);
+}
+
+.hist__btn--peligro:hover {
+    border-color: var(--h-mal);
+    background: #e53939;
+}
+
+.hist__btn:focus-visible,
+.hist__item:focus-visible {
+    outline: 3px solid var(--h-foco);
+    outline-offset: 2px;
+}
+
+/* ── Estados ── */
+.hist__estado {
+    color: var(--h-suave);
+}
+
+.hist__alerta {
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--h-mal);
+    border-radius: 10px;
+    color: var(--h-mal);
+    background: rgba(248, 113, 113, 0.08);
+    font-weight: 600;
+}
+
+.hist__vacio {
+    display: grid;
+    gap: 0.75rem;
+    justify-items: start;
+    padding: 2rem;
+    border: 1px dashed var(--h-linea-fuerte);
+    border-radius: 16px;
+    background: var(--h-panel);
+}
+
+.hist__vacio h2 {
+    font-size: 1.375rem;
+    font-weight: 800;
+}
+
+.hist__vacio p {
+    color: var(--h-suave);
+}
+
+/* ── Resumen ── */
+.hist__resumen {
+    display: grid;
+    gap: 1.5rem;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid var(--h-linea);
+    border-radius: 16px;
+    background: var(--h-panel);
+}
+
+.hist__resumen dl {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+    gap: 1rem;
+}
+
+.hist__resumen dt {
+    color: var(--h-suave);
+    font-size: 0.875rem;
+}
+
+.hist__resumen dd {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+}
+
+.hist__tendencia svg {
+    display: block;
+    width: 100%;
+    max-width: 420px;
+    height: auto;
+}
+
+.hist__tendencia figcaption {
+    color: var(--h-suave);
+    font-size: 0.8125rem;
+}
+
+.hist__linea {
+    fill: none;
+    stroke: var(--h-azul-claro);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.hist__punto {
+    fill: var(--h-ok);
+}
+
+/* ── Cuerpo: lista + detalle ── */
+.hist__cuerpo {
+    display: grid;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.hist__lista {
+    display: grid;
+    gap: 0.5rem;
+    max-height: 32rem;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+    scrollbar-color: var(--h-linea-fuerte) transparent;
+}
+
+.hist__item {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0 0.75rem;
+    align-items: center;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--h-linea);
+    border-radius: 12px;
+    color: inherit;
+    background: var(--h-panel);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.hist__item:hover {
+    border-color: var(--h-linea-fuerte);
+    background: var(--h-panel-2);
+}
+
+.hist__item[aria-current="true"] {
+    border-color: var(--h-azul-claro);
+    background: var(--h-azul-tenue);
+}
+
+.hist__item-fecha {
+    font-weight: 600;
+}
+
+.hist__item-meta {
+    grid-column: 1;
+    color: var(--h-suave);
+    font-size: 0.875rem;
+}
+
+.hist__item .hist__nota {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+}
+
+/* ── Notas por nivel (el color nunca es la única señal: siempre va el número) ── */
+.hist__nota {
+    display: inline-block;
+    min-width: 2.5rem;
+    padding: 0.15rem 0.5rem;
+    border: 1.5px solid currentColor;
+    border-radius: 999px;
+    font-weight: 700;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+}
+
+.hist [data-nivel="excelente"],
+.hist [data-nivel="bueno"] {
+    color: var(--h-ok);
+}
+
+.hist [data-nivel="regular"] {
+    color: var(--h-medio);
+}
+
+.hist [data-nivel="bajo"] {
+    color: var(--h-mal);
+}
+
+/* ── Detalle ── */
+.hist__detalle {
+    display: grid;
+    gap: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    border: 1px solid var(--h-linea);
+    border-radius: 16px;
+    background: var(--h-panel);
+}
+
+.hist__detalle>header {
+    display: grid;
+    gap: 0.25rem;
+}
+
+.hist__detalle h2 {
+    font-size: 1.25rem;
+    font-weight: 800;
+}
+
+.hist__detalle header p:not(.hist__nivel) {
+    color: var(--h-suave);
+}
+
+.hist__nivel {
+    display: flex;
+    gap: 0.75rem;
+    align-items: baseline;
+    margin-top: 0.5rem;
+    font-size: 3rem;
+    font-weight: 800;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.hist__nivel span {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.hist__frecuentes {
+    display: grid;
+    gap: 0.5rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid var(--h-linea);
+    border-left: 4px solid var(--h-azul-claro);
+    border-radius: 10px;
+    background: var(--h-panel-2);
+}
+
+.hist__frecuentes h3 {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.hist__frecuentes li {
+    overflow-wrap: anywhere;
+}
+
+.hist__tabla-wrap {
+    overflow-x: auto;
+}
+
+.hist__tabla {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.hist__tabla th,
+.hist__tabla td {
+    padding: 0.65rem 0.5rem;
+    border-bottom: 1px solid var(--h-linea);
+    text-align: left;
+    vertical-align: top;
+}
+
+.hist__tabla thead th {
+    color: var(--h-suave);
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.hist__metricas {
+    display: grid;
+    gap: 0.25rem;
+}
+
+.hist__bien {
+    color: var(--h-ok);
+}
+
+.hist__obs {
+    padding: 0.75rem 1rem;
+    border-left: 4px solid var(--h-linea-fuerte);
+    border-radius: 4px;
+    background: var(--h-panel-2);
+    overflow-wrap: anywhere;
+}
+
+.hist__acciones {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+@media (min-width: 900px) {
+    .hist__resumen {
+        grid-template-columns: 1fr minmax(260px, 420px);
+    }
+
+    .hist__cuerpo {
+        grid-template-columns: minmax(260px, 340px) 1fr;
+    }
+}

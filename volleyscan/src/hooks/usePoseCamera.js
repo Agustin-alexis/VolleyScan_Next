@@ -1,37 +1,41 @@
-"use client";
+'use client';
 
 // ─────────────────────────────────────────────────────────────
 // usePoseCamera.js — Análisis de gestos (VolleyScan)
 //
 // Orquesta todo el pipeline en el navegador:
 //   cámara (60 fps) → MediaPipe → suavizado One Euro → medir + dibujar
+//                                                    → motor de repeticiones
 //
 // Dos juegos de puntos por cuadro:
-//   · IMAGEN (píxeles)  → se dibujan en el canvas
+//   · IMAGEN (píxeles)  → se dibujan en el canvas y alimentan el motor
 //   · MUNDO (metros 3D) → se miden los ángulos, sin distorsión de perspectiva
 //
 // Reparto de responsabilidades:
-//   · lib/pose/smoothing.js  quita el temblor de los puntos
-//   · lib/pose/renderer.js   dibuja en el canvas (sin React)
-//   · lib/pose/geometry.js   ángulos, tronco y encuadre
-//   · este hook              ciclo de vida, bucle y estado para la UI
+//   · lib/pose/smoothing.js        quita el temblor de los puntos
+//   · lib/pose/renderer.js         dibuja en el canvas (sin React)
+//   · lib/pose/geometry.js         ángulos, tronco y encuadre
+//   · lib/pose/engine/*            detecta el remate y lo califica
+//   · lib/pose/movimientos/*       estándar técnico de cada movimiento
+//   · este hook                    ciclo de vida, bucle y estado para la UI
 //
-// Rendimiento: el dibujo corre al ritmo de la cámara directo sobre el
-// canvas; hacia React solo se publica un objeto `live` ~10 veces por segundo.
+// Guardado: el hook avisa de cada repetición con el callback `onRep`.
+// Guardar en la base de datos se conecta ahí, sin tocar el motor.
 // ─────────────────────────────────────────────────────────────
 
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { assessFraming, measureAngles } from "../lib/pose/geometry";
-import { createRenderer } from "../lib/pose/renderer";
-import { PoseSmoother } from "../lib/pose/smoothing";
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
+import { createRepAnalyzer } from '@/lib/engine/repAnalyzer';
+import { assessFraming, measureAngles } from '@/lib/pose/geometry';
+import { REMATE } from '@/lib/movimientos/remate';
+import { createRenderer } from '@/lib/pose/renderer';
+import { PoseSmoother } from '@/lib/pose/smoothing';
 
-const WASM_URL =
-    "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
+const WASM_URL = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm';
 const MODEL_URLS = {
-    lite: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
-    full: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task",
+    lite: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
+    full: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task',
     heavy:
-        "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task",
+        'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_heavy/float16/1/pose_landmarker_heavy.task',
 };
 
 const PANEL_INTERVAL_MS = 100;
@@ -39,7 +43,7 @@ const DEFAULT_LAYERS = { skeleton: true, angles: true, trails: true };
 const INITIAL_LIVE = {
     angles: {},
     ranges: {},
-    framing: { status: "none", hint: "" },
+    framing: { status: 'none', hint: '' },
     fps: 0,
     latency: 0,
 };
@@ -47,14 +51,14 @@ const INITIAL_LIVE = {
 // ── Ciclo de vida como máquina de estados ─────────────────
 function lifecycleReducer(state, action) {
     switch (action.type) {
-        case "LOADING":
-            return { status: "loading", error: "" };
-        case "RUNNING":
-            return { status: "running", error: "" };
-        case "ERROR":
-            return { status: "error", error: action.error };
-        case "IDLE":
-            return { status: "idle", error: "" };
+        case 'LOADING':
+            return { status: 'loading', error: '' };
+        case 'RUNNING':
+            return { status: 'running', error: '' };
+        case 'ERROR':
+            return { status: 'error', error: action.error };
+        case 'IDLE':
+            return { status: 'idle', error: '' };
         default:
             return state;
     }
@@ -62,30 +66,26 @@ function lifecycleReducer(state, action) {
 
 function friendlyError(err) {
     switch (err?.name) {
-        case "NotAllowedError":
-            return "Permiso de cámara denegado. Habilítalo desde el candado de la barra de direcciones y vuelve a intentarlo.";
-        case "NotFoundError":
-            return "No se encontró ninguna cámara. Conecta una y vuelve a intentarlo.";
-        case "NotReadableError":
-            return "La cámara está siendo usada por otra aplicación. Ciérrala y vuelve a intentarlo.";
+        case 'NotAllowedError':
+            return 'Permiso de cámara denegado. Habilítalo desde el candado de la barra de direcciones y vuelve a intentarlo.';
+        case 'NotFoundError':
+            return 'No se encontró ninguna cámara. Conecta una y vuelve a intentarlo.';
+        case 'NotReadableError':
+            return 'La cámara está siendo usada por otra aplicación. Ciérrala y vuelve a intentarlo.';
         default:
-            return "No se pudo iniciar el análisis. Revisa tu conexión y vuelve a intentarlo.";
+            return 'No se pudo iniciar el análisis. Revisa tu conexión y vuelve a intentarlo.';
     }
 }
 
 // GPU primero (mucho más rápido); si el equipo no la soporta, CPU.
 async function createLandmarker(model) {
-    const { FilesetResolver, PoseLandmarker } =
-        await import("@mediapipe/tasks-vision");
+    const { FilesetResolver, PoseLandmarker } = await import('@mediapipe/tasks-vision');
     const vision = await FilesetResolver.forVisionTasks(WASM_URL);
 
     const build = (delegate) =>
         PoseLandmarker.createFromOptions(vision, {
-            baseOptions: {
-                modelAssetPath: MODEL_URLS[model] ?? MODEL_URLS.full,
-                delegate,
-            },
-            runningMode: "VIDEO",
+            baseOptions: { modelAssetPath: MODEL_URLS[model] ?? MODEL_URLS.full, delegate },
+            runningMode: 'VIDEO',
             numPoses: 1,
             minPoseDetectionConfidence: 0.5,
             minPosePresenceConfidence: 0.5,
@@ -93,20 +93,26 @@ async function createLandmarker(model) {
         });
 
     try {
-        return await build("GPU");
+        return await build('GPU');
     } catch (err) {
-        console.warn("[usePoseCamera] GPU no disponible, usando CPU.", err);
-        return build("CPU");
+        console.warn('[usePoseCamera] GPU no disponible, usando CPU.', err);
+        return build('CPU');
     }
 }
 
 /**
- * @param {{ model?: 'lite' | 'full' | 'heavy', targetFps?: number }} options
+ * @param {{
+ *   model?: 'lite' | 'full' | 'heavy',
+ *   targetFps?: number,
+ *   standard?: object,
+ *   onRep?: (rep: object) => void,
+ * }} options
  *   model:     'lite' = más fluido · 'full' = equilibrado · 'heavy' = más preciso
- *   targetFps: cuadros por segundo que se piden a la cámara (el navegador
- *              y la cámara pueden entregar menos; el valor real se mide)
+ *   targetFps: cuadros por segundo que se piden a la cámara (el valor real se mide)
+ *   standard:  estándar del movimiento a evaluar (por defecto, el remate)
+ *   onRep:     se llama al terminar cada repetición, ya calificada
  */
-export function usePoseCamera({ model = "full", targetFps = 60 } = {}) {
+export function usePoseCamera({ model = 'full', targetFps = 60, standard = REMATE, onRep } = {}) {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const landmarkerRef = useRef(null);
@@ -119,29 +125,35 @@ export function usePoseCamera({ model = "full", targetFps = 60 } = {}) {
     const imageSmootherRef = useRef(null);
     const worldSmootherRef = useRef(null);
     const rendererRef = useRef(null);
-    if (!imageSmootherRef.current)
-        imageSmootherRef.current = new PoseSmoother(undefined, ["x", "y"]);
-    if (!worldSmootherRef.current)
-        worldSmootherRef.current = new PoseSmoother(undefined, ["x", "y", "z"]);
+    const analyzerRef = useRef(null);
+    if (!imageSmootherRef.current) imageSmootherRef.current = new PoseSmoother(undefined, ['x', 'y']);
+    if (!worldSmootherRef.current) worldSmootherRef.current = new PoseSmoother(undefined, ['x', 'y', 'z']);
     if (!rendererRef.current) rendererRef.current = createRenderer();
+    if (!analyzerRef.current) analyzerRef.current = createRepAnalyzer(standard);
 
     const rangesRef = useRef({}); // { codoD: {min, max}, ... }
     const layersRef = useRef(DEFAULT_LAYERS);
-    const facingRef = useRef("user");
+    const facingRef = useRef('user');
+    const phaseRef = useRef('sin_cuerpo');
+    const repsRef = useRef([]);
+    const onRepRef = useRef(onRep);
 
-    const [lifecycle, dispatch] = useReducer(lifecycleReducer, {
-        status: "idle",
-        error: "",
-    });
+    const [lifecycle, dispatch] = useReducer(lifecycleReducer, { status: 'idle', error: '' });
     const [live, setLive] = useState(INITIAL_LIVE);
     const [layers, setLayers] = useState(DEFAULT_LAYERS);
-    const [facing, setFacing] = useState("user");
+    const [facing, setFacing] = useState('user');
     const [camera, setCamera] = useState(null); // { width, height, frameRate } reales
+    const [phase, setPhase] = useState('sin_cuerpo');
+    const [reps, setReps] = useState([]);
 
-    // El bucle lee las capas desde una ref para no depender de re-renders
+    // El bucle lee las capas y el callback desde refs para no depender de re-renders
     useEffect(() => {
         layersRef.current = layers;
     }, [layers]);
+
+    useEffect(() => {
+        onRepRef.current = onRep;
+    }, [onRep]);
 
     // ── Programación de cuadros ─────────────────────────────
     // requestVideoFrameCallback se dispara una vez por cada cuadro REAL del
@@ -149,7 +161,7 @@ export function usePoseCamera({ model = "full", targetFps = 60 } = {}) {
     // requestAnimationFrame y descartamos cuadros repetidos.
     const scheduleFrame = useCallback((callback) => {
         const video = videoRef.current;
-        if (video && "requestVideoFrameCallback" in video) {
+        if (video && 'requestVideoFrameCallback' in video) {
             rvfcRef.current = video.requestVideoFrameCallback(callback);
         } else {
             rafRef.current = requestAnimationFrame(callback);
@@ -159,7 +171,7 @@ export function usePoseCamera({ model = "full", targetFps = 60 } = {}) {
     const cancelFrame = useCallback(() => {
         cancelAnimationFrame(rafRef.current);
         const video = videoRef.current;
-        if (video && rvfcRef.current && "cancelVideoFrameCallback" in video) {
+        if (video && rvfcRef.current && 'cancelVideoFrameCallback' in video) {
             video.cancelVideoFrameCallback(rvfcRef.current);
         }
         rvfcRef.current = 0;
@@ -237,17 +249,8 @@ export function usePoseCamera({ model = "full", targetFps = 60 } = {}) {
             const canvas = canvasRef.current;
             const landmarker = landmarkerRef.current;
 
-            if (
-                video &&
-                canvas &&
-                landmarker &&
-                video.readyState >= 2 &&
-                video.videoWidth
-            ) {
-                if (
-                    canvas.width !== video.videoWidth ||
-                    canvas.height !== video.videoHeight
-                ) {
+            if (video && canvas && landmarker && video.readyState >= 2 && video.videoWidth) {
+                if (canvas.width !== video.videoWidth || canvas.height !== video.videoHeight) {
                     canvas.width = video.videoWidth;
                     canvas.height = video.videoHeight;
                 }
@@ -278,9 +281,7 @@ export function usePoseCamera({ model = "full", targetFps = 60 } = {}) {
                         // Mundo: suavizar en 3D (metros) y medir con eso. La visibilidad
                         // se toma de la imagen para que ambos juegos coincidan.
                         const measured = rawWorld
-                            ? worldSmootherRef.current
-                                .apply(rawWorld, t1)
-                                .map((p, i) => ({ ...p, v: pts[i].v }))
+                            ? worldSmootherRef.current.apply(rawWorld, t1).map((p, i) => ({ ...p, v: pts[i].v }))
                             : pts; // respaldo: si faltara el 3D, se mide en 2D
                         angles = measureAngles(measured);
                     } else {
@@ -288,15 +289,28 @@ export function usePoseCamera({ model = "full", targetFps = 60 } = {}) {
                         worldSmootherRef.current.reset();
                     }
 
-                    rendererRef.current.render(canvas.getContext("2d"), {
+                    rendererRef.current.render(canvas.getContext('2d'), {
                         pts,
                         angles,
                         w,
                         h,
                         now: t1,
-                        mirrored: facingRef.current === "user",
+                        mirrored: facingRef.current === 'user',
                         layers: layersRef.current,
                     });
+
+                    // Motor de repeticiones: fase en vivo y, al terminar, el remate calificado.
+                    // La fase solo toca React cuando CAMBIA (unas pocas veces por remate).
+                    const out = analyzerRef.current.push({ t: t1, pts, angles });
+                    if (out.phase !== phaseRef.current) {
+                        phaseRef.current = out.phase;
+                        setPhase(out.phase);
+                    }
+                    if (out.rep) {
+                        repsRef.current = [...repsRef.current, out.rep];
+                        setReps(repsRef.current);
+                        onRepRef.current?.(out.rep);
+                    }
 
                     frames += 1;
                     if (t1 - fpsStart >= 1000) {
@@ -322,6 +336,9 @@ export function usePoseCamera({ model = "full", targetFps = 60 } = {}) {
         imageSmootherRef.current.reset();
         worldSmootherRef.current.reset();
         rendererRef.current.reset();
+        analyzerRef.current.reset();
+        phaseRef.current = 'sin_cuerpo';
+        setPhase('sin_cuerpo');
     }, []);
 
     // ── Controles públicos ──────────────────────────────────
@@ -331,41 +348,44 @@ export function usePoseCamera({ model = "full", targetFps = 60 } = {}) {
         stopStream();
 
         const canvas = canvasRef.current;
-        if (canvas)
-            canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+        if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
 
         resetPipeline();
         setLive(INITIAL_LIVE);
         setCamera(null);
-        dispatch({ type: "IDLE" });
+        dispatch({ type: 'IDLE' });
+        // Los remates de la sesión se conservan en pantalla hasta la próxima sesión
     }, [cancelFrame, resetPipeline, stopStream]);
 
     const fail = useCallback(
         (err) => {
-            console.error("[usePoseCamara]", err);
+            console.error('[usePoseCamera]', err);
             runningRef.current = false;
             cancelFrame();
             stopStream();
             setCamera(null);
-            dispatch({ type: "ERROR", error: friendlyError(err) });
+            dispatch({ type: 'ERROR', error: friendlyError(err) });
         },
         [cancelFrame, stopStream],
     );
 
     const start = useCallback(async () => {
         if (runningRef.current) return;
-        dispatch({ type: "LOADING" });
+        dispatch({ type: 'LOADING' });
 
         try {
             // El modelo se carga solo la primera vez y solo cuando el usuario lo pide
-            if (!landmarkerRef.current)
-                landmarkerRef.current = await createLandmarker(model);
+            if (!landmarkerRef.current) landmarkerRef.current = await createLandmarker(model);
             await openStream(facingRef.current);
 
+            // Sesión nueva: rangos y remates en cero
             rangesRef.current = {};
+            repsRef.current = [];
+            setReps([]);
             resetPipeline();
+
             runningRef.current = true;
-            dispatch({ type: "RUNNING" });
+            dispatch({ type: 'RUNNING' });
             runLoop();
         } catch (err) {
             fail(err);
@@ -373,7 +393,7 @@ export function usePoseCamera({ model = "full", targetFps = 60 } = {}) {
     }, [fail, model, openStream, resetPipeline, runLoop]);
 
     const switchCamera = useCallback(async () => {
-        const next = facingRef.current === "user" ? "environment" : "user";
+        const next = facingRef.current === 'user' ? 'environment' : 'user';
         facingRef.current = next;
         setFacing(next);
         if (!runningRef.current) return;
@@ -407,8 +427,8 @@ export function usePoseCamera({ model = "full", targetFps = 60 } = {}) {
             if (document.hidden) cancelFrame();
             else runLoop();
         };
-        document.addEventListener("visibilitychange", onVisibility);
-        return () => document.removeEventListener("visibilitychange", onVisibility);
+        document.addEventListener('visibilitychange', onVisibility);
+        return () => document.removeEventListener('visibilitychange', onVisibility);
     }, [cancelFrame, runLoop]);
 
     // Limpieza al salir de la página: apaga la cámara y libera el modelo
@@ -431,7 +451,9 @@ export function usePoseCamera({ model = "full", targetFps = 60 } = {}) {
         camera,
         layers,
         facing,
-        mirrored: facing === "user",
+        mirrored: facing === 'user',
+        phase,
+        reps,
         start,
         stop,
         switchCamera,

@@ -1,9 +1,35 @@
 'use client';
 
+// ─────────────────────────────────────────────────────────────
+// GestureAnalyzer.jsx — Análisis de gestos (VolleyScan)
+//
+// Una sola pantalla, sin scroll:
+//   · Izquierda — cámara en vivo que ocupa todo el alto disponible, con
+//     esqueleto, ángulos y estela de las muñecas, más un HUD (estado,
+//     fase del remate, remates y promedio, fps, latencia, capas y
+//     encuadre). Al terminar cada remate aparece su resultado.
+//   · Derecha — panel de medición con los ángulos 3D de codo, hombro,
+//     cadera, rodilla y tobillo, más la inclinación del tronco, cada uno
+//     con el rango recorrido en la sesión.
+//
+// La tipografía y los colores salen del CSS y de la app: este componente
+// no carga fuentes propias.
+//
+// Guardado en el historial: cada remate que termina el motor (`onRep`) se
+// suma a la sesión; al pulsar "Detener" la sesión se envía al servidor
+// (lib/historial/sesionAnalisis.js). Si no se puede enviar, queda en el
+// navegador y se reintenta sola.
+// ─────────────────────────────────────────────────────────────
 
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePoseCamera } from '@/hooks/usePoseCamera';
 import { resumirSesion } from '@/lib/engine/session';
+import {
+    agregarRemate,
+    cerrarYEnviar,
+    crearSesion,
+    reenviarPendientes,
+} from '@/lib/historial/sesionAnalisis';
 import { ANGLES, ANGLE_ROWS, TRUNK } from '@/lib/pose/geometry';
 import { REMATE } from '@/lib/movimientos/remate';
 import AngleGauge from './AngleGauge';
@@ -31,7 +57,23 @@ const TIPS = [
     'A 3 o 4 metros, con luz de frente',
 ];
 
+const MENSAJE_GUARDADO = {
+    guardando: 'Guardando la sesión en tu historial…',
+    enviada: 'Sesión guardada en tu historial.',
+    pendiente: 'Sesión guardada en este dispositivo. Se enviará a tu historial cuando haya conexión.',
+    rechazada: 'No se pudo guardar la sesión: los datos no son válidos.',
+};
+
 export default function GestureAnalyzer() {
+    // Sesión de práctica en curso: vive en un ref para no re-renderizar en cada remate
+    const sesionRef = useRef(null);
+    const [guardado, setGuardado] = useState(null);
+
+    const alTerminarRemate = useCallback((rep) => {
+        if (!sesionRef.current) sesionRef.current = crearSesion();
+        agregarRemate(sesionRef.current, rep);
+    }, []);
+
     const {
         videoRef,
         canvasRef,
@@ -48,7 +90,39 @@ export default function GestureAnalyzer() {
         switchCamera,
         toggleLayer,
         resetRanges,
-    } = usePoseCamera({ model: 'full', targetFps: 60 });
+    } = usePoseCamera({ model: 'full', targetFps: 60, onRep: alTerminarRemate });
+
+    // Cierra la sesión en curso y la envía; si no hubo remates, no hace nada
+    const guardarSesion = useCallback(async () => {
+        const sesion = sesionRef.current;
+        sesionRef.current = null;
+        if (!sesion?.repeticiones.length) return;
+        setGuardado('guardando');
+        const { estado } = await cerrarYEnviar(sesion);
+        setGuardado(estado);
+    }, []);
+
+    const iniciar = () => {
+        setGuardado(null);
+        sesionRef.current = crearSesion();
+        start();
+    };
+
+    const detener = () => {
+        stop();
+        guardarSesion();
+    };
+
+    // Al abrir la pantalla: reintenta las sesiones que quedaron sin enviar.
+    // Al salir de la pantalla con la cámara encendida: no se pierde la sesión.
+    useEffect(() => {
+        reenviarPendientes();
+        return () => {
+            const sesion = sesionRef.current;
+            sesionRef.current = null;
+            if (sesion?.repeticiones.length) cerrarYEnviar(sesion);
+        };
+    }, []);
 
     const running = status === 'running';
     const loading = status === 'loading';
@@ -56,7 +130,7 @@ export default function GestureAnalyzer() {
     const resolution = camera?.width && camera?.height ? `${camera.width}×${camera.height}` : null;
 
     const resumen = useMemo(() => resumirSesion(reps), [reps]);
-    const lastRep = reps?.length ? reps[reps.length - 1] : null;
+    const lastRep = reps.length ? reps[reps.length - 1] : null;
 
     return (
         <section className={styles.root} aria-label="Análisis de gestos con IA">
@@ -76,11 +150,11 @@ export default function GestureAnalyzer() {
                         </button>
                     )}
                     {running ? (
-                        <button type="button" className={styles.btnGhost} onClick={stop}>
+                        <button type="button" className={styles.btnGhost} onClick={detener}>
                             Detener
                         </button>
                     ) : (
-                        <button type="button" className={styles.btnPrimary} onClick={start} disabled={loading}>
+                        <button type="button" className={styles.btnPrimary} onClick={iniciar} disabled={loading}>
                             {loading ? 'Cargando…' : 'Activar cámara'}
                         </button>
                     )}
@@ -91,6 +165,12 @@ export default function GestureAnalyzer() {
                 {STATUS_TEXT[status]}
                 {running ? `. ${framing.hint}` : ''}
             </p>
+
+            {guardado && (
+                <p className={styles.subtitle} role="status" aria-live="polite">
+                    {MENSAJE_GUARDADO[guardado]}
+                </p>
+            )}
 
             <div className={styles.split}>
                 {/* ── Cámara ────────────────────────────────────── */}
@@ -154,7 +234,7 @@ export default function GestureAnalyzer() {
                                 {framing.hint}
                             </div>
 
-                            <RepResultCard rep={lastRep} numero={reps?.length ?? 0} />
+                            <RepResultCard rep={lastRep} numero={reps.length} />
                         </>
                     )}
 

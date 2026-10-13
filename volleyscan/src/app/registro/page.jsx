@@ -250,8 +250,12 @@ export default function page() {
               </div>
               {errors.password && <p className="field-error-msg">{errors.password}</p>}
             </div>
-
+            <button type="submit" className="boton-principal">
+              Completar registro
+            </button>
           </form>
+
+
 
           {/* Redireccion */}
           <div className="redireccion-inicio">
