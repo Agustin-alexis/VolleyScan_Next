@@ -1,40 +1,12 @@
-// ─────────────────────────────────────────────────────────────
-// remate.js — Estándar técnico del remate (VolleyScan)
-//
-// Este archivo ES el "criterio del entrenador": qué se mide en cada fase
-// del remate, qué rango se considera correcto, cuánto pesa cada medida
-// en el score y qué corrección se da cuando algo se sale del rango.
-//
-// Versión 1.0 — definida con los criterios técnicos habituales del
-// remate de voleibol. Aún no está validada con deportistas reales:
-//   · los márgenes son amplios a propósito (la cámara y la estimación 3D
-//     tienen un error de unos 5–10°),
-//   · cada sesión guarda la versión con la que se calificó, así que se
-//     pueden ajustar los rangos sin perder el historial.
-//
-// Para ajustar un criterio basta con editar `ideal`, `margen` o `peso`.
-// Los pesos deben sumar 100.
-//
-// Cómo se califica cada medida (ver scorer.js):
-//   · dentro de `ideal`                      → puntaje 1.0 (100 %)
-//   · fuera, a `margen` unidades del rango   → puntaje 0.0
-//   · entre ambos                            → baja de forma lineal
-// ─────────────────────────────────────────────────────────────
 
 export const REMATE = {
     id: 'remate',
     nombre: 'Remate',
     version: '1.0',
 
-    // Una medida con puntaje menor a esto se reporta como error a corregir
     umbralError: 0.8,
-    // Si las medidas con dato suman menos peso que esto, la repetición
-    // no se califica (no se vio suficiente cuerpo)
     pesoMinimo: 60,
 
-    // ── Detección de fases ──────────────────────────────────
-    // Las distancias se miden en "torsos" (largo hombros–caderas), así no
-    // dependen de qué tan lejos esté la cámara.
     deteccion: {
         saltoMinTorsos: 0.15, // elevación de los pies para considerar que saltó
         aterrizajeTorsos: 0.06, // por debajo de esto vuelve a estar en el suelo

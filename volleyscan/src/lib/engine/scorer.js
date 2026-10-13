@@ -1,19 +1,3 @@
-// ─────────────────────────────────────────────────────────────
-// scorer.js — Calificación de una repetición (VolleyScan)
-//
-// Recibe los valores medidos en una repetición y un estándar (por ahora
-// REMATE) y devuelve el resultado: score 0–100, lista de errores a
-// corregir y puntos clave (lo que salió bien).
-//
-// JavaScript puro: no sabe nada de cámara ni de React. Funciona igual
-// con cualquier movimiento que tenga su archivo de estándar.
-//
-// El objeto que devuelve está pensado para guardarse tal cual:
-//   · score, version, brazo, métricas   → sesión
-//   · errores                           → errores_detectados
-//   · puntosClave                       → puntos_clave
-// ─────────────────────────────────────────────────────────────
-
 const clamp01 = (n) => Math.min(1, Math.max(0, n));
 const sum = (arr) => arr.reduce((acc, n) => acc + n, 0);
 const round = (n, d = 2) => Math.round(n * 10 ** d) / 10 ** d;

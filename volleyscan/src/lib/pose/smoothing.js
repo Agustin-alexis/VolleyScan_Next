@@ -1,26 +1,3 @@
-// ─────────────────────────────────────────────────────────────
-// smoothing.js — Análisis de gestos (VolleyScan)
-//
-// Filtro One Euro (Casiez, Roussel y Vogel, CHI 2012).
-//
-// Problema: los puntos que entrega el modelo "tiemblan" de un cuadro a
-// otro, y ese temblor hace saltar los ángulos aunque estés quieto.
-//
-// Por qué no un promedio simple: si promedias los últimos N cuadros,
-// el esqueleto se queda atrás cuando te mueves rápido (justo en el
-// remate). El filtro One Euro ajusta la fuerza del suavizado según la
-// velocidad:
-//   · movimiento lento  → suaviza mucho (adiós al temblor)
-//   · movimiento rápido → casi no suaviza (sin retraso)
-//
-// Parámetros:
-//   minCutoff  ↓ más suave en reposo, pero más lento al arrancar
-//   beta       ↑ menos retraso en movimientos rápidos, pero más temblor
-//   dCutoff    suavizado de la velocidad estimada (rara vez se toca)
-//
-// Se usa con dos instancias: una para los puntos de imagen (ejes x, y)
-// y otra para los puntos del mundo en metros (ejes x, y, z).
-// ─────────────────────────────────────────────────────────────
 
 const TWO_PI = 2 * Math.PI;
 

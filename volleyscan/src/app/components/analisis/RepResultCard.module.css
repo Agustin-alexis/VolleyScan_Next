@@ -1,11 +1,3 @@
-/* ─────────────────────────────────────────────────────────────
-   RepResultCard.module.css — Resultado de un remate
-
-   Misma paleta del dashboard del usuario. El anillo del score replica
-   el de "Último análisis": verde cuando es alto; azul y naranja para
-   los scores medio y bajo.
-   La tipografía se hereda de la app.
-   ───────────────────────────────────────────────────────────── */
 
 .card {
     --card: rgba(17, 24, 39, 0.94);

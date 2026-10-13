@@ -7,26 +7,8 @@ import Logo from "@/app/public/img/Logo.VS.jpg"
 import facebook from "@/app/public/img/facebook.jpg"
 import google from "@/app/public/img/google.jpg"
 import Image from 'next/image'
+import {registrarAtleta} from '@/app/services/panelApi'
 import "./registro.css"
-function IconoEntrenador() {
-  return (
-    <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor" aria-hidden="true">
-      <circle cx="11" cy="7.5" r="4" />
-      <path d="M3 21c0-4.4 3.6-8 8-8 1.3 0 2.5.3 3.6.9A5 5 0 0 0 13 18c0 1.1.4 2.2 1 3H3z" />
-      <circle cx="18" cy="18" r="3.5" fill="none" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M16.5 18l1.1 1.1 2-2.2" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  )
-}
-
-function IconoUsuario() {
-  return (
-    <svg viewBox="0 0 24 24" width="32" height="32" fill="currentColor" aria-hidden="true">
-      <circle cx="12" cy="8" r="4.5" />
-      <path d="M3.5 21c0-4.7 3.8-8.5 8.5-8.5s8.5 3.8 8.5 8.5z" />
-    </svg>
-  )
-}
 
 function IconoOjo() {
   return (
@@ -48,10 +30,24 @@ function IconoOjoTachado() {
   )
 }
 
-export default function page() {
+// Campos del formulario que el servidor puede marcar con error
+const CAMPOS = ['nombre', 'apellido', 'email', 'password']
+
+// Convierte la respuesta de error del servidor en { campo: 'mensaje' }
+function erroresDelServidor(datos) {
+  const errs = {}
+  if (datos && typeof datos === 'object') {
+    for (const campo of CAMPOS) {
+      const valor = datos[campo]
+      if (valor) errs[campo] = Array.isArray(valor) ? valor[0] : String(valor)
+    }
+  }
+  return errs
+}
+
+export default function RegistroPage() {
   const navigate = useRouter()
   const [form, setForm] = useState({
-    rol: 'entrenador',
     nombre: '',
     apellido: '',
     email: '',
@@ -75,11 +71,6 @@ export default function page() {
     setForm(prev => ({ ...prev, [id]: value }))
     setErrors(prev => ({ ...prev, [id]: '' }))
   }
-  function handleRol(rol) {
-    setForm(prev => ({ ...prev, rol }))
-  }
-
-
 
   /* ── Validación ── */
   function validate() {
@@ -93,28 +84,43 @@ export default function page() {
     }
     if (!form.password) {
       errs.password = 'La contraseña es obligatoria.'
-    } else if (form.password.length < 6) {
-      errs.password = 'Mínimo 6 caracteres.'
+    } else if (form.password.length < 8) {
+      errs.password = 'Mínimo 8 caracteres.'
     }
     return errs
   }
 
   /* ── Submit ── */
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     const errs = validate()
     if (Object.keys(errs).length > 0) { setErrors(errs); return }
 
     setLoading(true)
+    setErrors({})
 
-    setTimeout(() => {
+    try {
+      // Registro real: el servidor crea siempre un ATLETA y deja la sesión iniciada
+      const usuario = await registrarAtleta({
+        nombre: form.nombre.trim(),
+        apellido: form.apellido.trim(),
+        email: form.email.trim(),
+        password: form.password,
+      })
+      showToast(`✓ ¡Bienvenido/a, ${usuario.nombre}! Redirigiendo…`, 'success')
+      setTimeout(() => navigate.push('/usuario'), 1500)
+    } catch (error) {
+      if (error.status === 400 || error.status === 409) {
+        setErrors(erroresDelServidor(error.datos))
+        showToast('Revisa los datos del formulario.', 'error')
+      } else if (error.status === 429) {
+        showToast('Demasiados intentos. Inténtalo de nuevo más tarde.', 'error')
+      } else {
+        showToast('No se pudo conectar con el servidor. Inténtalo más tarde.', 'error')
+      }
+    } finally {
       setLoading(false)
-      // Guardar datos básicos de sesión
-      sessionStorage.setItem('vs_nombre', `${form.nombre} ${form.apellido}`)
-      sessionStorage.setItem('vs_rol', form.rol)
-      showToast(`✓ ¡Bienvenido/a, ${form.nombre}! Redirigiendo…`, 'success')
-      setTimeout(() => navigate.push(form.rol === 'entrenador' ? '/panel_entrenador' : '/usuario'), 1500)
-    }, 1200)
+    }
   }
 
   function handleSocial(provider) {
@@ -150,40 +156,6 @@ export default function page() {
 
           <form className="formulario-registro" onSubmit={handleSubmit} noValidate>
 
-            {/* Selector de rol */}
-            <fieldset className="selector-rol">
-              <legend>¿Cómo vas a ingresar?</legend>
-
-              <div className="opciones-rol">
-                <label className={`opcion-rol ${form.rol === 'entrenador' ? 'activa' : ''}`}>
-                  <input
-                    type="radio"
-                    name="rol"
-                    value="entrenador"
-                    checked={form.rol === 'entrenador'}
-                    onChange={() => handleRol('entrenador')}
-                  />
-                  <span className="radio-custom" />
-                  <IconoEntrenador />
-                  <span className="texto-rol">Entrenador</span>
-                </label>
-
-                <label className={`opcion-rol ${form.rol === 'usuario' ? 'activa' : ''}`}>
-                  <input
-                    type="radio"
-                    name="rol"
-                    value="usuario"
-                    checked={form.rol === 'usuario'}
-                    onChange={() => handleRol('usuario')}
-                  />
-                  <span className="radio-custom" />
-                  <IconoUsuario />
-                  <span className="texto-rol">Usuario</span>
-                </label>
-              </div>
-            </fieldset>
-
-
             {/* Nombre + Apellido */}
             <div className="fila-formulario">
               <div className="grupo-input">
@@ -194,6 +166,7 @@ export default function page() {
                   value={form.nombre}
                   onChange={handleChange}
                   className={errors.nombre ? 'input-error' : ''}
+                  maxLength={100}
                 />
                 {errors.nombre && <p className="field-error-msg">{errors.nombre}</p>}
               </div>
@@ -206,6 +179,7 @@ export default function page() {
                   value={form.apellido}
                   onChange={handleChange}
                   className={errors.apellido ? 'input-error' : ''}
+                  maxLength={100}
                 />
                 {errors.apellido && <p className="field-error-msg">{errors.apellido}</p>}
               </div>
@@ -221,6 +195,7 @@ export default function page() {
                 onChange={handleChange}
                 className={errors.email ? 'input-error' : ''}
                 autoComplete="email"
+                maxLength={150}
               />
               {errors.email && <p className="field-error-msg">{errors.email}</p>}
             </div>
@@ -237,7 +212,8 @@ export default function page() {
                   onChange={handleChange}
                   className={errors.password ? 'input-error' : ''}
                   autoComplete="new-password"
-                  minLength={6}
+                  minLength={8}
+                  maxLength={72}
                 />
                 <button
                   type="button"
@@ -250,12 +226,12 @@ export default function page() {
               </div>
               {errors.password && <p className="field-error-msg">{errors.password}</p>}
             </div>
-            <button type="submit" className="boton-principal">
-              Completar registro
+            <button type="submit" className="boton-principal" disabled={loading}>
+              {loading ? 'Creando cuenta…' : 'Completar registro'}
             </button>
           </form>
 
-
+          <p className="subtitulo">¿Eres entrenador? Solicita tu cuenta al administrador.</p>
 
           {/* Redireccion */}
           <div className="redireccion-inicio">

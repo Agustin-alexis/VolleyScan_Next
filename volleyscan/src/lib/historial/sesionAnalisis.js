@@ -1,20 +1,3 @@
-// ─────────────────────────────────────────────────────────────
-// sesionAnalisis.js — Arma la sesión de práctica y la envía al servidor
-//
-// Una sesión es todo lo que ocurre entre "Activar cámara" y "Detener".
-//   1. crearSesion()              al activar la cámara
-//   2. agregarRemate(sesion, rep) cada vez que el motor termina un remate
-//   3. cerrarYEnviar(sesion)      al detener: la manda a POST /analisis/sesiones
-//
-// Si el envío falla (sin red, el servidor aún no tiene la ruta, etc.) la
-// sesión queda guardada en el navegador y se reintenta sola la próxima vez
-// (reenviarPendientes). El `clienteUuid` evita que un reintento duplique la
-// sesión en la base de datos.
-//
-// ÚNICO PUNTO A ADAPTAR: la función `enviar`, abajo. Hoy manda la cookie de
-// sesión (credentials: 'include'). Si tu login usa un token en el header
-// Authorization, agrégalo en `headers`.
-// ─────────────────────────────────────────────────────────────
 
 const CLAVE_PENDIENTES = 'volleyscan.analisis.pendientes';
 const MAX_PENDIENTES = 20;

@@ -1,23 +1,3 @@
-// ─────────────────────────────────────────────────────────────
-// geometry.js — Análisis de gestos (VolleyScan)
-//
-// JavaScript puro, sin React ni DOM: se puede probar de forma aislada
-// y es la base de las reglas de corrección de las fases siguientes.
-//
-// Contiene:
-//  · los 19 puntos del cuerpo que usamos (MediaPipe entrega 33)
-//  · el esqueleto y los ángulos que medimos
-//  · calcAngle / measureAngles: matemática de ángulos en 2D o 3D
-//  · assessFraming: ¿se ve el cuerpo completo para medir bien?
-//
-// Convención de coordenadas:
-//  · puntos de IMAGEN → píxeles {x, y, v}: sirven para DIBUJAR
-//  · puntos del MUNDO → metros {x, y, z, v}: sirven para MEDIR
-//    (calcAngle usa z automáticamente si los tres puntos la traen)
-// ─────────────────────────────────────────────────────────────
-
-// El lado es el de la PERSONA, no el de la pantalla:
-// "derecho" = brazo derecho del deportista.
 export const LM = {
     NOSE: 0,
     L_SHOULDER: 11,

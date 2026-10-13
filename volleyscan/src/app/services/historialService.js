@@ -1,24 +1,3 @@
-/**
- * historialService.js
- *
- * Capa de datos del historial de sesiones de VolleyScan.
- *
- * Hoy persiste en localStorage. La pantalla solo conoce las funciones
- * exportadas (todas async), así que migrar a MySQL consiste en reemplazar
- * el cuerpo de estas funciones por llamadas a la API (ver services/api.js)
- * sin tocar ningún componente.
- *
- * Seguridad:
- *  - Todo dato se valida y normaliza al ESCRIBIR y al LEER: localStorage es
- *    editable por el usuario o por cualquier script de la misma origen, por
- *    lo que nunca se confía en lo que hay guardado.
- *  - Solo se guardan métricas numéricas y un texto corto. Nunca video,
- *    imágenes, landmarks crudos, tokens ni datos personales.
- *  - Datos aislados por usuario (clave con namespace) para que dos cuentas
- *    en el mismo navegador no vean el historial de la otra.
- *  - Límites duros de tamaño y cantidad; protección contra prototype pollution.
- */
-
 const VERSION = 1;
 const PREFIJO = "volleyscan:historial";
 
@@ -103,7 +82,7 @@ function almacen() {
     }
 }
 
-/* ---------------------------- Normalización ---------------------------- */
+/* -------------------- Normalización ----------------- */
 
 function normalizarMetricas(metricas) {
     if (metricas === null || typeof metricas !== "object" || Array.isArray(metricas)) {
@@ -298,7 +277,7 @@ export async function guardarSesion(datos, usuarioId = USUARIO_LOCAL) {
         observaciones: datos.observaciones,
     });
     if (!sesion) {
-        throw new HistorialError(
+        throw HistorialError(
             "DATOS_INVALIDOS",
             "La sesión no contiene repeticiones válidas para guardar."
         );
