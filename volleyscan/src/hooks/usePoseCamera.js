@@ -1,27 +1,5 @@
 'use client';
 
-// ─────────────────────────────────────────────────────────────
-// usePoseCamera.js — Análisis de gestos (VolleyScan)
-//
-// Orquesta todo el pipeline en el navegador:
-//   cámara (60 fps) → MediaPipe → suavizado One Euro → medir + dibujar
-//                                                    → motor de repeticiones
-//
-// Dos juegos de puntos por cuadro:
-//   · IMAGEN (píxeles)  → se dibujan en el canvas y alimentan el motor
-//   · MUNDO (metros 3D) → se miden los ángulos, sin distorsión de perspectiva
-//
-// Reparto de responsabilidades:
-//   · lib/pose/smoothing.js        quita el temblor de los puntos
-//   · lib/pose/renderer.js         dibuja en el canvas (sin React)
-//   · lib/pose/geometry.js         ángulos, tronco y encuadre
-//   · lib/pose/engine/*            detecta el remate y lo califica
-//   · lib/pose/movimientos/*       estándar técnico de cada movimiento
-//   · este hook                    ciclo de vida, bucle y estado para la UI
-//
-// Guardado: el hook avisa de cada repetición con el callback `onRep`.
-// Guardar en la base de datos se conecta ahí, sin tocar el motor.
-// ─────────────────────────────────────────────────────────────
 
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { createRepAnalyzer } from '@/lib/engine/repAnalyzer';

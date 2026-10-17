@@ -1,28 +1,3 @@
-// ─────────────────────────────────────────────────────────────
-// repAnalyzer.js — Motor de análisis de repeticiones (VolleyScan)
-//
-// Recibe, cuadro a cuadro, los puntos del cuerpo y los ángulos ya
-// medidos. Detecta cuándo empieza y termina un remate y, al terminar,
-// devuelve la repetición calificada.
-//
-// Cómo detecta las fases (sin pedirle nada al deportista):
-//   · DESPEGUE : los dos pies suben por encima de su nivel de suelo
-//   · GOLPEO   : dentro del vuelo, el pico de velocidad de la muñeca
-//                cuando está por encima del hombro (ese es el brazo
-//                de golpeo: se identifica solo)
-//   · CAÍDA    : los pies vuelven al suelo
-//   · CARGA    : mirando atrás desde el despegue, el momento de máxima
-//                flexión de rodillas
-//
-// Todas las distancias se normalizan por el largo del torso, así el
-// resultado no depende de qué tan lejos esté la cámara.
-//
-// Requisitos de la grabación: cámara fija, deportista de cuerpo
-// completo, y que no se acerque o aleje mucho de la cámara durante el
-// salto (el suelo se toma como la altura de los pies antes de saltar).
-//
-// JavaScript puro: se prueba en Node sin cámara ni navegador.
-// ─────────────────────────────────────────────────────────────
 
 import { LM, MIN_VISIBILITY } from '@/lib/pose/geometry';
 import { evaluarRepeticion } from './scorer';

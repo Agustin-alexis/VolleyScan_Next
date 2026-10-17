@@ -1,25 +1,5 @@
 'use client';
 
-// ─────────────────────────────────────────────────────────────
-// GestureAnalyzer.jsx — Análisis de gestos (VolleyScan)
-//
-// Una sola pantalla, sin scroll:
-//   · Izquierda — cámara en vivo que ocupa todo el alto disponible, con
-//     esqueleto, ángulos y estela de las muñecas, más un HUD (estado,
-//     fase del remate, remates y promedio, fps, latencia, capas y
-//     encuadre). Al terminar cada remate aparece su resultado.
-//   · Derecha — panel de medición con los ángulos 3D de codo, hombro,
-//     cadera, rodilla y tobillo, más la inclinación del tronco, cada uno
-//     con el rango recorrido en la sesión.
-//
-// La tipografía y los colores salen del CSS y de la app: este componente
-// no carga fuentes propias.
-//
-// Guardado en el historial: cada remate que termina el motor (`onRep`) se
-// suma a la sesión; al pulsar "Detener" la sesión se envía al servidor
-// (lib/historial/sesionAnalisis.js). Si no se puede enviar, queda en el
-// navegador y se reintenta sola.
-// ─────────────────────────────────────────────────────────────
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePoseCamera } from '@/hooks/usePoseCamera';

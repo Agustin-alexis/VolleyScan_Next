@@ -1,23 +1,5 @@
 'use client';
 
-// ─────────────────────────────────────────────────────────────
-// AngleGauge.jsx — Análisis de gestos (VolleyScan)
-//
-// Medidor horizontal compacto de 0° a `max` (por defecto 180°):
-//   · barra azul        → ángulo actual
-//   · banda azul tenue  → rango recorrido en la sesión (mín–máx)
-//   · marca fina al 50% → referencia de 90° (solo en la escala de 180°)
-//
-// Es la versión compacta del medidor semicircular anterior: permite
-// ver las 11 mediciones a la vez sin hacer scroll mientras se ejecuta
-// el movimiento.
-//
-// `max` permite reutilizarlo: 180 para articulaciones, 90 para la
-// inclinación del tronco.
-//
-// Los estilos viven en GestureAnalyzer.module.css (se comparten para
-// mantener la paleta en un solo archivo).
-// ─────────────────────────────────────────────────────────────
 
 import styles from '@/app/components/analisis/GestureAnalyzer.module.css'
 

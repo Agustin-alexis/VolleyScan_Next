@@ -7,23 +7,14 @@ import Image from 'next/image'
 import Logo from "@/app/public/img/Logo.VS.jpg"
 import google from "@/app/public/img/google.jpg"
 import facebook from "@/app/public/img/facebook.jpg"
+import { iniciarSesion } from '@/app/services/panelApi'
 import './page.css'
 
 
-// Usuarios simulados
-const USUARIOS = {
-  'atleta@volleyscan.com': {
-    password: 'atleta123',
-    rol: 'atleta',
-    nombre: 'Alexis',
-    destino: '/usuario',
-  },
-  'entrenador@volleyscan.com': {
-    password: 'coach123',
-    rol: 'entrenador',
-    nombre: 'Coach Rivera',
-    destino: '/panel_entrenador',
-  },
+// A dónde va cada rol después de iniciar sesión
+const DESTINO_POR_ROL = {
+  atleta: '/usuario',
+  entrenador: '/panel_entrenador',
 }
 
 const IconEye = () => (
@@ -75,7 +66,7 @@ export default function LoginPage() {
     return errs
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     const errs = validate()
     if (Object.keys(errs).length > 0) { setErrors(errs); return }
@@ -83,25 +74,27 @@ export default function LoginPage() {
     setLoading(true)
     setErrors({})
 
-    setTimeout(() => {
-      setLoading(false)
-      const usuario = USUARIOS[email]
-
-      if (!usuario || usuario.password !== password) {
+    try {
+      // Login real contra el backend Django (guarda el token en sessionStorage)
+      const usuario = await iniciarSesion(email.trim(), password)
+      showToast(`✓ Bienvenido/a, ${usuario.nombre}. Redirigiendo…`, 'success')
+      setTimeout(() => router.push(DESTINO_POR_ROL[usuario.rol] ?? '/usuario'), 1500)
+    } catch (error) {
+      setPassword('')
+      if (error.status === 401) {
         setErrors({
           email: 'Correo o contraseña incorrectos.',
           password: 'Correo o contraseña incorrectos.',
         })
-        setPassword('')
         showToast('Credenciales incorrectas. Inténtalo de nuevo.', 'error')
-        return
+      } else if (error.status === 429) {
+        showToast('Demasiados intentos. Espera un minuto e inténtalo de nuevo.', 'error')
+      } else {
+        showToast('No se pudo conectar con el servidor. Inténtalo más tarde.', 'error')
       }
-
-      sessionStorage.setItem('vs_rol', usuario.rol)
-      sessionStorage.setItem('vs_nombre', usuario.nombre)
-      showToast(`✓ Bienvenido/a, ${usuario.nombre}. Redirigiendo…`, 'success')
-      setTimeout(() => router.push(usuario.destino), 1500)
-    }, 1000)
+    } finally {
+      setLoading(false)
+    }
   }
 
   function handleSocial(provider) {

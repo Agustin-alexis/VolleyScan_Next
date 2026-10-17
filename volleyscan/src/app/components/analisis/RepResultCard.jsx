@@ -1,16 +1,5 @@
 'use client';
 
-// ─────────────────────────────────────────────────────────────
-// RepResultCard.jsx — Resultado de un remate (VolleyScan)
-//
-// Aparece sobre la cámara al terminar cada remate, con el score en un
-// anillo y lo que hay que corregir (o, si salió limpio, lo que salió
-// bien). Se oculta sola a los 12 s o con la X.
-//
-// Usa su propio CSS (RepResultCard.module.css) para no tocar el del
-// resto de la pantalla.
-// ─────────────────────────────────────────────────────────────
-
 import { useEffect, useState } from 'react';
 import styles from './RepResultCard.module.css';
 

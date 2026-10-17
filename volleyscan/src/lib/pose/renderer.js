@@ -1,26 +1,3 @@
-// ─────────────────────────────────────────────────────────────
-// renderer.js — Análisis de gestos (VolleyScan)
-//
-// Dibuja sobre el canvas encima del video, como el telestrador de una
-// transmisión deportiva:
-//   · estela de las muñecas (trayectoria del brazo de golpeo)
-//   · esqueleto con halo (incluye manos y pies)
-//   · arcos de ángulo con su valor
-//   · articulaciones
-//
-// Colores (paleta del dashboard):
-//   azul    → medición (arcos de ángulo)
-//   verde   → articulaciones seguidas correctamente
-//   naranja → movimiento (muñecas y su estela)
-//
-// Es independiente de React: recibe datos y pinta. El hook solo orquesta.
-// Todo se dibuja en coordenadas del VIDEO (no de la pantalla); el CSS
-// escala el canvas igual que el video, así que quedan alineados.
-//
-// Nota sobre los arcos: la FORMA del arco es la proyección 2D que ves en
-// pantalla, pero el NÚMERO es el ángulo 3D medido. Si el brazo apunta
-// hacia la cámara, el arco se ve más cerrado que el número: es correcto.
-// ─────────────────────────────────────────────────────────────
 
 import { ANGLES, JOINTS, LM, MINOR_JOINTS, MIN_VISIBILITY, SKELETON } from './geometry';
 
