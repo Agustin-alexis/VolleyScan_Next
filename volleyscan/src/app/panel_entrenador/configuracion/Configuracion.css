@@ -321,7 +321,7 @@ body::before {
 /* ── SETTING CARD ── */
 .setting-card{
   background:var(--panel2);border:1px solid var(--border);
-  border-radius:14px;padding:20px;margin-bottom:14px;
+  border-radius:14px;padding:20px;margin: bottom 10px;
   transition:border-color .2s;
 }
 .setting-card:hover{border-color:rgba(124,92,252,0.2)}
@@ -336,7 +336,7 @@ body::before {
 /* ── FIELD ROWS ── */
 .field-row{
   display:flex;align-items:center;justify-content:space-between;
-  padding:11px 0;border-bottom:1px solid var(--border);gap:14px;
+  padding:11px 0;border-bottom:1px solid var(--border);gap:10px;
 }
 .field-row:last-child{border-bottom:none;padding-bottom:0}
 .field-row:first-of-type{padding-top:0}
@@ -592,3 +592,88 @@ body::before {
   height: 100vh;
   overflow: hidden;
 }
+
+/* RESPONSIVE CONFIGURACIÓN */
+
+@media (max-width: 768px) {
+
+    .content {
+        flex-direction: column;
+        min-width: 0;
+    }
+
+    .settings-nav {
+        width: 100%;
+        min-width: 0;
+        flex-direction: row;
+        overflow-x: auto;
+    }
+
+    .settings-content {
+        width: 100%;
+        padding: 15px 10px;
+    }
+
+    /* Organizar las dos columnas */
+    .settings-section.active > div[style*="display: flex"] {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        width: 100% !important;
+    }
+
+    .settings-section.active > div[style*="display: flex"] > div {
+        width: 100% !important;
+        min-width: 0 !important;
+        flex: none !important;
+    }
+
+    /* Adaptar tarjetas y controles */
+    .setting-card {
+        width: 100%;
+        padding: 14px;
+    }
+
+    .field-select,
+    .field-input {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .grid2,
+    .grid3 {
+        grid-template-columns: 1fr;
+    }
+    @media (max-width: 768px) {
+    .setting-card {
+        padding: 8px;
+        gap: 6px;
+    }
+
+    .field-row {
+        margin-bottom: 12px;
+        gap: 15px;
+    }
+
+    .field-select,
+    .field-input,
+    .setting-card button {
+        height: 50px;
+        padding: 4px 8px;
+        font-size: 11px;
+        max-width: 30%;
+        box-sizing: border-box;
+    }
+
+    .setting-card label {
+        font-size: 11px;
+    }
+
+    .setting-card {
+        min-width: 0;
+        width: 100%;
+        box-sizing: border-box;
+    }
+}
+}
+
+

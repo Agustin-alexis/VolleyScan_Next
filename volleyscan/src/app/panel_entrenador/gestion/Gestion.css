@@ -1751,3 +1751,101 @@ body {
   color: var(--red);
 }
 .gest-main { flex:1; overflow:hidden; background:var(--bg); display:flex; flex-direction:column; padding:28px 28px 0; }
+
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE — GESTIÓN DE DEPORTISTAS (v2)
+   1) Borra el bloque responsive anterior (el que empieza en
+      "RESPONSIVE — GESTIÓN DE DEPORTISTAS").
+   2) Pega este al FINAL del archivo.
+   ══════════════════════════════════════════════════════════ */
+ 
+/* ── TABLET Y CELULAR: hasta 960px ── */
+@media (max-width: 950px) {
+ 
+  /* REGLA CLAVE: ningún contenedor puede ser más ancho que la pantalla.
+     Sin min-width: 0, un flex/grid se estira hasta el ancho de la tabla y se corta. */
+  .gest-main,
+  .gest-main > .main,
+  .content-row,
+  .table-panel,
+  .detail-panel,
+  .toolbar {
+    min-width: 0;
+    max-width: 100%;
+  }
+ 
+  .gest-main {
+    width: 100%;
+    height: auto;
+    overflow: visible;           /* el scroll lo maneja el layout */
+    padding: 12px 12px 24px;
+  }
+  .gest-main > .main {
+    width: 100%;
+    height: auto;
+    overflow: visible;
+    padding: 0;                  /* el padding ya lo pone .gest-main */
+  }
+ 
+  .gest-main .page-title {
+    font-size: 15px;
+    letter-spacing: .04em;
+    margin-bottom: 14px;
+    overflow-wrap: anywhere;
+  }
+ 
+  /* Tabla arriba, detalle debajo */
+  .content-row {
+    flex-direction: column;
+    flex: none;
+    width: 100%;
+    overflow: visible;
+    min-height: 0;
+    gap: 14px;
+  }
+  .table-panel {
+    flex: none;
+    width: 100%;
+  }
+ 
+  /* Barra de búsqueda y filtros */
+  .toolbar {
+    padding: 14px 12px 12px;
+    gap: 8px;
+  }
+  .search-wrap {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  .filter-sel {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+  }
+  .btn-add {
+    flex: 1 1 100%;
+    justify-content: center;
+    white-space: normal;
+  }
+ 
+  /* Tabla: en tablet se desliza horizontalmente en vez de cortarse */
+  .table-wrap {
+    flex: none;
+    overflow-x: auto;
+    overflow-y: visible;
+    padding: 0 12px 12px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .athletes-table {
+    min-width: 620px;
+  }
+ 
+  /* Detalle a todo el ancho */
+  .detail-panel {
+    width: 100%;
+  }
+  /* Sin nadie seleccionado, no ocupa espacio (navegadores modernos) */
+  .detail-panel:has(.detail-empty) {
+    display: none;
+  }
+}
+ 
