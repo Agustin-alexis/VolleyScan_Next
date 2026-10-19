@@ -440,7 +440,7 @@ export default function Perfil() {
                                                     <option value="en">English</option>
                                                     <option value="pt">Português</option>
                                                 </select>
-                                                <i className="fa-solid fa-chevron-down select-icon" />
+                                                <FaChevronDown className="fa-solid select-icon" />
                                             </div>
                                         </div>
                                         <div className="field-group">
@@ -452,7 +452,7 @@ export default function Perfil() {
                                                     <option value="metric">Métrico (kg, m)</option>
                                                     <option value="imperial">Imperial (lb, ft)</option>
                                                 </select>
-                                                <i className="fa-solid fa-chevron-down select-icon" />
+                                                <FaChevronDown className="fa-solid select-icon" />
                                             </div>
                                         </div>
                                     </div>
