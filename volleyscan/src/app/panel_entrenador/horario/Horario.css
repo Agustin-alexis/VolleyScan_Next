@@ -30,6 +30,8 @@
   --radius-sm:9px;
   --trans:    .18s cubic-bezier(.4,0,.2,1);
   --shadow:   0 4px 24px rgba(0,0,0,.5);
+
+  
 }
 
 html, body { height: 100%; font-family: 'Sora', sans-serif; background: var(--bg); color: var(--t1); overflow: hidden; -webkit-font-smoothing: antialiased; }
@@ -627,4 +629,86 @@ html, body { height: 100%; font-family: 'Sora', sans-serif; background: var(--bg
   min-height: 0;
   display: flex;
   gap: 14px;
+}
+
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE — HORARIO
+   Pega este bloque al FINAL de tu CSS de Horario
+   (después de .hor-main .cal-layout).
+   ══════════════════════════════════════════════════════════ */
+
+/* ── TABLET Y CELULAR: hasta 960px ── */
+@media (max-width: 960px) {
+
+  /* La página deja de usar 100vh: el scroll lo maneja el layout */
+  .hor-main,
+  .hor-main > .main {
+    height: auto;
+    overflow: visible;
+  }
+  .hor-main > .main {
+    padding: 16px 12px 24px;
+    gap: 12px;
+  }
+
+  .page-section-label {
+    font-size: 12px;
+  }
+
+  /* Calendario arriba, próximos eventos debajo */
+  .cal-layout,
+  .hor-main .cal-layout {
+    flex-direction: column;
+    flex: none;
+    min-height: 0;
+  }
+
+  /* El calendario necesita alto propio para que la vista de semana haga scroll interno */
+  .cal-area {
+    flex: none;
+    width: 100%;
+    height: 72dvh;
+    min-height: 440px;
+  }
+
+  .events-panel {
+    width: 100%;
+    min-width: 0;
+    overflow: visible;
+  }
+  .ep-list {
+    flex: none;
+    overflow: visible;
+  }
+
+  /* Barra de controles: fila 1 = flechas y vistas, fila 2 = mes centrado */
+  .cal-controls {
+    flex-wrap: wrap;
+    padding: 10px 12px;
+    gap: 8px;
+  }
+  .ctrl-center {
+    order: 3;
+    flex: 1 1 100%;
+  }
+  .view-btn {
+    padding: 6px 12px;
+  }
+
+  /* Vista semana: 7 columnas con scroll horizontal y horas fijas a la izquierda */
+  .cal-view {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .time-col {
+    position: sticky;
+    left: 0;
+    z-index: 6;
+    width: 44px;
+    background: var(--card);
+  }
+  .days-grid {
+    flex: 1 0 588px;
+    min-width: 588px;
+  }
 }

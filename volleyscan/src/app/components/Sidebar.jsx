@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import './Sidebar.css';
 import Image from 'next/image';
@@ -15,8 +16,10 @@ import {
     FaDumbbell,
     FaFileAlt,
     FaMicrochip,
-    FaCog
+    FaCog,
+    FaBars
 } from 'react-icons/fa';
+import { FaXmark } from 'react-icons/fa6';
 
 const nav = [
     {
@@ -83,74 +86,97 @@ const nav = [
 
 export default function Sidebar() {
     const pathname = usePathname();
+    const [open, setOpen] = useState(false);
 
     return (
-        <aside className="sidebar">
 
-            <div className="sb-logo">
-                <Image
-                    src={logo}
-                    alt="VolleyAI"
-                    className="sb-logo-icon"
-                    style={{
-                        width: '42px',
-                        height: '42px',
-                        borderRadius: '12px',
-                        objectFit: 'cover'
-                    }}
-                />
+        <>
 
-                <div>
-                    <div className="sb-logo-name">VolleyAI</div>
-                    <div className="sb-logo-role">Entrenador</div>
+            <button
+                className="sb-toggle"
+                onClick={() => setOpen(true)}
+                aria-label="Abrir menú"
+            >
+                <FaBars size={18} />
+            </button>
+
+            {open && <div className="sb-overlay" onClick={() => setOpen(false)} />}
+
+            <aside className={open ? 'sidebar sidebar--open' : 'sidebar'}>
+
+                <button
+                    className="sb-close"
+                    onClick={() => setOpen(false)}
+                    aria-label="Cerrar menú"
+                >
+                    <FaXmark size={18} />
+                </button>
+
+                <div className="sb-logo">
+                    <Image
+                        src={logo}
+                        alt="VolleyAI"
+                        className="sb-logo-icon"
+                        style={{
+                            width: '42px',
+                            height: '42px',
+                            borderRadius: '12px',
+                            objectFit: 'cover'
+                        }}
+                    />
+
+                    <div>
+                        <div className="sb-logo-name">VolleyAI</div>
+                        <div className="sb-logo-role">Entrenador</div>
+                    </div>
                 </div>
-            </div>
 
-            <nav className="sb-nav">
+                <nav className="sb-nav">
 
-                {nav.map(({ group, items }) => (
-                    <div key={group}>
+                    {nav.map(({ group, items }) => (
+                        <div key={group}>
 
-                        <div className="sb-group-label">
-                            {group}
+                            <div className="sb-group-label">
+                                {group}
+                            </div>
+
+                            {items.map(({ to, icon: Icon, label }) => (
+                                <Link
+                                    key={to}
+                                    href={to}
+                                    className={
+                                        pathname === to
+                                            ? 'nav-item active'
+                                            : 'nav-item'
+                                    }
+                                >
+                                    <Icon className="nav-icon" />
+                                    <span>{label}</span>
+                                </Link>
+                            ))}
+
+                        </div>
+                    ))}
+
+                </nav>
+
+                <div className="sb-footer">
+                    <div className="sb-avatar">AL</div>
+
+                    <div className="sb-foot-info">
+                        <div className="sb-foot-name">
+                            Agustín Luligo
                         </div>
 
-                        {items.map(({ to, icon: Icon, label }) => (
-                            <Link
-                                key={to}
-                                href={to}
-                                className={
-                                    pathname === to
-                                        ? 'nav-item active'
-                                        : 'nav-item'
-                                }
-                            >
-                                <Icon className="nav-icon" />
-                                <span>{label}</span>
-                            </Link>
-                        ))}
-
-                    </div>
-                ))}
-
-            </nav>
-
-            <div className="sb-footer">
-                <div className="sb-avatar">AL</div>
-
-                <div className="sb-foot-info">
-                    <div className="sb-foot-name">
-                        Agustín Luligo
+                        <div className="sb-foot-role">
+                            Entrenador principal
+                        </div>
                     </div>
 
-                    <div className="sb-foot-role">
-                        Entrenador principal
-                    </div>
+                    <span className="sb-online-dot"></span>
                 </div>
 
-                <span className="sb-online-dot"></span>
-            </div>
-
-        </aside>
+            </aside>
+        </>
     );
 }

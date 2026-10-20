@@ -6,7 +6,8 @@ export default function PanelLayout({ children }) {
       style={{
         display: "flex",
         width: "100%",
-        minHeight: "100vh",
+        height: "100dvh",     // antes: minHeight "100vh"
+        overflow: "hidden",   // la página completa no se mueve
       }}
     >
       <Sidebar />
@@ -15,13 +16,17 @@ export default function PanelLayout({ children }) {
         style={{
           flex: 1,
           minWidth: 0,
-          minHeight: "100vh",
+          height: "100dvh",   // antes: minHeight "100vh"
+          overflowY: "auto",  // solo esta zona hace scroll
           padding: "20px",
           boxSizing: "border-box",
         }}
+
       >
         {children}
+
       </main>
+
     </div>
   );
 }
