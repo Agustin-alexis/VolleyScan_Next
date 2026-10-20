@@ -8,52 +8,81 @@ import {
     FaListCheck
 } from "react-icons/fa6";
 
+import { useApi } from "@/lib/UseApi";
+import { api } from "@/lib/api";
+
 import './rutinas.css'
 
-const Rutinas = () => {
+const NIVELES = ["principiante", "intermedio", "avanzado"];
+const COLOR_BARRA = ["diff-bar--blue", "diff-bar--teal", "diff-bar--green"];
+
+const capitalizar = (t) => t.charAt(0).toUpperCase() + t.slice(1);
+
+/* =========================================
+   PÁGINA: busca las rutinas y muestra la
+   más reciente que esté activa
+========================================= */
+
+export default function Rutinas() {
+
+    const { data: lista, cargando, error } = useApi("/usuario/rutinas/");
+
+    return (
+        <main className="main-content" id="rutinas">
+
+            <header className="page-header">
+                <h1 className="page-header__title">
+                    Rutinas / Entrenamiento Personalizado
+                </h1>
+            </header>
+
+            {cargando && <p style={{ color: "#94a3b8" }}>Cargando…</p>}
+
+            {error && (
+                <p style={{ color: "#ef4444" }}>
+                    No se pudieron cargar las rutinas.
+                </p>
+            )}
+
+            {lista && lista.length === 0 && (
+                <p style={{ color: "#94a3b8" }}>
+                    Aún no tienes rutinas asignadas.
+                </p>
+            )}
+
+            {/* La API ya las ordena: activas primero, la más nueva arriba */}
+            {lista && lista.length > 0 && <RutinaDetalle id={lista[0].id} />}
+
+        </main>
+    );
+}
+
+/* =========================================
+   DETALLE DE UNA RUTINA
+========================================= */
+
+function RutinaDetalle({ id }) {
+
+    const { data: rutina, cargando, error, setData } = useApi(`/usuario/rutinas/${id}/`);
 
     const canvasRef = useRef(null);
 
-    const [completed, setCompleted] = useState([]);
-
-    const exercises = [
-        {
-            id: 0,
-            name: "Remate por zona 4",
-            meta: "4 series x 8 repeticiones",
-            number: 1
-        },
-        {
-            id: 1,
-            name: "Recepción alta",
-            meta: "4 series x 10 repeticiones",
-            number: 2
-        },
-        {
-            id: 2,
-            name: "Pase largo a objetivo",
-            meta: "3 series x 12 repeticiones",
-            number: 3
-        }
-    ];
-
-    const totalExercises = 5;
-
-    const completedCount = completed.length;
-
-    const percentage = Math.round(
-        (completedCount / totalExercises) * 100
-    );
+    const [guardando, setGuardando] = useState(null);
+    const [aviso, setAviso] = useState("");
 
     /* =========================================
        DONUT
+       Depende de `rutina` para dibujarse cuando
+       llegan los datos y cada vez que cambian
     ========================================= */
 
     useEffect(() => {
 
         const canvas = canvasRef.current;
 
-        if (!canvas) return;
+        if (!canvas || !rutina) return;
+
+        const porcentaje = rutina.progreso.porcentaje;
 
         const ctx = canvas.getContext("2d");
 
@@ -82,7 +111,7 @@ const Rutinas = () => {
         // Progreso
         const endAngle =
             (-Math.PI / 2) +
-            (Math.PI * 2 * percentage / 100);
+            (Math.PI * 2 * porcentaje / 100);
 
         ctx.beginPath();
 
@@ -100,215 +129,264 @@ const Rutinas = () => {
 
         ctx.stroke();
 
-    }, [percentage]);
+    }, [rutina]);
 
     /* =========================================
-       COMPLETAR EJERCICIO
+       COMPLETAR EJERCICIO (se guarda en el backend)
     ========================================= */
 
-    const completeExercise = (id) => {
+    async function completeExercise(ejercicio) {
 
-        if (completed.includes(id)) return;
+        setAviso("");
+        setGuardando(ejercicio.id);
 
-        setCompleted([...completed, id]);
-    };
+        try {
+
+            const res = await api(
+                `/usuario/rutinas/${id}/ejercicios/${ejercicio.id}/completar/`,
+                { method: "PUT", body: { completado: true } }
+            );
+
+            // La respuesta trae el ejercicio actualizado y el progreso nuevo
+            setData((prev) => ({
+                ...prev,
+                progreso: res.progreso,
+                ejercicios: prev.ejercicios.map((e) =>
+                    e.id === res.ejercicio.id ? res.ejercicio : e
+                ),
+            }));
+
+        } catch {
+
+            setAviso("No se pudo guardar. Inténtalo de nuevo.");
+
+        } finally {
+
+            setGuardando(null);
+
+        }
+    }
+
+    /* ── Estados de carga (después de todos los hooks) ── */
+
+    if (cargando) return <p style={{ color: "#94a3b8" }}>Cargando…</p>;
+
+    if (error || !rutina) {
+        return (
+            <p style={{ color: "#ef4444" }}>
+                No se pudo cargar la rutina.
+            </p>
+        );
+    }
+
+    const nivel = rutina.nivel ?? "intermedio";
+    const nivelesActivos = NIVELES.indexOf(nivel) + 1; // 1, 2 o 3 barras
+
+    const { total, completados, porcentaje } = rutina.progreso;
 
     return (
-        <main className="main-content" id="rutinas">
+        <section
+            className="routine-panel"
+            aria-label="Rutina personalizada de hoy"
+        >
 
-            <header className="page-header">
-                <h1 className="page-header__title">
-                    Rutinas / Entrenamiento Personalizado
-                </h1>
+            {/* HEADER */}
+            <header className="routine-header">
+
+                <div className="routine-header__title-row">
+
+                    <h2 className="routine-header__title">
+                        {rutina.nombre}
+                    </h2>
+
+                    <span className="badge badge--level">
+                        {capitalizar(nivel)}
+                    </span>
+
+                </div>
+
+                {rutina.descripcion && (
+                    <p className="routine-header__subtitle">
+                        {rutina.descripcion}
+                    </p>
+                )}
+
             </header>
 
-            <section
-                className="routine-panel"
-                aria-label="Rutina personalizada de hoy"
-            >
+            {/* META */}
+            <div className="routine-meta-row">
 
-                {/* HEADER */}
-                <header className="routine-header">
+                <article className="meta-card meta-card--objective">
 
-                    <div className="routine-header__title-row">
+                    <div className="meta-card__icon-wrap meta-icon--green">
+                        <FaBullseye />
+                    </div>
 
-                        <h2 className="routine-header__title">
-                            Rutina personalizada
-                        </h2>
+                    <div className="meta-card__body">
 
-                        <span className="badge badge--level">
-                            Intermedio
-                        </span>
+                        <p className="meta-card__label">
+                            Objetivo de la semana
+                        </p>
+
+                        <p className="meta-card__value">
+                            {rutina.objetivo ?? "Sin objetivo definido"}
+                        </p>
 
                     </div>
 
-                    <p className="routine-header__subtitle">
-                        Rutina recomendada por la IA para ti.
+                </article>
+
+                <article className="meta-card meta-card--difficulty">
+
+                    <header className="meta-card__header">
+
+                        <FaCirclePlus className="meta-card__icon-sm" />
+
+                        <p className="meta-card__label">
+                            Nivel de dificultad
+                        </p>
+
+                    </header>
+
+                    <p className="meta-card__value">
+                        {capitalizar(nivel)}
                     </p>
 
-                </header>
+                    <div className="difficulty-bars">
 
-                {/* META */}
-                <div className="routine-meta-row">
+                        {NIVELES.map((_, i) => (
+                            <span
+                                key={i}
+                                className={`diff-bar ${i < nivelesActivos
+                                    ? `diff-bar--active ${COLOR_BARRA[i]}`
+                                    : "diff-bar--inactive"
+                                    }`}
+                            ></span>
+                        ))}
 
-                    <article className="meta-card meta-card--objective">
+                    </div>
 
-                        <div className="meta-card__icon-wrap meta-icon--green">
-                            <FaBullseye />
-                        </div>
+                </article>
 
-                        <div className="meta-card__body">
+            </div>
 
-                            <p className="meta-card__label">
-                                Objetivo de la semana
-                            </p>
+            {/* EJERCICIOS */}
+            <div className="exercises-row">
 
-                            <p className="meta-card__value">
-                                Mejorar técnica de remate y recepción
-                            </p>
+                <section className="exercises-section">
 
-                        </div>
+                    <h3 className="exercises-section__title">
+                        Ejercicios de hoy
+                    </h3>
 
-                    </article>
-
-                    <article className="meta-card meta-card--difficulty">
-
-                        <header className="meta-card__header">
-
-                            <FaCirclePlus className="meta-card__icon-sm" />
-
-                            <p className="meta-card__label">
-                                Nivel de dificultad
-                            </p>
-
-                        </header>
-
-                        <p className="meta-card__value">
-                            Intermedio
+                    {rutina.ejercicios.length === 0 && (
+                        <p style={{ color: "#94a3b8" }}>
+                            Esta rutina todavía no tiene ejercicios.
                         </p>
+                    )}
 
-                        <div className="difficulty-bars">
+                    <ol className="exercise-list">
 
-                            <span className="diff-bar diff-bar--active diff-bar--blue"></span>
+                        {rutina.ejercicios.map((exercise, i) => {
 
-                            <span className="diff-bar diff-bar--active diff-bar--teal"></span>
+                            const isCompleted = exercise.completado;
 
-                            <span className="diff-bar diff-bar--inactive"></span>
+                            return (
 
-                        </div>
+                                <li
+                                    key={exercise.id}
+                                    className={`exercise-item ${isCompleted ? "completed" : ""
+                                        }`}
+                                >
 
-                    </article>
-
-                </div>
-
-                {/* EJERCICIOS */}
-                <div className="exercises-row">
-
-                    <section className="exercises-section">
-
-                        <h3 className="exercises-section__title">
-                            Ejercicios de hoy
-                        </h3>
-
-                        <ol className="exercise-list">
-
-                            {exercises.map((exercise) => {
-
-                                const isCompleted =
-                                    completed.includes(exercise.id);
-
-                                return (
-
-                                    <li
-                                        key={exercise.id}
-                                        className={`exercise-item ${isCompleted ? "completed" : ""
-                                            }`}
+                                    <span
+                                        className={`exercise-num exercise-num--${(i % 3) + 1}`}
                                     >
+                                        {i + 1}
+                                    </span>
 
-                                        <span
-                                            className={`exercise-num exercise-num--${exercise.number}`}
-                                        >
-                                            {exercise.number}
-                                        </span>
+                                    <div className="exercise-info">
 
-                                        <div className="exercise-info">
+                                        <p className="exercise-info__name">
+                                            {exercise.nombre}
+                                        </p>
 
-                                            <p className="exercise-info__name">
-                                                {exercise.name}
-                                            </p>
+                                        <p className="exercise-info__meta">
+                                            {exercise.series} series x {exercise.repeticiones} repeticiones
+                                        </p>
 
-                                            <p className="exercise-info__meta">
-                                                {exercise.meta}
-                                            </p>
+                                    </div>
 
-                                        </div>
-
-                                        <button
-                                            className={`btn-start ${isCompleted ? "btn-completed" : ""
-                                                }`}
-                                            onClick={() =>
-                                                completeExercise(exercise.id)
-                                            }
-                                            disabled={isCompleted}
-                                        >
-                                            {isCompleted
-                                                ? "Completado"
+                                    <button
+                                        className={`btn-start ${isCompleted ? "btn-completed" : ""
+                                            }`}
+                                        onClick={() =>
+                                            completeExercise(exercise)
+                                        }
+                                        disabled={isCompleted || guardando === exercise.id}
+                                    >
+                                        {isCompleted
+                                            ? "Completado"
+                                            : guardando === exercise.id
+                                                ? "Guardando…"
                                                 : "Comenzar"}
-                                        </button>
+                                    </button>
 
-                                    </li>
-                                );
-                            })}
+                                </li>
+                            );
+                        })}
 
-                        </ol>
+                    </ol>
 
-                    </section>
+                    {aviso && (
+                        <p style={{ color: "#ef4444", fontSize: ".85rem" }}>
+                            {aviso}
+                        </p>
+                    )}
 
-                    {/* PROGRESO */}
-                    <aside className="progress-aside">
+                </section>
 
-                        <h3 className="progress-aside__title">
-                            Progreso de la rutina
-                        </h3>
+                {/* PROGRESO */}
+                <aside className="progress-aside">
 
-                        <div className="donut-wrap">
+                    <h3 className="progress-aside__title">
+                        Progreso de la rutina
+                    </h3>
 
-                            <canvas
-                                ref={canvasRef}
-                                width="140"
-                                height="140"
-                            />
+                    <div className="donut-wrap">
 
-                            <div className="donut-center">
+                        <canvas
+                            ref={canvasRef}
+                            width="140"
+                            height="140"
+                        />
 
-                                <span className="donut-center__pct">
-                                    {percentage}%
-                                </span>
+                        <div className="donut-center">
 
-                            </div>
+                            <span className="donut-center__pct">
+                                {porcentaje}%
+                            </span>
 
                         </div>
 
-                        <p className="progress-aside__count">
-                            {completedCount} de {totalExercises} ejercicios completados
-                        </p>
+                    </div>
 
-                        <button className="btn-full-routine">
+                    <p className="progress-aside__count">
+                        {completados} de {total} ejercicios completados
+                    </p>
 
-                            <FaListCheck />
+                    <button className="btn-full-routine">
 
-                            Ver rutina completa
+                        <FaListCheck />
 
-                        </button>
+                        Ver rutina completa
 
-                    </aside>
+                    </button>
 
-                </div>
+                </aside>
 
-            </section>
+            </div>
 
-        </main>
+        </section>
     );
-};
-
-export default Rutinas;
+}

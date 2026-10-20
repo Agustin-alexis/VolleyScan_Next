@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image';
 import './perfil.css'
@@ -11,6 +11,8 @@ import {
     FaLock,
     FaChevronDown,
 } from 'react-icons/fa';
+import { useApi } from '@/lib/UseApi';
+import { api, ApiError, cerrarSesion } from '@/lib/api'
 
 /* ── Íconos SVG para toggle contraseña ── */
 const IconEye = () => (
@@ -36,32 +38,46 @@ const PROFILE_SECTIONS = [
     { id: 'seguridad', icon: FaLock, label: 'Cuenta y seguridad' },
 ]
 
+/* El backend manda null en los campos vacíos y los inputs no aceptan null */
+const aForm = (p) => ({
+    nombre: p.nombre ?? '',
+    apellido: p.apellido ?? '',
+    email: p.email ?? '',
+    fecha_nac: p.fecha_nac ?? '',
+    nivel: p.nivel ?? 'principiante',
+    peso: p.peso ?? '',
+    estatura: p.estatura ?? '',
+    posicion: p.posicion ?? '',
+})
+
+/* { campo: ["mensaje"] } -> { campo: "mensaje" } */
+const primerError = (data) =>
+    Object.fromEntries(
+        Object.entries(data ?? {}).map(([k, v]) => [k, Array.isArray(v) ? v[0] : String(v)])
+    )
+
 export default function Perfil() {
     const router = useRouter()
+
+    /* ── Datos del backend ── */
+    const { data: perfil, cargando: cargandoPerfil, error: errorPerfil } = useApi('/usuario/perfil/')
+    const { data: config } = useApi('/usuario/configuracion/')
 
     /* ── Estado activo ── */
     const [activeSection, setActiveSection] = useState('personal')
 
-    /* ── Foto de perfil ── */
+    /* ── Foto de perfil (solo vista previa: el backend aún no guarda fotos) ── */
     const [photoSrc, setPhotoSrc] = useState(
         'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=200&q=80'
     )
     const photoInputRef = useRef(null)
 
     /* ── Info personal ── */
-    const [personal, setPersonal] = useState({
-        nombre: 'Juan Pérez',
-        email: 'juanperez@mail.com',
-        fechaNac: '2002-05-15',
-        nivel: 'intermedio',
-        peso: '72',
-        estatura: '1.80',
-        posicion: 'opuesto',
-    })
-    const [personalSnapshot, setPersonalSnapshot] = useState({ ...personal })
+    const [personal, setPersonal] = useState(aForm({}))
+    const [personalSnapshot, setPersonalSnapshot] = useState(aForm({}))
     const [personalErrors, setPersonalErrors] = useState({})
 
-    /* ── Objetivos ── */
+    /* ── Objetivos (local: no tiene tabla en el backend) ── */
     const [objetivos, setObjetivos] = useState({
         objPrincipal: 'tecnica',
         sesiones: 4,
@@ -69,13 +85,13 @@ export default function Perfil() {
         areas: { remate: true, recepcion: true, saque: false },
     })
 
-    /* ── Preferencias ── */
+    /* ── Preferencias (nombres iguales a las columnas de configuracion) ── */
     const [preferencias, setPreferencias] = useState({
-        notifSesion: true,
-        notifAnalisis: true,
-        notifContenido: false,
+        notif_sesion: true,
+        notif_analisis: true,
+        notif_contenido: false,
         idioma: 'es',
-        unidades: 'metric',
+        unidad_medida: 'metric',
     })
 
     /* ── Seguridad ── */
@@ -98,6 +114,26 @@ export default function Perfil() {
         setTimeout(() => setToast(null), 3000)
     }
 
+    /* ── Cuando llegan los datos, llenar los formularios ── */
+    useEffect(() => {
+        if (!perfil) return
+        const f = aForm(perfil)
+        setPersonal(f)
+        setPersonalSnapshot(f)
+    }, [perfil])
+
+    useEffect(() => {
+        if (config) setPreferencias(config)
+    }, [config])
+
+    /* ── Helpers del formulario personal ── */
+    const cambiar = (campo) => (e) => {
+        setPersonal(p => ({ ...p, [campo]: e.target.value }))
+        setPersonalErrors(p => ({ ...p, [campo]: '' }))
+    }
+    const claseInput = (campo) =>
+        `field-input-1${personalErrors[campo] ? ' input-error' : ''}`
+
     /* ── Cambio de foto ── */
     function handlePhotoChange(e) {
         const file = e.target.files?.[0]
@@ -108,15 +144,35 @@ export default function Perfil() {
     }
 
     /* ── Guardar info personal ── */
-    function handlePersonalSubmit(e) {
+    async function handlePersonalSubmit(e) {
         e.preventDefault()
-        const errs = {}
-        if (!personal.nombre.trim()) errs.nombre = 'El nombre es obligatorio.'
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(personal.email)) errs.email = 'Correo inválido.'
-        if (Object.keys(errs).length > 0) { setPersonalErrors(errs); return }
-        setPersonalSnapshot({ ...personal })
         setPersonalErrors({})
-        showToast('✓ Información personal guardada.')
+        try {
+            const datos = await api('/usuario/perfil/', {
+                method: 'PUT',
+                body: {
+                    nombre: personal.nombre.trim(),
+                    apellido: personal.apellido.trim(),
+                    email: personal.email.trim(),
+                    fecha_nac: personal.fecha_nac || null,
+                    nivel: personal.nivel,
+                    posicion: personal.posicion || null,
+                    // la API rechaza "" en campos numéricos: se manda null
+                    peso: personal.peso === '' ? null : personal.peso,
+                    estatura: personal.estatura === '' ? null : personal.estatura,
+                },
+            })
+            const nuevo = aForm(datos)
+            setPersonal(nuevo)
+            setPersonalSnapshot(nuevo)
+            showToast('✓ Información personal guardada.')
+        } catch (err) {
+            if (err instanceof ApiError && err.status === 400) {
+                setPersonalErrors(primerError(err.data))
+            } else {
+                showToast('No se pudo guardar. Inténtalo de nuevo.', 'error')
+            }
+        }
     }
 
     function handlePersonalCancel() {
@@ -142,29 +198,69 @@ export default function Perfil() {
     const strengthClasses = ['', 'weak', 'fair', 'good', 'strong']
 
     /* ── Guardar contraseña ── */
-    function handlePasswordSubmit(e) {
+    async function handlePasswordSubmit(e) {
         e.preventDefault()
         setPassError('')
+        if (!passActual) { setPassError('Introduce tu contraseña actual.'); return }
         if (!passNueva) { setPassError('Introduce la nueva contraseña.'); return }
         if (passNueva.length < 8) { setPassError('Mínimo 8 caracteres.'); return }
         if (passNueva !== passConfirm) { setPassError('Las contraseñas no coinciden.'); return }
-        setPassActual(''); setPassNueva(''); setPassConfirm('')
-        showToast('✓ Contraseña actualizada correctamente.')
+        try {
+            await api('/usuario/perfil/password/', {
+                method: 'PUT',
+                body: { password_actual: passActual, password_nueva: passNueva },
+            })
+            setPassActual(''); setPassNueva(''); setPassConfirm('')
+            showToast('✓ Contraseña actualizada correctamente.')
+        } catch (err) {
+            const d = err instanceof ApiError ? err.data : null
+            setPassError(
+                d?.password_actual?.[0] ?? d?.password_nueva?.[0] ?? 'No se pudo actualizar la contraseña.'
+            )
+        }
     }
 
-    /* ── Guardar objetivos ── */
+    /* ── Guardar objetivos (local) ── */
     function handleObjetivosSubmit(e) {
         e.preventDefault()
         showToast('✓ Objetivos guardados correctamente.')
     }
 
     /* ── Guardar preferencias ── */
-    function handlePreferenciasSubmit(e) {
+    async function handlePreferenciasSubmit(e) {
         e.preventDefault()
-        showToast('✓ Preferencias guardadas correctamente.')
+        const { notif_sesion, notif_analisis, notif_contenido, idioma, unidad_medida } = preferencias
+        try {
+            await api('/usuario/configuracion/', {
+                method: 'PUT',
+                body: { notif_sesion, notif_analisis, notif_contenido, idioma, unidad_medida },
+            })
+            showToast('✓ Preferencias guardadas correctamente.')
+        } catch {
+            showToast('No se pudieron guardar las preferencias.', 'error')
+        }
+    }
+
+    /* ── Eliminar cuenta ── */
+    async function eliminarCuenta() {
+        try {
+            await api('/usuario/perfil/', { method: 'DELETE' })
+            cerrarSesion()
+            router.push('/')
+        } catch {
+            showToast('No se pudo eliminar la cuenta.', 'error')
+        }
     }
 
     const toastColors = { success: '#22c55e', error: '#ef4444', info: '#3b82f6' }
+
+    /* ── Estados de carga (después de todos los hooks) ── */
+    if (cargandoPerfil) {
+        return <main className="main-content"><p style={{ color: '#94a3b8' }}>Cargando…</p></main>
+    }
+    if (errorPerfil) {
+        return <main className="main-content"><p style={{ color: '#ef4444' }}>No se pudo cargar el perfil.</p></main>
+    }
 
     return (
         <main className="main-content">
@@ -190,10 +286,10 @@ export default function Perfil() {
                             <input type="file" accept="image/*" className="visually-hidden"
                                 ref={photoInputRef} onChange={handlePhotoChange} />
                         </div>
-                        <p className="identity-card__name">{personal.nombre}</p>
+                        <p className="identity-card__name">{personalSnapshot.nombre} {personalSnapshot.apellido}</p>
                         <p className="identity-card__role">Deportista</p>
                         <span className="badge badge--level">
-                            {personal.nivel.charAt(0).toUpperCase() + personal.nivel.slice(1)}
+                            {personalSnapshot.nivel.charAt(0).toUpperCase() + personalSnapshot.nivel.slice(1)}
                         </span>
                     </div>
 
@@ -224,22 +320,33 @@ export default function Perfil() {
                                     <h2 className="section-title" id="title-personal">Información personal</h2>
                                     <form onSubmit={handlePersonalSubmit} noValidate>
 
-                                        <div className="field-group">
-                                            <label className="field-label" htmlFor="nombre">Nombre completo</label>
-                                            <input className={`field-input-1${personalErrors.nombre ? ' input-error' : ''}`}
-                                                type="text" id="nombre"
-                                                value={personal.nombre}
-                                                onChange={e => { setPersonal(p => ({ ...p, nombre: e.target.value })); setPersonalErrors(p => ({ ...p, nombre: '' })) }}
-                                                autoComplete="name" />
-                                            {personalErrors.nombre && <span className="field-error">{personalErrors.nombre}</span>}
+                                        <div className="field-row">
+                                            <div className="field-group">
+                                                <label className="field-label" htmlFor="nombre">Nombre</label>
+                                                <input className={claseInput('nombre')}
+                                                    type="text" id="nombre"
+                                                    value={personal.nombre}
+                                                    onChange={cambiar('nombre')}
+                                                    autoComplete="given-name" />
+                                                {personalErrors.nombre && <span className="field-error">{personalErrors.nombre}</span>}
+                                            </div>
+                                            <div className="field-group">
+                                                <label className="field-label" htmlFor="apellido">Apellido</label>
+                                                <input className={claseInput('apellido')}
+                                                    type="text" id="apellido"
+                                                    value={personal.apellido}
+                                                    onChange={cambiar('apellido')}
+                                                    autoComplete="family-name" />
+                                                {personalErrors.apellido && <span className="field-error">{personalErrors.apellido}</span>}
+                                            </div>
                                         </div>
 
                                         <div className="field-group">
                                             <label className="field-label" htmlFor="email">Correo electrónico</label>
-                                            <input className={`field-input-1${personalErrors.email ? ' input-error' : ''}`}
+                                            <input className={claseInput('email')}
                                                 type="email" id="email"
                                                 value={personal.email}
-                                                onChange={e => { setPersonal(p => ({ ...p, email: e.target.value })); setPersonalErrors(p => ({ ...p, email: '' })) }}
+                                                onChange={cambiar('email')}
                                                 autoComplete="email" />
                                             {personalErrors.email && <span className="field-error">{personalErrors.email}</span>}
                                         </div>
@@ -247,16 +354,17 @@ export default function Perfil() {
                                         <div className="field-row">
                                             <div className="field-group">
                                                 <label className="field-label" htmlFor="fechaNac">Fecha de nacimiento</label>
-                                                <input className="field-input-1" type="date" id="fechaNac"
-                                                    value={personal.fechaNac}
-                                                    onChange={e => setPersonal(p => ({ ...p, fechaNac: e.target.value }))} />
+                                                <input className={claseInput('fecha_nac')} type="date" id="fechaNac"
+                                                    value={personal.fecha_nac}
+                                                    onChange={cambiar('fecha_nac')} />
+                                                {personalErrors.fecha_nac && <span className="field-error">{personalErrors.fecha_nac}</span>}
                                             </div>
                                             <div className="field-group">
                                                 <label className="field-label" htmlFor="nivel">Nivel</label>
                                                 <div className="select-wrap">
                                                     <select className="field-select" id="nivel"
                                                         value={personal.nivel}
-                                                        onChange={e => setPersonal(p => ({ ...p, nivel: e.target.value }))}>
+                                                        onChange={cambiar('nivel')}>
                                                         <option value="principiante">Principiante</option>
                                                         <option value="intermedio">Intermedio</option>
                                                         <option value="avanzado">Avanzado</option>
@@ -271,20 +379,22 @@ export default function Perfil() {
                                             <div className="field-group">
                                                 <label className="field-label" htmlFor="peso">Peso</label>
                                                 <div className="input-unit-wrap">
-                                                    <input className="field-input-1" type="number" id="peso"
+                                                    <input className={claseInput('peso')} type="number" id="peso"
                                                         value={personal.peso} min="30" max="200"
-                                                        onChange={e => setPersonal(p => ({ ...p, peso: e.target.value }))} />
+                                                        onChange={cambiar('peso')} />
                                                     <span className="input-unit">kg</span>
                                                 </div>
+                                                {personalErrors.peso && <span className="field-error">{personalErrors.peso}</span>}
                                             </div>
                                             <div className="field-group">
                                                 <label className="field-label" htmlFor="estatura">Estatura</label>
                                                 <div className="input-unit-wrap">
-                                                    <input className="field-input-1" type="number" id="estatura"
+                                                    <input className={claseInput('estatura')} type="number" id="estatura"
                                                         value={personal.estatura} step="0.01" min="1" max="2.5"
-                                                        onChange={e => setPersonal(p => ({ ...p, estatura: e.target.value }))} />
+                                                        onChange={cambiar('estatura')} />
                                                     <span className="input-unit">m</span>
                                                 </div>
+                                                {personalErrors.estatura && <span className="field-error">{personalErrors.estatura}</span>}
                                             </div>
                                         </div>
 
@@ -293,7 +403,8 @@ export default function Perfil() {
                                             <div className="select-wrap">
                                                 <select className="field-select" id="posicion"
                                                     value={personal.posicion}
-                                                    onChange={e => setPersonal(p => ({ ...p, posicion: e.target.value }))}>
+                                                    onChange={cambiar('posicion')}>
+                                                    <option value="">Sin definir</option>
                                                     <option value="opuesto">Opuesto</option>
                                                     <option value="armador">Armador</option>
                                                     <option value="central">Central</option>
@@ -407,9 +518,9 @@ export default function Perfil() {
                                     <legend className="pref-legend">Notificaciones</legend>
                                     <div className="toggle-list">
                                         {[
-                                            { key: 'notifSesion', label: 'Recordatorio de sesión', desc: '30 min antes del entrenamiento' },
-                                            { key: 'notifAnalisis', label: 'Análisis completado', desc: 'Cuando la IA termina un análisis' },
-                                            { key: 'notifContenido', label: 'Nuevos contenidos', desc: 'Videos y ejercicios nuevos' },
+                                            { key: 'notif_sesion', label: 'Recordatorio de sesión', desc: '30 min antes del entrenamiento' },
+                                            { key: 'notif_analisis', label: 'Análisis completado', desc: 'Cuando la IA termina un análisis' },
+                                            { key: 'notif_contenido', label: 'Nuevos contenidos', desc: 'Videos y ejercicios nuevos' },
                                         ].map(item => (
                                             <div key={item.key} className="toggle-item">
                                                 <div className="toggle-item__info">
@@ -447,8 +558,8 @@ export default function Perfil() {
                                             <label className="field-label" htmlFor="unidades">Unidades</label>
                                             <div className="select-wrap">
                                                 <select className="field-select" id="unidades"
-                                                    value={preferencias.unidades}
-                                                    onChange={e => setPreferencias(p => ({ ...p, unidades: e.target.value }))}>
+                                                    value={preferencias.unidad_medida}
+                                                    onChange={e => setPreferencias(p => ({ ...p, unidad_medida: e.target.value }))}>
                                                     <option value="metric">Métrico (kg, m)</option>
                                                     <option value="imperial">Imperial (lb, ft)</option>
                                                 </select>
@@ -460,7 +571,9 @@ export default function Perfil() {
 
                                 <div className="form-actions">
                                     <button className="btn btn--secondary" type="button"
-                                        onClick={() => showToast('Cambios descartados.', 'info')}>Cancelar</button>
+                                        onClick={() => { if (config) setPreferencias(config); showToast('Cambios descartados.', 'info') }}>
+                                        Cancelar
+                                    </button>
                                     <button className="btn btn--primary" type="submit">Guardar cambios</button>
                                 </div>
                             </form>
@@ -540,7 +653,7 @@ export default function Perfil() {
                                     <p className="danger-zone__title">Zona de peligro</p>
                                     <p className="danger-zone__desc">Estas acciones son permanentes e irreversibles.</p>
                                     <button className="btn btn--danger-outline" type="button"
-                                        onClick={() => setModal({ message: '¿Eliminar cuenta? Esta acción es permanente.', onConfirm: () => { sessionStorage.clear(); router.push('/') } })}>
+                                        onClick={() => setModal({ message: '¿Eliminar cuenta? Esta acción es permanente.', onConfirm: eliminarCuenta })}>
                                         <i className="fa-solid fa-trash-can" /> Eliminar cuenta
                                     </button>
                                 </div>

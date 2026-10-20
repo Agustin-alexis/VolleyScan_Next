@@ -48,8 +48,6 @@ body {
 }
 
 .logo-1 {
-  width: 36px;
-  height: 36px;
   border-radius: 8px;
   object-fit: cover;
 }
@@ -184,8 +182,6 @@ body {
 }
 
 .img-pro {
-  width: 100%;
-  max-width: 480px;
   border-radius: 20px;
   object-fit: cover;
   box-shadow: 0 24px 60px rgba(0, 0, 0, .5);

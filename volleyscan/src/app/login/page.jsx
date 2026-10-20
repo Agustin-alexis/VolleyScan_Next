@@ -8,6 +8,8 @@ import Logo from "@/app/public/img/Logo.VS.jpg"
 import google from "@/app/public/img/google.jpg"
 import facebook from "@/app/public/img/facebook.jpg"
 import { iniciarSesion } from '@/app/services/panelApi'
+
+import { api, guardarSesion, ApiError } from '@/lib/api'
 import './page.css'
 
 
@@ -16,6 +18,7 @@ const DESTINO_POR_ROL = {
   atleta: '/usuario',
   entrenador: '/panel_entrenador',
 }
+
 
 const IconEye = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
@@ -73,24 +76,29 @@ export default function LoginPage() {
 
     setLoading(true)
     setErrors({})
-
     try {
-      // Login real contra el backend Django (guarda el token en sessionStorage)
-      const usuario = await iniciarSesion(email.trim(), password)
-      showToast(`✓ Bienvenido/a, ${usuario.nombre}. Redirigiendo…`, 'success')
-      setTimeout(() => router.push(DESTINO_POR_ROL[usuario.rol] ?? '/usuario'), 1500)
-    } catch (error) {
-      setPassword('')
-      if (error.status === 401) {
+      const data = await api('/auth/login', {
+        method: 'POST',
+        body: { email: email.trim(), password }
+      })
+      guardarSesion(data)
+      showToast(`✓ Bienvenido/a, ${data.usuario.nombre}. Redirigiendo…`, 'success')
+
+      // Usa tu constante DESTINO_POR_ROL (redirige a '/panel_entrenador' o '/usuario')
+      const destino = DESTINO_POR_ROL[data.usuario.rol] ?? '/usuario'
+      setTimeout(() => router.push(destino), 1000)
+    } catch (err) {
+      if (!(err instanceof ApiError)) {
+        showToast('No se pudo conectar con el servidor.', 'error')
+      } else if (err.status === 429) {
+        showToast('Demasiados intentos. Espera un minuto.', 'error')
+      } else {
         setErrors({
           email: 'Correo o contraseña incorrectos.',
           password: 'Correo o contraseña incorrectos.',
         })
         showToast('Credenciales incorrectas. Inténtalo de nuevo.', 'error')
-      } else if (error.status === 429) {
-        showToast('Demasiados intentos. Espera un minuto e inténtalo de nuevo.', 'error')
-      } else {
-        showToast('No se pudo conectar con el servidor. Inténtalo más tarde.', 'error')
+        setPassword('')
       }
     } finally {
       setLoading(false)

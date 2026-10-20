@@ -1,7 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { cerrarSesion, getUsuario } from '@/lib/api';
 import './SidebarUsuario.css';
 import Image from 'next/image';
 import Logo from '@/app/public/img/Logo.VS.jpg';
@@ -12,6 +13,7 @@ import {
     FaChartLine,
     FaCamera,
     FaBell,
+    FaSignOutAlt,
 } from 'react-icons/fa';
 import {
     FaDumbbell, FaFileLines, FaGear, FaBars, FaXmark,
@@ -48,12 +50,30 @@ const nav = [
 
 export default function SidebarUsuario() {
     const pathname = usePathname();
+    const router = useRouter();
     const [open, setOpen] = useState(false);
+    const [usuario, setUsuario] = useState(null)
+
+    // Carga los datos del deportista logueado
+    useEffect(() => {
+        setUsuario(getUsuario());
+    }, []);
 
     // Cierra el menú al cambiar de página
     useEffect(() => {
         setOpen(false);
     }, [pathname]);
+
+    // Función para cerrar sesión y mandar al login
+    function handleLogout() {
+        cerrarSesion();
+        router.replace('/login');
+    }
+
+    // Saca las iniciales del nombre (ej: "Camilo Velasco" -> "CV")
+    const iniciales = usuario?.nombre
+        ? usuario.nombre.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+        : 'US';
 
     return (
         <>
@@ -93,29 +113,53 @@ export default function SidebarUsuario() {
                     {nav.map(({ group, items }) => (
                         <div key={group}>
                             <div className="sb-group-label">{group}</div>
-                            {items.map(({ to, icon: Icon, label }) => (
-                                <Link
-                                    key={to}
-                                    href={to}
-                                    className={pathname === to ? 'nav-item active' : 'nav-item'}
-                                >
-                                    <Icon size={15} />
-                                    <span>{label}</span>
-                                </Link>
-                            ))}
+                            {items.map(({ to, icon: Icon, label }) => {
+
+                                const activo = to === '/usuario'
+                                    ? pathname === '/usuario'
+                                    : pathname.startsWith(to);
+
+                                return (
+                                    <Link
+                                        key={to}
+                                        href={to}
+                                        className={activo ? 'nav-item active' : 'nav-item'}>
+                                        <Icon size={15} />
+                                        <span>{label}</span>
+                                    </Link>
+                                );
+                            })}
                         </div>
                     ))}
                 </nav>
 
                 <div className="sb-footer">
-                    <div className="sb-avatar">JP</div>
+                    <div className="sb-avatar">{iniciales}</div>
                     <div className="sb-foot-info">
-                        <div className="sb-foot-name">Juan Perez</div>
-                        <div className="sb-foot-role">usuario</div>
+                        <div className="sb-foot-name">{usuario?.nombre || 'Usuario'}</div>
+                        <div className="sb-foot-role">{usuario?.rol || 'atleta'}</div>
                     </div>
                     <span className="sb-online-dot"></span>
+
+                    {/* Botón para cerrar sesión */}
+                    <button
+                        onClick={handleLogout}
+                        title="Cerrar sesión"
+                        style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#ef4444',
+                            cursor: 'pointer',
+                            marginLeft: 'auto',
+                            display: 'flex',
+                            alignItems: 'center',
+                            padding: '4px'
+                        }}
+                    >
+                        <FaSignOutAlt size={16} />
+                    </button>
                 </div>
             </aside>
         </>
     );
-}
+} 
