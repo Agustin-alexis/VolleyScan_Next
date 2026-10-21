@@ -1,15 +1,24 @@
 'use client';
 
+
 import { useEffect, useState } from 'react';
+import { REMATE } from '@/lib/movimientos/remate';
 import styles from './RepResultCard.module.css';
 
-const VISIBLE_MS = 12000;
+const VISIBLE_MS = 15000;
 const RADIO = 34;
 const CIRCUNFERENCIA = 2 * Math.PI * RADIO;
 
 const tonoDe = (score) => (score >= 80 ? 'alto' : score >= 60 ? 'medio' : 'bajo');
 
-export default function RepResultCard({ rep, numero }) {
+const AVISO_CONFIANZA = {
+    media: 'Medición con precisión media. Más luz y buen encuadre la mejoran.',
+    baja: 'Medición aproximada: la cámara va lenta. Mejora la luz o baja la calidad del modelo para ganar fps.',
+};
+
+const lista = (items) => items.map((i) => i.nombre.toLowerCase()).join(', ');
+
+export default function RepResultCard({ rep, numero, comparacion, onVerTecnica }) {
     const [visible, setVisible] = useState(false);
 
     // Cada remate nuevo vuelve a mostrar la tarjeta y reinicia el temporizador
@@ -45,10 +54,12 @@ export default function RepResultCard({ rep, numero }) {
         );
     }
 
-    const corregir = rep.errores.slice(0, 3);
-    const items = corregir.length
-        ? corregir.map((e) => ({ texto: e.mensaje, tipo: e.severidad }))
-        : rep.puntosClave.slice(0, 2).map((texto) => ({ texto, tipo: 'bien' }));
+    const principal = rep.principal;
+    const otras = rep.errores.slice(principal ? 1 : 0, 3);
+    const limpias = rep.errores.length === 0 ? rep.puntosClave.slice(0, 2) : [];
+    const nivel = REMATE.niveles?.[rep.nivel]?.nombre;
+    const delta = comparacion?.deltaScore ?? null;
+    const signo = delta === null ? null : delta > 0 ? 'sube' : delta < 0 ? 'baja' : 'igual';
 
     return (
         <div className={styles.card} role="status" aria-live="polite">
@@ -74,18 +85,86 @@ export default function RepResultCard({ rep, numero }) {
 
                 <div>
                     <h3 className={styles.title}>Remate {numero}</h3>
-                    <p className={styles.sub}>Brazo {rep.brazo}</p>
+                    <p className={styles.sub}>
+                        Brazo {rep.brazo}
+                        {nivel ? ` · ${nivel}` : ''}
+                    </p>
+                    {signo && (
+                        <span className={styles.delta} data-signo={signo}>
+                            {signo === 'igual' ? 'Igual que el anterior' : `${delta > 0 ? '+' : '−'}${Math.abs(delta)} vs el anterior`}
+                        </span>
+                    )}
                 </div>
             </div>
 
-            <p className={styles.label}>{corregir.length ? 'Qué corregir' : 'Qué salió bien'}</p>
-            <ul className={styles.list}>
-                {items.map((item) => (
-                    <li key={item.texto} className={styles.item} data-tipo={item.tipo}>
-                        {item.texto}
-                    </li>
-                ))}
-            </ul>
+            {rep.confianza && rep.confianza !== 'alta' && (
+                <p className={styles.conf} data-nivel={rep.confianza}>
+                    {AVISO_CONFIANZA[rep.confianza]}
+                </p>
+            )}
+
+            {principal && (
+                <>
+                    <p className={styles.label}>Lo más importante</p>
+                    <div className={styles.principal} data-tipo={principal.severidad}>
+                        <p className={styles.principalTexto}>{principal.mensaje}</p>
+                        {principal.porQue && <p className={styles.porQue}>{principal.porQue}</p>}
+                        {principal.ejercicio && (
+                            <p className={styles.ejercicio}>
+                                <span className={styles.ejercicioLabel}>Ejercicio</span>
+                                {principal.ejercicio}
+                            </p>
+                        )}
+                    </div>
+                </>
+            )}
+
+            {otras.length > 0 && (
+                <>
+                    <p className={styles.label}>También corregir</p>
+                    <ul className={styles.list}>
+                        {otras.map((e) => (
+                            <li key={e.medidaId} className={styles.item} data-tipo={e.severidad}>
+                                {e.mensaje}
+                            </li>
+                        ))}
+                    </ul>
+                </>
+            )}
+
+            {limpias.length > 0 && (
+                <>
+                    <p className={styles.label}>Qué salió bien</p>
+                    <ul className={styles.list}>
+                        {limpias.map((texto) => (
+                            <li key={texto} className={styles.item} data-tipo="bien">
+                                {texto}
+                            </li>
+                        ))}
+                    </ul>
+                </>
+            )}
+
+            {comparacion && (comparacion.mejoras.length > 0 || comparacion.retrocesos.length > 0) && (
+                <div className={styles.cambios}>
+                    {comparacion.mejoras.length > 0 && (
+                        <p className={styles.cambio} data-signo="sube">
+                            Mejoraste: {lista(comparacion.mejoras.slice(0, 2))}
+                        </p>
+                    )}
+                    {comparacion.retrocesos.length > 0 && (
+                        <p className={styles.cambio} data-signo="baja">
+                            Empeoró: {lista(comparacion.retrocesos.slice(0, 2))}
+                        </p>
+                    )}
+                </div>
+            )}
+
+            {rep.claves && onVerTecnica && (
+                <button type="button" className={styles.btnFoto} onClick={onVerTecnica}>
+                    Ver mi técnica
+                </button>
+            )}
         </div>
     );
 }

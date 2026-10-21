@@ -1,0 +1,303 @@
+/* ─────────────────────────────────────────────────────────────
+   TecnicaFoto.module.css — "Mi técnica" (esqueleto congelado)
+   Misma paleta del dashboard del usuario; la tipografía se hereda.
+   ───────────────────────────────────────────────────────────── */
+
+.panel {
+    --card: rgba(17, 24, 39, 0.97);
+    --bg: #0b0f1a;
+    --border: #1f2634;
+    --text: #ffffff;
+    --text-2: #cbd5e1;
+    --muted: #94a3b8;
+    --faint: #475569;
+    --blue: #3b82f6;
+    --blue-lite: #60a5fa;
+    --green: #22c55e;
+    --orange: #f97316;
+
+    position: absolute;
+    inset: 16px;
+    z-index: 4;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 16px;
+    padding: 18px 20px 20px;
+    border: 1px solid var(--border);
+    border-radius: 22px;
+    background: var(--card);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--text);
+    font-family: inherit;
+    line-height: 1.4;
+    animation: enter 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.panel *,
+.panel *::before,
+.panel *::after {
+    box-sizing: border-box;
+}
+
+@keyframes enter {
+    from {
+        opacity: 0;
+        transform: scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* ── Cabecera ──────────────────────────────────────────────── */
+.top {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.top>div:first-child {
+    min-width: 0;
+    flex: 1;
+}
+
+.title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.sub {
+    margin: 2px 0 0;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+.tabs {
+    display: flex;
+    flex: none;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg);
+}
+
+.tab {
+    padding: 7px 16px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.tab:hover {
+    color: var(--text);
+}
+
+.tab[aria-selected='true'] {
+    background: var(--blue);
+    color: #fff;
+}
+
+.tab:focus-visible,
+.close:focus-visible {
+    outline: 3px solid var(--blue-lite);
+    outline-offset: 2px;
+}
+
+.close {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.close:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text);
+}
+
+/* ── Cuerpo: figura y medidas ──────────────────────────────── */
+.body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 18px;
+    min-height: 0;
+}
+
+.lienzo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--bg);
+}
+
+.lienzo svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.angulo {
+    fill: var(--text);
+    font-size: 20px;
+    font-weight: 700;
+    paint-order: stroke;
+    stroke: var(--bg);
+    stroke-width: 8px;
+    stroke-linejoin: round;
+}
+
+.vacio {
+    margin: 0;
+    padding: 16px;
+    color: var(--muted);
+    font-size: 0.88rem;
+    text-align: center;
+}
+
+.medidas {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-height: 0;
+    padding-right: 4px;
+    overflow-y: auto;
+}
+
+.medida {
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: rgba(11, 15, 26, 0.6);
+}
+
+.medidaTop {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.medidaNombre {
+    color: var(--text-2);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.medidaValor {
+    flex: none;
+    font-size: 1.15rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+.medidaValor[data-estado='ok'] {
+    color: var(--green);
+}
+
+.medidaValor[data-estado='error'] {
+    color: var(--orange);
+}
+
+.medidaValor[data-estado='casi'] {
+    color: var(--blue-lite);
+}
+
+.medidaValor[data-estado='neutro'] {
+    color: var(--muted);
+}
+
+/* Barra: banda verde = rango ideal; punto = tu valor */
+.barra {
+    position: relative;
+    height: 8px;
+    margin: 12px 0 8px;
+    border-radius: 999px;
+    background: var(--border);
+}
+
+.ideal {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border-radius: 999px;
+    background: rgba(34, 197, 94, 0.45);
+}
+
+.marca {
+    position: absolute;
+    top: 50%;
+    width: 16px;
+    height: 16px;
+    border: 3px solid var(--bg);
+    border-radius: 50%;
+    background: var(--muted);
+    transform: translate(-50%, -50%);
+}
+
+.marca[data-estado='ok'] {
+    background: var(--green);
+}
+
+.marca[data-estado='error'] {
+    background: var(--orange);
+}
+
+.marca[data-estado='casi'] {
+    background: var(--blue-lite);
+}
+
+.rango {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.78rem;
+}
+
+@media (max-width: 760px) {
+    .panel {
+        inset: 8px;
+        padding: 14px;
+    }
+
+    .top {
+        flex-wrap: wrap;
+    }
+
+    .body {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .panel {
+        animation: none;
+    }
+
+    .tab,
+    .close {
+        transition: none;
+    }
+}

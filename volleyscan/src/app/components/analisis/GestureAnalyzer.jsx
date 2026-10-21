@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { usePoseCamera } from '@/hooks/usePoseCamera';
-import { resumirSesion } from '@/lib/engine/session';
+import {compararConAnterior, resumirSesion} from '@/lib/engine/session';
 import {
     agregarRemate,
     cerrarYEnviar,
@@ -13,8 +13,10 @@ import {
 import { ANGLES, ANGLE_ROWS, TRUNK } from '@/lib/pose/geometry';
 import { REMATE } from '@/lib/movimientos/remate';
 import AngleGauge from './AngleGauge';
+import DiagnosticoPanel from './DiagnosticoPanel';
 import styles from './GestureAnalyzer.module.css';
 import RepResultCard from './RepResultCard';
+import TecnicaFoto from './TecnicaFoto';
 
 const STATUS_TEXT = {
     idle: 'Cámara apagada',
@@ -29,6 +31,7 @@ const LAYER_OPTIONS = [
     { key: 'skeleton', label: 'Esqueleto' },
     { key: 'angles', label: 'Ángulos' },
     { key: 'trails', label: 'Trayectoria' },
+    { key: 'diagnostico', label: 'Diagnóstico' },
 ];
 
 const TIPS = [
@@ -44,7 +47,9 @@ const MENSAJE_GUARDADO = {
     rechazada: 'No se pudo guardar la sesión: los datos no son válidos.',
 };
 
-export default function GestureAnalyzer() {
+// `nivel` ajusta cuánta desviación se perdona: principiante, intermedio, avanzado o profesional
+export default function GestureAnalyzer({ nivel = 'intermedio' }) {
+    const [verTecnica, setVerTecnica] = useState(false);
     // Sesión de práctica en curso: vive en un ref para no re-renderizar en cada remate
     const sesionRef = useRef(null);
     const [guardado, setGuardado] = useState(null);
@@ -70,7 +75,7 @@ export default function GestureAnalyzer() {
         switchCamera,
         toggleLayer,
         resetRanges,
-    } = usePoseCamera({ model: 'full', targetFps: 60, onRep: alTerminarRemate });
+    } = usePoseCamera({ model: 'full', targetFps: 60, nivel, onRep: alTerminarRemate });
 
     // Cierra la sesión en curso y la envía; si no hubo remates, no hace nada
     const guardarSesion = useCallback(async () => {
@@ -111,6 +116,18 @@ export default function GestureAnalyzer() {
 
     const resumen = useMemo(() => resumirSesion(reps), [reps]);
     const lastRep = reps.length ? reps[reps.length - 1] : null;
+
+    // Compara el último remate válido con el válido anterior
+    const comparacion = useMemo(() => {
+        const validas = reps.filter((r) => r.valida);
+        if (validas.length < 2 || validas[validas.length - 1] !== lastRep) return null;
+        return compararConAnterior(lastRep, validas[validas.length - 2]);
+    }, [reps, lastRep]);
+
+    // La foto de un remate se cierra sola cuando llega otro
+    useEffect(() => {
+        setVerTecnica(false);
+    }, [reps.length]);
 
     return (
         <section className={styles.root} aria-label="Análisis de gestos con IA">
@@ -214,7 +231,31 @@ export default function GestureAnalyzer() {
                                 {framing.hint}
                             </div>
 
-                            <RepResultCard rep={lastRep} numero={reps.length} />
+                            <RepResultCard
+                                rep={lastRep}
+                                numero={reps.length}
+                                comparacion={comparacion}
+                                onVerTecnica={() => setVerTecnica(true)}
+                            />
+
+                            {layers.diagnostico && (
+                                <DiagnosticoPanel
+                                    live={live}
+                                    phase={phase}
+                                    fasesNombre={PHASE_LABEL}
+                                    rep={lastRep}
+                                    onClose={() => toggleLayer('diagnostico')}
+                                />
+                            )}
+
+                            {verTecnica && lastRep?.valida && (
+                                <TecnicaFoto
+                                    rep={lastRep}
+                                    numero={reps.length}
+                                    mirrored={mirrored}
+                                    onClose={() => setVerTecnica(false)}
+                                />
+                            )}
                         </>
                     )}
 

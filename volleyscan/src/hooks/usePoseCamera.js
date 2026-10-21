@@ -1,6 +1,5 @@
 'use client';
 
-
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { createRepAnalyzer } from '@/lib/engine/repAnalyzer';
 import { assessFraming, measureAngles } from '@/lib/pose/geometry';
@@ -17,13 +16,15 @@ const MODEL_URLS = {
 };
 
 const PANEL_INTERVAL_MS = 100;
-const DEFAULT_LAYERS = { skeleton: true, angles: true, trails: true };
+const HISTORIA_PUNTOS = 50; // 5 s de historia para el panel de diagnóstico
+const DEFAULT_LAYERS = { skeleton: true, angles: true, trails: true, diagnostico: false };
 const INITIAL_LIVE = {
     angles: {},
     ranges: {},
     framing: { status: 'none', hint: '' },
     fps: 0,
     latency: 0,
+    diag: { actual: null, historia: [] },
 };
 
 // ── Ciclo de vida como máquina de estados ─────────────────
@@ -83,14 +84,16 @@ async function createLandmarker(model) {
  *   model?: 'lite' | 'full' | 'heavy',
  *   targetFps?: number,
  *   standard?: object,
+ *   nivel?: 'principiante' | 'intermedio' | 'avanzado' | 'profesional',
  *   onRep?: (rep: object) => void,
  * }} options
  *   model:     'lite' = más fluido · 'full' = equilibrado · 'heavy' = más preciso
  *   targetFps: cuadros por segundo que se piden a la cámara (el valor real se mide)
  *   standard:  estándar del movimiento a evaluar (por defecto, el remate)
+ *   nivel:     nivel del deportista; cambia cuánto se perdona salirse del rango ideal
  *   onRep:     se llama al terminar cada repetición, ya calificada
  */
-export function usePoseCamera({ model = 'full', targetFps = 60, standard = REMATE, onRep } = {}) {
+export function usePoseCamera({ model = 'full', targetFps = 60, standard = REMATE, nivel, onRep } = {}) {
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
     const landmarkerRef = useRef(null);
@@ -107,7 +110,7 @@ export function usePoseCamera({ model = 'full', targetFps = 60, standard = REMAT
     if (!imageSmootherRef.current) imageSmootherRef.current = new PoseSmoother(undefined, ['x', 'y']);
     if (!worldSmootherRef.current) worldSmootherRef.current = new PoseSmoother(undefined, ['x', 'y', 'z']);
     if (!rendererRef.current) rendererRef.current = createRenderer();
-    if (!analyzerRef.current) analyzerRef.current = createRepAnalyzer(standard);
+    if (!analyzerRef.current) analyzerRef.current = createRepAnalyzer(standard, { nivel });
 
     const rangesRef = useRef({}); // { codoD: {min, max}, ... }
     const layersRef = useRef(DEFAULT_LAYERS);
@@ -132,6 +135,11 @@ export function usePoseCamera({ model = 'full', targetFps = 60, standard = REMAT
     useEffect(() => {
         onRepRef.current = onRep;
     }, [onRep]);
+
+    // Cambiar el nivel afecta a los remates siguientes, sin reiniciar nada
+    useEffect(() => {
+        analyzerRef.current.setNivel(nivel);
+    }, [nivel]);
 
     // ── Programación de cuadros ─────────────────────────────
     // requestVideoFrameCallback se dispara una vez por cada cuadro REAL del
@@ -202,6 +210,8 @@ export function usePoseCamera({ model = 'full', targetFps = 60, standard = REMAT
         let fpsStart = performance.now();
         let fps = 0;
         let latency = 0; // media móvil del tiempo de inferencia (ms)
+        let debug = null; // lo último que "vio" el motor (para el panel de diagnóstico)
+        let historia = []; // últimos 5 s de elevación de pies y velocidad de muñeca
 
         const publish = (pts, angles, w, h) => {
             for (const [id, deg] of Object.entries(angles)) {
@@ -211,12 +221,21 @@ export function usePoseCamera({ model = 'full', targetFps = 60, standard = REMAT
                     ? { min: Math.min(r.min, deg), max: Math.max(r.max, deg) }
                     : { min: deg, max: deg };
             }
+
+            if (debug?.cuerpo) {
+                historia = [
+                    ...historia.slice(-(HISTORIA_PUNTOS - 1)),
+                    { lift: debug.lift, speed: Math.max(debug.speedL, debug.speedR) },
+                ];
+            }
+
             setLive({
                 angles,
                 ranges: { ...rangesRef.current },
                 framing: assessFraming(pts, w, h),
                 fps,
                 latency: Math.round(latency),
+                diag: { actual: debug, historia },
             });
         };
 
@@ -280,6 +299,7 @@ export function usePoseCamera({ model = 'full', targetFps = 60, standard = REMAT
                     // Motor de repeticiones: fase en vivo y, al terminar, el remate calificado.
                     // La fase solo toca React cuando CAMBIA (unas pocas veces por remate).
                     const out = analyzerRef.current.push({ t: t1, pts, angles });
+                    debug = out.debug;
                     if (out.phase !== phaseRef.current) {
                         phaseRef.current = out.phase;
                         setPhase(out.phase);

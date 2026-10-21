@@ -1,8 +1,5 @@
 // Cliente del backend Django (login con token y panel del entrenador).
 // El chat con la IA (FastAPI) sigue en api.js.
-
-import { guardarSesion } from "./historialService"
-
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8001/api'
 
 const CLAVE_TOKEN = 'vs_token'
