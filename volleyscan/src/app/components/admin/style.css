@@ -51,10 +51,8 @@ body:has(.dashboard-page-container) {
   position: relative;
   z-index: 1;
 }
+.logo-1
 
-<<<<<<< Updated upstream
-.logo-1 {
-=======
 .dashboard-page-container :focus-visible {
   outline: 2px solid var(--cyan);
   outline-offset: 2px;
@@ -161,7 +159,6 @@ body:has(.dashboard-page-container) {
 .vs-logo {
   width: 32px;
   height: 32px;
->>>>>>> Stashed changes
   border-radius: 8px;
   object-fit: cover;
 }
@@ -265,16 +262,17 @@ body:has(.dashboard-page-container) {
   transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
-<<<<<<< Updated upstream
-.img-pro {
+
+.img-pro{
   border-radius: 20px;
   object-fit: cover;
   box-shadow: 0 24px 60px rgba(0, 0, 0, .5);
-=======
+}
+
 .vs-btn-primary {
   background: var(--text);
   color: var(--ink);
->>>>>>> Stashed changes
+
 }
 
 .vs-btn-primary:hover {

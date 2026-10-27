@@ -50,14 +50,7 @@ const MENSAJE_GUARDADO = {
 // `nivel` ajusta cuánta desviación se perdona: principiante, intermedio, avanzado o profesional
 export default function GestureAnalyzer({ nivel = 'intermedio' }) {
     const [verTecnica, setVerTecnica] = useState(false);
-    // Sesión de práctica en curso: vive en un ref para no re-renderizar en cada remate
-    const sesionRef = useRef(null);
     const [guardado, setGuardado] = useState(null);
-
-    const alTerminarRemate = useCallback((rep) => {
-        if (!sesionRef.current) sesionRef.current = crearSesion();
-        agregarRemate(sesionRef.current, rep);
-    }, []);
 
     const {
         videoRef,
@@ -75,21 +68,32 @@ export default function GestureAnalyzer({ nivel = 'intermedio' }) {
         switchCamera,
         toggleLayer,
         resetRanges,
-    } = usePoseCamera({ model: 'full', targetFps: 60, nivel, onRep: alTerminarRemate });
+    } = usePoseCamera({ model: 'full', targetFps: 60, nivel });
 
-    // Cierra la sesión en curso y la envía; si no hubo remates, no hace nada
+    // Cierra la sesión en curso y la envía usando el estado `reps` del hook
     const guardarSesion = useCallback(async () => {
-        const sesion = sesionRef.current;
-        sesionRef.current = null;
-        if (!sesion?.repeticiones.length) return;
+        if (!reps || reps.length === 0) {
+            console.log("No hay remates válidos en esta sesión para guardar.");
+            return;
+        }
+        
         setGuardado('guardando');
-        const { estado } = await cerrarYEnviar(sesion);
+        
+        const sesionData = {
+            clienteUuid: crypto.randomUUID(),
+            tecnica: 'remate',
+            modeloIa: 'mediapipe-pose-full',
+            inicio: new Date().toISOString(),
+            fin: new Date().toISOString(),
+            repeticiones: reps,
+        };
+
+        const { estado } = await cerrarYEnviar(sesionData);
         setGuardado(estado);
-    }, []);
+    }, [reps]);
 
     const iniciar = () => {
         setGuardado(null);
-        sesionRef.current = crearSesion();
         start();
     };
 
@@ -99,14 +103,8 @@ export default function GestureAnalyzer({ nivel = 'intermedio' }) {
     };
 
     // Al abrir la pantalla: reintenta las sesiones que quedaron sin enviar.
-    // Al salir de la pantalla con la cámara encendida: no se pierde la sesión.
     useEffect(() => {
         reenviarPendientes();
-        return () => {
-            const sesion = sesionRef.current;
-            sesionRef.current = null;
-            if (sesion?.repeticiones.length) cerrarYEnviar(sesion);
-        };
     }, []);
 
     const running = status === 'running';

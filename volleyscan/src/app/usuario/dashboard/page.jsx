@@ -153,11 +153,8 @@ export default function Dashboard() {
             {/* Header */}
             <header className="dashboard__header">
                 <div className="welcome">
-<<<<<<< Updated upstream
                     <h1 className="welcome__title">¡Hola, {usuario?.nombre || 'Atleta'}! 👋</h1>
-=======
                     <h1 className="welcome__title">¡Hola!</h1>
->>>>>>> Stashed changes
                     <p className="welcome__subtitle">Sigue entrenando y mejora cada día.</p>
                 </div>
                 <button className="btn-notification" aria-label="Ver notificaciones"
