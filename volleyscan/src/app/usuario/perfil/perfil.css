@@ -204,6 +204,7 @@
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: .07em;
+  padding: 5px;
 }
 
 .field-input-1 {
@@ -299,6 +300,9 @@
 
 /* Input con toggle contraseña */
 .input-pass-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
   width: 100%;
 }
 
@@ -314,7 +318,7 @@
   transform: translateY(-50%);
   color: var(--text-muted);
   font-size: .85rem;
-  background: none;
+  background: transparent;
   border: none;
   cursor: pointer;
   transition: color var(--transition);
@@ -323,7 +327,7 @@
 }
 
 .pass-toggle:hover {
-  color: var(--text-primary);
+  color: #f8fafc;
 }
 
 /* Fuerza contraseña */
@@ -616,12 +620,11 @@
 
 .btn--danger-outline {
   background: transparent;
-  color: var(--accent-red);
-  border: 1px solid rgba(239, 68, 68, .4);
+  color: var(--accent-r);
 }
 
 .btn--danger-outline:hover {
-  background: rgba(239, 68, 68, .08);
+  background: red;
   filter: none;
 }
 

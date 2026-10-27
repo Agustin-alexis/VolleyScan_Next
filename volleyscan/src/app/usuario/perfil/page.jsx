@@ -411,7 +411,7 @@ export default function Perfil() {
                                                     <option value="punta">Punta receptor</option>
                                                     <option value="libero">Líbero</option>
                                                 </select>
-                                                <i className="fa-solid fa-chevron-down select-icon" />
+                                                <FaChevronDown className="fa-solid fa-chevron-down select-icon" />
                                             </div>
                                         </div>
 
@@ -673,7 +673,7 @@ export default function Perfil() {
                         <p className="modal__body">{modal.message}</p>
                         <div className="modal__actions">
                             <button className="btn btn--secondary" type="button" onClick={() => setModal(null)}>Cancelar</button>
-                            <button className="btn btn--danger" type="button" onClick={() => { modal.onConfirm(); setModal(null) }}>
+                            <button className="btn btn--danger-outline" type="button" onClick={() => { modal.onConfirm(); setModal(null) }}>
                                 Sí, eliminar
                             </button>
                         </div>

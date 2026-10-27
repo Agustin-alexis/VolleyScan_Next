@@ -6,7 +6,8 @@
     border-right: 1px solid rgba(255, 255, 255, 0.07);
     display: flex;
     flex-direction: column;
-    position: relative;
+    position: sticky;
+    top: 0;
     z-index: 30;
     height: 100vh;
 }
@@ -109,6 +110,21 @@
     color: #7c3aed;
 }
 
+.nav-badge {
+    margin-left: auto;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: #f97316;
+    color: #fff;
+    font-size: .65rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .sb-footer {
     padding: 14px;
     border-top: 1px solid rgba(255, 255, 255, 0.07);
@@ -160,6 +176,7 @@
     flex-shrink: 0;
     box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
 }
+
 /* ── RESPONSIVE ── */
 .sb-toggle,
 .sb-close,
@@ -168,21 +185,23 @@
 }
 
 @media (max-width: 899px) {
-   aside.sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 260px;
-    min-width: 0;
-    max-width: 80vw;
-    height: 100dvh;
-    flex-shrink: 0;
-    transform: translateX(-100%);
-    transition: transform 0.25s ease;
-    background: #0c1020;        /* fondo sólido, sin transparencia */
-    opacity: 1;
-    backdrop-filter: none;
-    z-index: 1000;              /* por encima del overlay y del contenido */
+    aside.sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 260px;
+        min-width: 0;
+        max-width: 80vw;
+        height: 100dvh;
+        flex-shrink: 0;
+        transform: translateX(-100%);
+        transition: transform 0.25s ease;
+        background: #0c1020;
+        /* fondo sólido, sin transparencia */
+        opacity: 1;
+        backdrop-filter: none;
+        z-index: 1000;
+        /* por encima del overlay y del contenido */
     }
 
     aside.sidebar.sidebar--open {
@@ -191,29 +210,30 @@
     }
 
     .sb-overlay {
-    display: block;
-    position: fixed;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.75);   /* más oscuro (antes 0.55) */
-    z-index: 900;
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.75);
+        /* más oscuro (antes 0.55) */
+        z-index: 900;
     }
 
 
     .sb-toggle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: fixed;
-    top: 12px;
-    left: 12px;
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: #0c1020;
-    color: #e8eaf6;
-    cursor: pointer;
-    z-index: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: #0c1020;
+        color: #e8eaf6;
+        cursor: pointer;
+        z-index: 800;
     }
 
     .sb-close {
