@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cerrarSesion, getUsuario } from '@/lib/api';
+import { useApi } from '@/lib/UseApi';
 import './SidebarUsuario.css';
 import Image from 'next/image';
 import Logo from '@/app/public/img/Logo.VS.jpg';
@@ -38,7 +39,7 @@ const nav = [
             { to: '/usuario/progreso', icon: FaChartLine, label: 'Progreso' },
             { to: '/usuario/analisis', icon: FaCamera, label: 'Analisis IA' },
             { to: '/usuario/histtrial', icon: FaCamera, label: 'Historial de IA' },
-            { to: '/usuario/notificaciones', icon: FaBell, label: 'Notificaciones' },
+            { to: '/usuario/notificaciones', icon: FaBell, label: 'Notificaciones', },
         ]
     },
     {
@@ -50,9 +51,20 @@ const nav = [
 
 export default function SidebarUsuario() {
     const pathname = usePathname();
+    const { data: notifs, recargar } = useApi('/usuario/notificaciones', {
+        leida: 'false',
+        ruta: pathname,
+    })
+    const sinLeer = notifs?.sin_leer ?? 0;
     const router = useRouter();
     const [open, setOpen] = useState(false);
     const [usuario, setUsuario] = useState(null)
+
+    // Para que la página de Notificaciones avise cuando marca o borra
+    useEffect(() => {
+        window.addEventListener('notificaciones:cambio', recargar);
+        return () => window.removeEventListener('notificaciones:cambio', recargar);
+    }, [recargar]);
 
     // Carga los datos del deportista logueado
     useEffect(() => {
@@ -70,9 +82,13 @@ export default function SidebarUsuario() {
         router.replace('/login');
     }
 
+    const nombreCompleto = usuario
+        ? `${usuario.nombre} ${usuario.apellido ?? ''}`.trim()
+        : 'Usuario';
+
     // Saca las iniciales del nombre (ej: "Camilo Velasco" -> "CV")
-    const iniciales = usuario?.nombre
-        ? usuario.nombre.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
+    const iniciales = usuario
+        ? `${usuario.nombre?.[0] ?? ''}${usuario.apellido?.[0] ?? ''}`.toUpperCase()
         : 'US';
 
     return (
@@ -126,6 +142,9 @@ export default function SidebarUsuario() {
                                         className={activo ? 'nav-item active' : 'nav-item'}>
                                         <Icon size={15} />
                                         <span>{label}</span>
+                                        {to === '/usuario/notificaciones' && sinLeer > 0 && (
+                                            <span className="nav-badge">{sinLeer > 99 ? '99+' : sinLeer}</span>
+                                        )}
                                     </Link>
                                 );
                             })}
@@ -136,7 +155,7 @@ export default function SidebarUsuario() {
                 <div className="sb-footer">
                     <div className="sb-avatar">{iniciales}</div>
                     <div className="sb-foot-info">
-                        <div className="sb-foot-name">{usuario?.nombre || 'Usuario'}</div>
+                        <div className="sb-foot-name">{nombreCompleto}</div>
                         <div className="sb-foot-role">{usuario?.rol || 'atleta'}</div>
                     </div>
                     <span className="sb-online-dot"></span>

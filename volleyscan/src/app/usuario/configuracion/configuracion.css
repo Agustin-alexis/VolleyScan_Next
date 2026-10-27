@@ -272,7 +272,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 }
 
 .btn--logout:hover {
-  background: rgba(239, 68, 68, .1);
+  background: red;
 }
 
 /* ── Botones ── */

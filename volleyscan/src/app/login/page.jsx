@@ -17,6 +17,7 @@ import './page.css'
 const DESTINO_POR_ROL = {
   atleta: '/usuario',
   entrenador: '/panel_entrenador',
+  admin: '/admin',
 }
 
 
