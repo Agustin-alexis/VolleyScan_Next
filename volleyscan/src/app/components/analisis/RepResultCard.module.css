@@ -1,3 +1,11 @@
+/* ─────────────────────────────────────────────────────────────
+   RepResultCard.module.css — Resultado de un remate
+
+   Misma paleta del dashboard del usuario. El anillo del score replica
+   el de "Último análisis": verde cuando es alto; azul y naranja para
+   los scores medio y bajo.
+   La tipografía se hereda de la app.
+   ───────────────────────────────────────────────────────────── */
 
 .card {
     --card: rgba(17, 24, 39, 0.94);
@@ -14,7 +22,9 @@
     top: 68px;
     right: 24px;
     z-index: 3;
-    width: min(340px, calc(100% - 48px));
+    width: min(360px, calc(100% - 48px));
+    max-height: calc(100% - 92px);
+    overflow-y: auto;
     padding: 16px 18px 18px;
     border: 1px solid var(--border);
     border-radius: 20px;
@@ -60,9 +70,7 @@
     font-size: 1.3rem;
     line-height: 1;
     cursor: pointer;
-    transition:
-        background-color 0.15s ease,
-        color 0.15s ease;
+    transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .close:hover {
@@ -112,11 +120,11 @@
     height: 78px;
 }
 
-.ring[data-tone="medio"] {
+.ring[data-tone='medio'] {
     --tone: var(--blue);
 }
 
-.ring[data-tone="bajo"] {
+.ring[data-tone='bajo'] {
     --tone: var(--orange);
 }
 
@@ -193,7 +201,7 @@
 }
 
 .item::before {
-    content: "";
+    content: '';
     position: absolute;
     top: 0.45em;
     left: 0;
@@ -203,19 +211,148 @@
     background: var(--muted);
 }
 
-.item[data-tipo="alta"]::before {
+.item[data-tipo='alta']::before {
     background: var(--orange);
     box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2);
 }
 
-.item[data-tipo="media"]::before {
+.item[data-tipo='media']::before {
     background: var(--blue);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
-.item[data-tipo="bien"]::before {
+.item[data-tipo='bien']::before {
     background: var(--green);
     box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+/* ── Cambio respecto al remate anterior ────────────────────── */
+.delta {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.14);
+    color: var(--muted);
+    font-size: 0.75rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.delta[data-signo='sube'] {
+    background: rgba(34, 197, 94, 0.16);
+    color: var(--green);
+}
+
+.delta[data-signo='baja'] {
+    background: rgba(249, 115, 22, 0.16);
+    color: var(--orange);
+}
+
+/* ── Aviso de medición aproximada ──────────────────────────── */
+.conf {
+    margin: 0 0 12px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    background: rgba(148, 163, 184, 0.1);
+    color: var(--muted);
+    font-size: 0.78rem;
+}
+
+.conf[data-nivel='baja'] {
+    background: rgba(249, 115, 22, 0.12);
+    color: #fdba74;
+}
+
+/* ── Corrección principal ──────────────────────────────────── */
+.principal {
+    margin: 0 0 14px;
+    padding: 12px 14px;
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    border-radius: 14px;
+    background: rgba(59, 130, 246, 0.08);
+}
+
+.principal[data-tipo='alta'] {
+    border-color: rgba(249, 115, 22, 0.45);
+    background: rgba(249, 115, 22, 0.09);
+}
+
+.principalTexto {
+    margin: 0;
+    color: var(--text);
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+.porQue {
+    margin: 8px 0 0;
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+.ejercicio {
+    margin: 10px 0 0;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+    color: var(--text-2);
+    font-size: 0.82rem;
+}
+
+.ejercicioLabel {
+    display: block;
+    margin-bottom: 2px;
+    color: var(--blue-lite);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+/* ── Comparación con el remate anterior ────────────────────── */
+.cambios {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 14px;
+}
+
+.cambio {
+    margin: 0;
+    font-size: 0.8rem;
+}
+
+.cambio[data-signo='sube'] {
+    color: var(--green);
+}
+
+.cambio[data-signo='baja'] {
+    color: #fdba74;
+}
+
+/* ── Botón de la foto del contacto ─────────────────────────── */
+.btnFoto {
+    width: 100%;
+    margin-top: 14px;
+    padding: 10px 14px;
+    border: 1px solid rgba(59, 130, 246, 0.5);
+    border-radius: 12px;
+    background: rgba(59, 130, 246, 0.14);
+    color: var(--blue-lite);
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.btnFoto:hover {
+    background: rgba(59, 130, 246, 0.26);
+}
+
+.btnFoto:focus-visible {
+    outline: 3px solid var(--blue-lite);
+    outline-offset: 2px;
 }
 
 /* En pantallas angostas la tarjeta baja a la parte inferior del video */

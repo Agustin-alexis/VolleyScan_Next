@@ -21,14 +21,22 @@ const severidadDe = (puntaje) => (puntaje < 0.4 ? 'alta' : puntaje < 0.65 ? 'med
  * @param valores  { [idMedida]: número | null } medidos en la repetición
  * @param standard estándar del movimiento (p. ej. REMATE)
  * @param extras   datos adicionales que se copian al resultado
+ * @param opciones { nivel } nivel del deportista (principiante, intermedio,
+ *                 avanzado, profesional): ajusta cuánto se perdona salirse
+ *                 del rango ideal. Sin nivel se usa el del estándar.
  */
-export function evaluarRepeticion(valores, standard, extras = {}) {
+export function evaluarRepeticion(valores, standard, extras = {}, opciones = {}) {
     const defs = new Map(standard.medidas.map((def) => [def.id, def]));
+
+    // Nivel del deportista → tolerancia (multiplica el margen de cada medida)
+    const niveles = standard.niveles ?? {};
+    const nivel = niveles[opciones.nivel] ? opciones.nivel : (standard.nivelPorDefecto ?? null);
+    const tolerancia = niveles[nivel]?.tolerancia ?? 1;
 
     const medidas = standard.medidas.map((def) => {
         const raw = valores[def.id];
         const valor = Number.isFinite(raw) ? raw : null;
-        const puntaje = puntajeMedida(valor, def);
+        const puntaje = puntajeMedida(valor, { ...def, margen: def.margen * tolerancia });
         const estado =
             puntaje === null
                 ? 'sin_dato'
@@ -51,7 +59,7 @@ export function evaluarRepeticion(valores, standard, extras = {}) {
         };
     });
 
-    const base = { movimiento: standard.id, version: standard.version, ...extras };
+    const base = { movimiento: standard.id, version: standard.version, nivel, ...extras };
     const conDato = medidas.filter((m) => m.puntaje !== null);
     const pesoConDato = sum(conDato.map((m) => m.peso));
 
@@ -64,6 +72,7 @@ export function evaluarRepeticion(valores, standard, extras = {}) {
             score: null,
             medidas,
             errores: [],
+            principal: null,
             puntosClave: [],
         };
     }
@@ -77,8 +86,12 @@ export function evaluarRepeticion(valores, standard, extras = {}) {
             medidaId: m.id,
             fase: m.fase,
             severidad: severidadDe(m.puntaje),
+            nombre: m.nombre,
             mensaje: defs.get(m.id).mensajes?.[m.estado] ?? `Ajusta: ${m.nombre.toLowerCase()}.`,
+            porQue: defs.get(m.id).porQue ?? null,
+            ejercicio: defs.get(m.id).ejercicio ?? null,
             valor: m.valor,
+            ideal: m.ideal,
             // cuántos puntos del score cuesta este error: sirve para ordenar
             impacto: round(m.peso * (1 - m.puntaje)),
         }))
@@ -89,5 +102,16 @@ export function evaluarRepeticion(valores, standard, extras = {}) {
         .sort((a, b) => b.peso - a.peso)
         .map((m) => defs.get(m.id).fortaleza);
 
-    return { ...base, valida: true, motivo: null, score, medidas, errores, puntosClave };
+    // La corrección principal es la que más puntos cuesta: la que conviene
+    // trabajar primero. Corregir todo a la vez no funciona.
+    return {
+        ...base,
+        valida: true,
+        motivo: null,
+        score,
+        medidas,
+        errores,
+        principal: errores[0] ?? null,
+        puntosClave,
+    };
 }

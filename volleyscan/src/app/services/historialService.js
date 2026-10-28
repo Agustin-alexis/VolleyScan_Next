@@ -277,7 +277,7 @@ export async function guardarSesion(datos, usuarioId = USUARIO_LOCAL) {
         observaciones: datos.observaciones,
     });
     if (!sesion) {
-        throw HistorialError(
+        throw new HistorialError(
             "DATOS_INVALIDOS",
             "La sesión no contiene repeticiones válidas para guardar."
         );
