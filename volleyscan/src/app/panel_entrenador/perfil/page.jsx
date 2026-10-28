@@ -146,7 +146,6 @@ export default function Perfil() {
                         <article className={styles['info-card']}>
                             <header className={styles['card-header']}>
                                 <h2 className={styles['card-title']}><i className="fa-solid fa-circle-info"></i> Información personal</h2>
-                                {isEditing && <span className={styles['edit-indicator']}>✎ Modo edición</span>}
                             </header>
 
                             <section className={styles['form-group']}>
