@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import './Sidebar.css';
 import Image from 'next/image';
 import logo from '@/app/public/img/Logo.VS.jpg';
+import { api } from '@/lib/api';
 
 import {
     FaHome,
@@ -77,21 +78,40 @@ const nav = [
         items: [
             {
                 to: '/panel_entrenador/configuracion',
-                icon: FaCog,
+                icon: '/panel_entrenador/configuracion' ? FaCog : FaCog,
                 label: 'Configuración'
             },
         ]
     },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ entrenador: entrenadorProp }) {
     const pathname = usePathname();
     const [open, setOpen] = useState(false);
+    const [usuario, setUsuario] = useState(entrenadorProp || null);
+
+    // Si el layout le pasa el entrenador, lo usamos; si no, lo consultamos
+    useEffect(() => {
+        if (entrenadorProp) {
+            setUsuario(entrenadorProp);
+            return;
+        }
+        api('/auth/me')
+            .then((data) => setUsuario(data))
+            .catch(() => { });
+    }, [entrenadorProp]);
+
+    // Calculamos las iniciales reales (Ej: "Carlos Ramírez" -> "CR")
+    const iniciales = usuario
+        ? `${usuario.nombre?.[0] || ''}${usuario.apellido?.[0] || ''}`.toUpperCase()
+        : 'EN';
+
+    const nombreCompleto = usuario
+        ? `${usuario.nombre} ${usuario.apellido}`.trim()
+        : 'Cargando...';
 
     return (
-
         <>
-
             <button
                 className="sb-toggle"
                 onClick={() => setOpen(true)}
@@ -132,10 +152,8 @@ export default function Sidebar() {
                 </div>
 
                 <nav className="sb-nav">
-
                     {nav.map(({ group, items }) => (
                         <div key={group}>
-
                             <div className="sb-group-label">
                                 {group}
                             </div>
@@ -144,6 +162,7 @@ export default function Sidebar() {
                                 <Link
                                     key={to}
                                     href={to}
+                                    onClick={() => setOpen(false)}
                                     className={
                                         pathname === to
                                             ? 'nav-item active'
@@ -154,22 +173,30 @@ export default function Sidebar() {
                                     <span>{label}</span>
                                 </Link>
                             ))}
-
                         </div>
                     ))}
-
                 </nav>
 
                 <div className="sb-footer">
-                    <div className="sb-avatar">AL</div>
+                    <div className="sb-avatar">
+                        {usuario?.foto_url ? (
+                            <img
+                                src={usuario.foto_url}
+                                alt={nombreCompleto}
+                                style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                            />
+                        ) : (
+                            iniciales
+                        )}
+                    </div>
 
                     <div className="sb-foot-info">
                         <div className="sb-foot-name">
-                            Agustín Luligo
+                            {nombreCompleto}
                         </div>
 
                         <div className="sb-foot-role">
-                            Entrenador principal
+                            Entrenador
                         </div>
                     </div>
 

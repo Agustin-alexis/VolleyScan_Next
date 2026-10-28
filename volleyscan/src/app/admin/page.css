@@ -211,3 +211,51 @@
     border-radius: 999px;
     font-weight: 500;
 }
+
+.coach-inactive {
+    opacity: 0.65;
+}
+
+.coach-badge-off {
+    background-color: #334155;
+    color: #cbd5e1;
+    font-size: 0.72rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    font-weight: 500;
+    margin-left: 0.4rem;
+}
+
+.coach-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.btn-action {
+    border: none;
+    padding: 0.4rem 0.7rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.btn-toggle {
+    background-color: #334155;
+    color: #f8fafc;
+}
+
+.btn-toggle:hover {
+    background-color: #475569;
+}
+
+.btn-delete {
+    background-color: #7f1d1d;
+    color: #fecaca;
+}
+
+.btn-delete:hover {
+    background-color: #991b1b;
+}

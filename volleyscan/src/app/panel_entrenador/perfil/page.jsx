@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import styles from './Perfil.module.css';
+import { api, ApiError } from '@/lib/api';
+import { FaCircleCheck } from 'react-icons/fa6';
 
 const DEFAULT_ACHIEVEMENTS = [
     { id: 1, icon: '🏆', title: 'Mejor entrenador', description: 'Torneo Regional 2024' },
@@ -9,16 +11,18 @@ const DEFAULT_ACHIEVEMENTS = [
     { id: 3, icon: '🎯', title: '100 sesiones', description: 'Completadas este año' },
 ];
 
-const DEFAULT_PROFILE = {
-    fullName: 'Agustín Luligo', email: 'agustin@volleyai.com',
-    phone: '+57 310 000 0000', club: 'Club Atlético Popayán',
-    experience: '5', level: 'Nivel 3'
-};
-
 export default function Perfil() {
     const [isEditing, setIsEditing] = useState(false);
-    const [profile, setProfile] = useState(DEFAULT_PROFILE);
-    const [form, setForm] = useState(DEFAULT_PROFILE);
+    const [profile, setProfile] = useState({
+        nombre: '',
+        apellido: '',
+        email: '',
+        phone: '+57 310 000 0000',
+        club: 'Club Atlético Popayán',
+        experience: '5',
+        level: 'Nivel 3'
+    });
+    const [form, setForm] = useState(profile);
     const [achievements, setAchievements] = useState(DEFAULT_ACHIEVEMENTS);
     const [modal, setModal] = useState(false);
     const [newA, setNewA] = useState({ title: '', description: '', icon: '🏆' });
@@ -29,15 +33,71 @@ export default function Perfil() {
         setTimeout(() => setToast(t => ({ ...t, show: false })), 3000);
     }
 
-    function saveProfile() {
-        if (!form.fullName.trim()) { showToast('El nombre no puede estar vacío'); return; }
-        if (!form.email.includes('@')) { showToast('Correo electrónico inválido'); return; }
-        setProfile(form);
-        setIsEditing(false);
-        showToast('Perfil actualizado correctamente');
+    // 1. Cargar el perfil real desde el backend al abrir la página
+    useEffect(() => {
+        async function cargarPerfil() {
+            try {
+                const data = await api('/panel/perfil');
+                const datosPerfil = {
+                    nombre: data.nombre || '',
+                    apellido: data.apellido || '',
+                    email: data.email || '',
+                    phone: data.telefono || data.phone || '+57 310 000 0000',
+                    club: data.club || 'Club Atlético Popayán',
+                    experience: String(data.experiencia || data.experience || '5'),
+                    level: data.nivel || data.level || 'Nivel 3'
+                };
+                setProfile(datosPerfil);
+                setForm(datosPerfil);
+            } catch {
+                showToast('No se pudo cargar la información del perfil');
+            }
+        }
+        cargarPerfil();
+    }, []);
+
+    // 2. Guardar cambios en el servidor mediante PATCH
+    async function saveProfile() {
+        if (!form.nombre.trim()) { showToast('El nombre no puede estar vacío'); return; }
+
+        try {
+            const dataActualizada = await api('/panel/perfil', {
+                method: 'PATCH',
+                body: {
+                    nombre: form.nombre.trim(),
+                    apellido: form.apellido.trim(),
+                    telefono: form.phone,
+                    club: form.club,
+                    experiencia: form.experience,
+                    nivel: form.level
+                }
+            });
+
+            const datosNuevos = {
+                nombre: dataActualizada.nombre || form.nombre,
+                apellido: dataActualizada.apellido || form.apellido,
+                email: dataActualizada.email || profile.email,
+                phone: dataActualizada.telefono || form.phone,
+                club: dataActualizada.club || form.club,
+                experience: String(dataActualizada.experiencia || form.experience),
+                level: dataActualizada.nivel || form.level
+            };
+
+            setProfile(datosNuevos);
+            setForm(datosNuevos);
+            setIsEditing(false);
+            showToast('Perfil actualizado correctamente');
+        } catch (err) {
+            const detalle = err instanceof ApiError && err.data?.detail ? err.data.detail : 'Error al actualizar el perfil';
+            showToast(detalle);
+        }
     }
 
-    function cancelEdit() { setForm(profile); setIsEditing(false); showToast('Edición cancelada'); }
+    function cancelEdit() {
+        setForm(profile);
+        setIsEditing(false);
+        showToast('Edición cancelada');
+    }
 
     function addAchievement() {
         if (!newA.title.trim()) { showToast('El título es obligatorio'); return; }
@@ -55,7 +115,8 @@ export default function Perfil() {
         }
     }
 
-    const initials = profile.fullName.split(' ').map(n => n[0]).join('').toUpperCase();
+    const nombreCompleto = `${profile.nombre} ${profile.apellido}`.trim() || 'Entrenador';
+    const initials = nombreCompleto.split(' ').map(n => n[0]).join('').toUpperCase();
 
     return (
         <>
@@ -66,7 +127,7 @@ export default function Perfil() {
                     <header className={styles['profile-header']}>
                         <figure className={styles['profile-avatar']}><span>{initials}</span></figure>
                         <section className={styles['profile-info']}>
-                            <h1 className={styles['profile-name']}>{profile.fullName}</h1>
+                            <h1 className={styles['profile-name']}>{nombreCompleto}</h1>
                             <p className={styles['profile-badge']}>Entrenador principal · {profile.club}</p>
                             <ul className={styles['profile-tags']}>
                                 <li className={styles.tag}><i className="fa-solid fa-certificate"></i> {profile.level}</li>
@@ -88,23 +149,62 @@ export default function Perfil() {
                                 {isEditing && <span className={styles['edit-indicator']}>✎ Modo edición</span>}
                             </header>
 
-                            {[
-                                ['Nombre completo', 'fullName', 'text'],
-                                ['Correo electrónico', 'email', 'email'],
-                                ['Teléfono', 'phone', 'tel'],
-                                ['Club', 'club', 'text'],
-                                ['Años de experiencia', 'experience', 'number'],
-                            ].map(([label, key, type]) => (
-                                <section key={key} className={styles['form-group']}>
-                                    <label>{label}</label>
-                                    <section className={styles['form-field']}>
-                                        {isEditing
-                                            ? <input type={type} className={styles['field-input']} value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} />
-                                            : <span className={styles['field-value']}>{key === 'experience' ? `${profile[key]} años` : profile[key]}</span>
-                                        }
-                                    </section>
+                            <section className={styles['form-group']}>
+                                <label>Nombre</label>
+                                <section className={styles['form-field']}>
+                                    {isEditing
+                                        ? <input type="text" className={styles['field-input']} value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))} />
+                                        : <span className={styles['field-value']}>{profile.nombre}</span>
+                                    }
                                 </section>
-                            ))}
+                            </section>
+
+                            <section className={styles['form-group']}>
+                                <label>Apellido</label>
+                                <section className={styles['form-field']}>
+                                    {isEditing
+                                        ? <input type="text" className={styles['field-input']} value={form.apellido} onChange={e => setForm(f => ({ ...f, apellido: e.target.value }))} />
+                                        : <span className={styles['field-value']}>{profile.apellido}</span>
+                                    }
+                                </section>
+                            </section>
+
+                            <section className={styles['form-group']}>
+                                <label>Correo electrónico (No editable)</label>
+                                <section className={styles['form-field']}>
+                                    <span className={styles['field-value']} style={{ color: '#94a3b8' }}>{profile.email}</span>
+                                </section>
+                            </section>
+
+                            <section className={styles['form-group']}>
+                                <label>Teléfono</label>
+                                <section className={styles['form-field']}>
+                                    {isEditing
+                                        ? <input type="tel" className={styles['field-input']} value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+                                        : <span className={styles['field-value']}>{profile.phone}</span>
+                                    }
+                                </section>
+                            </section>
+
+                            <section className={styles['form-group']}>
+                                <label>Club</label>
+                                <section className={styles['form-field']}>
+                                    {isEditing
+                                        ? <input type="text" className={styles['field-input']} value={form.club} onChange={e => setForm(f => ({ ...f, club: e.target.value }))} />
+                                        : <span className={styles['field-value']}>{profile.club}</span>
+                                    }
+                                </section>
+                            </section>
+
+                            <section className={styles['form-group']}>
+                                <label>Años de experiencia</label>
+                                <section className={styles['form-field']}>
+                                    {isEditing
+                                        ? <input type="number" className={styles['field-input']} value={form.experience} onChange={e => setForm(f => ({ ...f, experience: e.target.value }))} />
+                                        : <span className={styles['field-value']}>{profile.experience} años</span>
+                                    }
+                                </section>
+                            </section>
 
                             <section className={styles['form-group']}>
                                 <label>Nivel</label>
@@ -119,7 +219,7 @@ export default function Perfil() {
                             </section>
 
                             {isEditing && (
-                                <footer className={styles['card-actions']} style={{ display: 'flex' }}>
+                                <footer className={styles['card-actions']}>
                                     <button className={styles['btn-save']} onClick={saveProfile}><i className="fa-solid fa-check"></i> Guardar cambios</button>
                                     <button className={styles['btn-cancel']} onClick={cancelEdit}><i className="fa-solid fa-xmark"></i> Cancelar</button>
                                 </footer>
@@ -181,11 +281,10 @@ export default function Perfil() {
 
                 {/* Toast */}
                 <article className={`${styles.toast} ${toast.show ? styles.show : ''}`}>
-                    <i className="fa-solid fa-circle-check" style={{ fontSize: '16px' }}></i>
+                    <FaCircleCheck className="fa-solid" style={{ fontSize: '16px' }} />
                     <span>{toast.msg}</span>
                 </article>
             </div>
-
         </>
     );
 }

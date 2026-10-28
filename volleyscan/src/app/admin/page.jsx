@@ -23,7 +23,6 @@ export default function AdminEntrenadoresPage() {
     const [mensaje, setMensaje] = useState(null);
     const [errores, setErrores] = useState({});
 
-    // 1. Verificar que el usuario logueado sea realmente 'admin'
     useEffect(() => {
         async function verificarAcceso() {
             try {
@@ -42,7 +41,6 @@ export default function AdminEntrenadoresPage() {
         verificarAcceso();
     }, [router]);
 
-    // 2. Traer la lista de entrenadores creados
     async function cargarEntrenadores() {
         setCargandoLista(true);
         try {
@@ -55,7 +53,6 @@ export default function AdminEntrenadoresPage() {
         }
     }
 
-    // 3. Crear un nuevo entrenador
     async function handleCrearEntrenador(e) {
         e.preventDefault();
         setErrores({});
@@ -99,6 +96,41 @@ export default function AdminEntrenadoresPage() {
         }
     }
 
+    // Activar o desactivar entrenador
+    async function handleToggleActivo(ent) {
+        try {
+            const actualizado = await api(`/admin/entrenadores/${ent.id}`, {
+                method: "PATCH",
+            });
+            setEntrenadores((prev) =>
+                prev.map((item) => (item.id === ent.id ? actualizado : item))
+            );
+        } catch {
+            setMensaje({ tipo: "error", texto: "No se pudo cambiar el estado del entrenador." });
+        }
+    }
+
+    // Eliminar entrenador definitivamente
+    async function handleEliminar(ent) {
+        const confirmar = window.confirm(
+            `¿Seguro que deseas eliminar a ${ent.nombre} ${ent.apellido}? Esta acción no se puede deshacer.`
+        );
+        if (!confirmar) return;
+
+        try {
+            await api(`/admin/entrenadores/${ent.id}`, {
+                method: "DELETE",
+            });
+            setEntrenadores((prev) => prev.filter((item) => item.id !== ent.id));
+            setMensaje({ tipo: "exito", texto: `Entrenador ${ent.nombre} eliminado.` });
+        } catch (err) {
+            const detalle = err instanceof ApiError && err.data?.detail
+                ? err.data.detail
+                : "No se pudo eliminar el entrenador.";
+            setMensaje({ tipo: "error", texto: detalle });
+        }
+    }
+
     function cerrarSesion() {
         localStorage.clear();
         router.push("/login");
@@ -116,7 +148,6 @@ export default function AdminEntrenadoresPage() {
         <div className="admin-page">
             <div className="admin-wrapper">
 
-                {/* Encabezado */}
                 <header className="admin-header">
                     <div>
                         <h1 className="admin-title">Panel de Administración — VolleyScan</h1>
@@ -223,15 +254,39 @@ export default function AdminEntrenadoresPage() {
                             <p className="empty-text">Aún no hay entrenadores registrados.</p>
                         ) : (
                             <div className="coach-list">
-                                {entrenadores.map((ent) => (
-                                    <div key={ent.id} className="coach-item">
-                                        <div>
-                                            <div className="coach-name">{ent.nombre} {ent.apellido}</div>
-                                            <div className="coach-email">{ent.email}</div>
+                                {entrenadores.map((ent) => {
+                                    const estaActivo = ent.activo !== false;
+                                    return (
+                                        <div key={ent.id} className={`coach-item ${!estaActivo ? "coach-inactive" : ""}`}>
+                                            <div>
+                                                <div className="coach-name">
+                                                    {ent.nombre} {ent.apellido}{" "}
+                                                    <span className={estaActivo ? "coach-badge" : "coach-badge-off"}>
+                                                        {estaActivo ? "Activo" : "Inactivo"}
+                                                    </span>
+                                                </div>
+                                                <div className="coach-email">{ent.email}</div>
+                                            </div>
+
+                                            <div className="coach-actions">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleToggleActivo(ent)}
+                                                    className="btn-action btn-toggle"
+                                                >
+                                                    {estaActivo ? "Desactivar" : "Activar"}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleEliminar(ent)}
+                                                    className="btn-action btn-delete"
+                                                >
+                                                    Eliminar
+                                                </button>
+                                            </div>
                                         </div>
-                                        <span className="coach-badge">Entrenador</span>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </section>
