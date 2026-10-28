@@ -69,7 +69,7 @@ const nav = [
             {
                 to: '/panel_entrenador/analisis',
                 icon: FaMicrochip,
-                label: 'Análisis IA'
+                label: 'Chat IA'
             },
         ]
     },

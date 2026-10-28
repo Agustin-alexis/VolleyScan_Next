@@ -2,24 +2,9 @@
 import './Analisis.css'
 import { enviarMensaje } from '@/app/services/api'
 
-import { useState, useRef, useEffect, useId, useMemo } from 'react';
+import { useState, useRef, useEffect, useId } from 'react';
 
-const PERFIL_DEPORTISTA = [
-    { clave: 'Posición', valor: 'Armador' },
-    { clave: 'Nivel', valor: 'Intermedio' },
-    { clave: 'Objetivo', valor: 'Mejorar salto' },
-];
-
-const WELCOME = `¡Hola! 👋 Soy tu entrenador personal de voleibol basado en IA.
-
-Puedo ayudarte con:
-✅ Rutinas de entrenamiento personalizadas
-✅ Análisis técnico por posición
-✅ Recomendaciones para mejorar rendimiento
-✅ Respuesta a dudas tácticas
-
-¿En qué puedo ayudarte hoy? 🏐`;
-
+// Chips rápidos (solo se muestran dentro del chat)
 const SUGERENCIAS = [
     { glifo: '01', texto: 'Rutina de salto' },
     { glifo: '02', texto: 'Mejorar recepción' },
@@ -27,7 +12,67 @@ const SUGERENCIAS = [
     { glifo: '04', texto: 'Errores en remate' },
 ];
 
+// Tarjetas de la pantalla de bienvenida
+const TARJETAS = [
+    {
+        icono: 'bolt',
+        titulo: 'Rutina de salto',
+        texto: 'Ejercicios de fuerza y pliometría para ganar altura.',
+        pregunta: 'Rutina de salto',
+    },
+    {
+        icono: 'target',
+        titulo: 'Análisis técnico',
+        texto: 'Detecta errores en remate y recepción, con pasos para corregirlos.',
+        pregunta: 'Errores en remate y recepción',
+    },
+    {
+        icono: 'calendar',
+        titulo: 'Plan semanal',
+        texto: 'Organiza la carga, el descanso y los partidos de tu semana.',
+        pregunta: 'Plan semanal',
+    },
+];
+
 const MAX_CARACTERES = 600;
+
+/* ---------- Iconos SVG (no dependen de Font Awesome) ---------- */
+const svgProps = {
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+    'aria-hidden': true,
+};
+
+function Icono({ nombre }) {
+    switch (nombre) {
+        case 'plus':
+            return (<svg {...svgProps}><path d="M12 5v14M5 12h14" /></svg>);
+        case 'chevron':
+            return (<svg {...svgProps}><path d="M6 9l6 6 6-6" /></svg>);
+        case 'sliders':
+            return (<svg {...svgProps}><path d="M4 6h10M18 6h2M4 12h2M10 12h10M4 18h12M20 18h0" /><circle cx="16" cy="6" r="2" /><circle cx="8" cy="12" r="2" /><circle cx="18" cy="18" r="2" /></svg>);
+        case 'grid':
+            return (<svg {...svgProps}><rect x="4" y="4" width="7" height="7" rx="1.5" /><rect x="13" y="4" width="7" height="7" rx="1.5" /><rect x="4" y="13" width="7" height="7" rx="1.5" /><rect x="13" y="13" width="7" height="7" rx="1.5" /></svg>);
+        case 'send':
+            return (<svg {...svgProps}><path d="M22 2L11 13" /><path d="M22 2l-7 20-4-9-9-4 20-7z" /></svg>);
+        case 'spark':
+            return (<svg {...svgProps}><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" /></svg>);
+        case 'bolt':
+            return (<svg {...svgProps}><path d="M13 2L4 14h7l-1 8 9-12h-7z" /></svg>);
+        case 'target':
+            return (<svg {...svgProps}><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="4.5" /><circle cx="12" cy="12" r="1" /></svg>);
+        case 'calendar':
+            return (<svg {...svgProps}><rect x="4" y="5" width="16" height="16" rx="2" /><path d="M4 10h16M9 3v4M15 3v4" /></svg>);
+        case 'arrow':
+            return (<svg {...svgProps}><path d="M7 17L17 7M8 7h9v9" /></svg>);
+        default:
+            return null;
+    }
+}
 
 function renderMarkdown(texto) {
     return texto
@@ -47,14 +92,8 @@ function horaActual() {
         .padStart(2, '0')}`;
 }
 
-function generarCodigoSesion() {
-    return Math.random().toString(16).slice(2, 6).toUpperCase();
-}
-
 export default function Analisis() {
-    const [mensajes, setMensajes] = useState([
-        { rol: 'coach', texto: WELCOME, hora: 'Ahora' },
-    ]);
+    const [mensajes, setMensajes] = useState([]);
     const [entrada, setEntrada] = useState('');
     const [escribiendo, setEscribiendo] = useState(false);
     const [copiadoIndex, setCopiadoIndex] = useState(null);
@@ -63,14 +102,17 @@ export default function Analisis() {
     const textareaRef = useRef(null);
     const inputId = useId();
 
-    const codigoSesion = useMemo(generarCodigoSesion, []);
-    const intercambios = Math.floor(mensajes.length / 2);
+    const vacio = mensajes.length === 0 && !escribiendo;
     const ultimoMensajeUsuario = [...mensajes].reverse().find((m) => m.rol === 'user')?.texto;
-    const ultimoEsCoach = mensajes[mensajes.length - 1]?.rol === 'coach' && mensajes.length > 1;
 
     useEffect(() => {
         finRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [mensajes, escribiendo]);
+
+    // Al pasar de bienvenida a chat el textarea se vuelve a montar: recuperar el foco
+    useEffect(() => {
+        textareaRef.current?.focus();
+    }, [vacio]);
 
     async function enviar(texto) {
         const mensaje = texto.trim();
@@ -81,7 +123,6 @@ export default function Analisis() {
         setEntrada('');
         setEscribiendo(true);
         if (textareaRef.current) textareaRef.current.style.height = 'auto';
-        textareaRef.current?.focus();
 
         try {
             const data = await enviarMensaje(mensaje);
@@ -139,176 +180,170 @@ export default function Analisis() {
         }
     }
 
-    return (
-        <main className="ai-panel">
-            <header className="ai-header">
-                <section className="ai-header-top">
-                    <hgroup className="ai-header-identity">
-                        <p className="ai-header-icon hud-frame" aria-hidden="true">
-                            <i className="fa-solid fa-microchip"></i>
-                        </p>
-                        <span className="ai-header-text">
-                            <h1>Análisis IA</h1>
-                            <p>Entrenador virtual especializado en voleibol</p>
-                        </span>
-                    </hgroup>
+    /* ---------- Caja de escritura (se reutiliza en bienvenida y chat) ---------- */
+    const composer = (
+        <form className="ai-composer" onSubmit={handleSubmit}>
+            <label className="ai-sr-only" htmlFor={inputId}>Escribe tu pregunta para el coach</label>
+            <div className="ai-composer-field">
+                <span className="ai-composer-spark"><Icono nombre="spark" /></span>
+                <textarea
+                    id={inputId}
+                    ref={textareaRef}
+                    placeholder="Pregúntame lo que quieras sobre tu entrenamiento..."
+                    rows="1"
+                    value={entrada}
+                    onChange={handleChangeEntrada}
+                    onKeyDown={handleKeyDown}
+                    maxLength={MAX_CARACTERES}
+                ></textarea>
+            </div>
 
-                    <span className="ai-telemetry">
-                        <p className="ai-status">
-                            <span className="ai-status-dot" aria-hidden="true"></span>
-                            IA conectada
-                        </p>
-                        
-                    </span>
-                </section>
-
-                <section className="ai-context" aria-label="Contexto del deportista activo">
-                    <p className="ai-context-label">
-                        <i className="fa-solid fa-user-check" aria-hidden="true"></i>
-                        Perfil activo
-                    </p>
-                    {PERFIL_DEPORTISTA.map((item) => (
-                        <p className="ai-chip" key={item.clave}>
-                            <span className="ai-chip-key">{item.clave}</span>
-                            <span className="ai-chip-value">{item.valor}</span>
-                        </p>
-                    ))}
-                </section>
-            </header>
-
-            <section
-                className="ai-messages"
-                aria-live="polite"
-                aria-label="Historial de la conversación"
-            >
-                <ul className="ai-messages-list">
-                    {mensajes.map((m, i) => {
-                        const esCoach = m.rol === 'coach';
-                        const esUltimoCoach = esCoach && i === mensajes.length - 1 && mensajes.length > 1;
-
-                        return (
-                            <li key={i}>
-                                <article className={`ai-message ${esCoach ? 'ai-message--coach' : 'ai-message--user'}`}>
-                                    <p className="ai-avatar" aria-hidden="true">
-                                        <i className={`fa-solid ${esCoach ? 'fa-microchip' : 'fa-user'}`}></i>
-                                    </p>
-                                    <span className="ai-bubble-column">
-                                        <span className="ai-sender">
-                                            {esCoach ? (
-                                                <>
-                                                    VolleyAI Coach
-                                                    <span className="ai-sender-badge">IA</span>
-                                                </>
-                                            ) : (
-                                                'Tú'
-                                            )}
-                                        </span>
-
-                                        <span className={`ai-bubble-wrap ${esCoach ? 'hud-frame' : ''}`}>
-                                            <span
-                                                className="ai-bubble"
-                                                dangerouslySetInnerHTML={{ __html: renderMarkdown(m.texto) }}
-                                            ></span>
-
-                                            {esCoach && (
-                                                <span className="ai-bubble-actions">
-                                                    <button
-                                                        type="button"
-                                                        className={`ai-action-btn ${copiadoIndex === i ? 'is-confirmed' : ''}`}
-                                                        onClick={() => copiarTexto(m.texto, i)}
-                                                        aria-label="Copiar respuesta"
-                                                        title="Copiar"
-                                                    >
-                                                        <i className={`fa-solid ${copiadoIndex === i ? 'fa-check' : 'fa-copy'}`}></i>
-                                                    </button>
-                                                    {esUltimoCoach && !escribiendo && (
-                                                        <button
-                                                            type="button"
-                                                            className="ai-action-btn"
-                                                            onClick={regenerar}
-                                                            aria-label="Regenerar respuesta"
-                                                            title="Regenerar"
-                                                        >
-                                                            <i className="fa-solid fa-rotate"></i>
-                                                        </button>
-                                                    )}
-                                                </span>
-                                            )}
-                                        </span>
-
-                                        <span className="ai-bubble-footer">
-                                            <time className="ai-timestamp">{m.hora}</time>
-                                        </span>
-                                    </span>
-                                </article>
-                            </li>
-                        );
-                    })}
-
-                    {escribiendo && (
-                        <li>
-                            <article className="ai-message ai-message--coach">
-                                <p className="ai-avatar" aria-hidden="true">
-                                    <i className="fa-solid fa-microchip"></i>
-                                </p>
-                                <span className="ai-bubble-column">
-                                    <span className="ai-sender">
-                                        VolleyAI Coach
-                                        <span className="ai-sender-badge">IA</span>
-                                    </span>
-                                    <span className="ai-thinking" role="status" aria-label="El coach está escribiendo">
-                                        <span className="ai-thinking-label">Analizando</span>
-                                        <span className="ai-thinking-bar" aria-hidden="true"></span>
-                                    </span>
-                                </span>
-                            </article>
-                        </li>
-                    )}
-                </ul>
-                <span ref={finRef}></span>
-            </section>
-
-            <footer className="ai-footer">
-                <form className="ai-input-form hud-frame" onSubmit={handleSubmit}>
-                    <span className="ai-prompt-glyph" aria-hidden="true">›</span>
-                    <label htmlFor={inputId}>Escribe tu pregunta para el coach</label>
-                    <textarea
-                        id={inputId}
-                        ref={textareaRef}
-                        placeholder="Escribe tu pregunta aquí... Ej: 'Cómo mejorar mi recepción'"
-                        rows="1"
-                        value={entrada}
-                        onChange={handleChangeEntrada}
-                        onKeyDown={handleKeyDown}
-                        maxLength={MAX_CARACTERES}
-                    ></textarea>
-                    <button className="ai-send-btn" type="submit" disabled={escribiendo || !entrada.trim()}>
-                        <i className="fa-solid fa-paper-plane"></i>
-                        <span
-                            style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}
-                        >
-                            Enviar mensaje
-                        </span>
+            <div className="ai-composer-bar">
+                <div className="ai-composer-tools">
+                    <button type="button" className="ai-round-btn" aria-label="Adjuntar archivo" title="Adjuntar">
+                        <Icono nombre="plus" />
                     </button>
-                </form>
+                    <button type="button" className="ai-pill-btn">
+                        <Icono nombre="sliders" /> Ajustes <Icono nombre="chevron" />
+                    </button>
+                    <button type="button" className="ai-pill-btn">
+                        <Icono nombre="grid" /> Opciones <Icono nombre="chevron" />
+                    </button>
+                </div>
 
-                <p className="ai-input-meta">
+                <div className="ai-composer-end">
                     <output htmlFor={inputId} className="ai-char-count">
                         {entrada.length}/{MAX_CARACTERES}
                     </output>
-                </p>
+                    <button
+                        className="ai-composer-send"
+                        type="submit"
+                        disabled={escribiendo || !entrada.trim()}
+                        aria-label="Enviar mensaje"
+                    >
+                        <Icono nombre="send" />
+                    </button>
+                </div>
+            </div>
+        </form>
+    );
 
-                <ul className="ai-suggestions">
-                    {SUGERENCIAS.map((s) => (
-                        <li key={s.texto}>
-                            <button className="ai-suggestion-btn" type="button" onClick={() => enviar(s.texto)}>
-                                <span className="ai-suggestion-glyph" aria-hidden="true">{s.glifo}</span>
-                                {s.texto}
-                            </button>
-                        </li>
-                    ))}
-                </ul>
-            </footer>
+    return (
+        <main className="ai-panel">
+            {/* ============ BARRA SUPERIOR ============ */}
+            <header className="ai-header">
+                <h1 className="ai-corner-title">Chat IA</h1>
+            </header>
+
+            {vacio ? (
+                /* ============ VISTA DE BIENVENIDA ============ */
+                <section className="ai-welcome" aria-label="Bienvenida">
+                    <div className="ai-orb" aria-hidden="true"></div>
+                    <p className="ai-eyebrow">Entrenador virtual de voleibol</p>
+                    <h2 className="ai-welcome-title">¿Listo para entrenar hoy?</h2>
+
+                    {composer}
+
+                    <ul className="ai-cards">
+                        {TARJETAS.map((t) => (
+                            <li key={t.titulo}>
+                                <button type="button" className="ai-card" onClick={() => enviar(t.pregunta)}>
+                                    <span className="ai-card-top">
+                                        <span className="ai-card-icon"><Icono nombre={t.icono} /></span>
+                                        <span className="ai-card-arrow"><Icono nombre="arrow" /></span>
+                                    </span>
+                                    <strong className="ai-card-title">{t.titulo}</strong>
+                                    <span className="ai-card-text">{t.texto}</span>
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+            ) : (
+                /* ============ VISTA DE CHAT ============ */
+                <>
+                    <section
+                        className="ai-messages"
+                        aria-live="polite"
+                        aria-label="Historial de la conversación"
+                    >
+                        <ul className="ai-messages-list">
+                            {mensajes.map((m, i) => {
+                                const esCoach = m.rol === 'coach';
+                                const esUltimoCoach = esCoach && i === mensajes.length - 1 && mensajes.length > 1;
+
+                                return (
+                                    <li key={i}>
+                                        <article className={`ai-message ${esCoach ? 'ai-message--coach' : 'ai-message--user'}`}>
+                                            <span className="ai-bubble-column">
+                                                <span className="ai-bubble-wrap">
+                                                    <span
+                                                        className="ai-bubble"
+                                                        dangerouslySetInnerHTML={{ __html: renderMarkdown(m.texto) }}
+                                                    ></span>
+
+                                                    {esCoach && (
+                                                        <span className="ai-bubble-actions">
+                                                            <button
+                                                                type="button"
+                                                                className={`ai-action-btn ${copiadoIndex === i ? 'is-confirmed' : ''}`}
+                                                                onClick={() => copiarTexto(m.texto, i)}
+                                                                aria-label="Copiar respuesta"
+                                                                title="Copiar"
+                                                            ></button>
+                                                            {esUltimoCoach && !escribiendo && (
+                                                                <button
+                                                                    type="button"
+                                                                    className="ai-action-btn"
+                                                                    onClick={regenerar}
+                                                                    aria-label="Regenerar respuesta"
+                                                                    title="Regenerar"
+                                                                ></button>
+                                                            )}
+                                                        </span>
+                                                    )}
+                                                </span>
+
+                                                <span className="ai-bubble-footer">
+                                                    <time className="ai-timestamp">{m.hora}</time>
+                                                </span>
+                                            </span>
+                                        </article>
+                                    </li>
+                                );
+                            })}
+
+                            {escribiendo && (
+                                <li>
+                                    <article className="ai-message ai-message--coach">
+                                        <span className="ai-bubble-column">
+                                            <span className="ai-thinking" role="status" aria-label="El coach está escribiendo">
+                                                <span className="ai-thinking-label">Analizando</span>
+                                                <span className="ai-thinking-bar" aria-hidden="true"></span>
+                                            </span>
+                                        </span>
+                                    </article>
+                                </li>
+                            )}
+                        </ul>
+                        <span ref={finRef}></span>
+                    </section>
+
+                    <footer className="ai-footer">
+                        {composer}
+                        <ul className="ai-suggestions">
+                            {SUGERENCIAS.map((s) => (
+                                <li key={s.texto}>
+                                    <button className="ai-suggestion-btn" type="button" onClick={() => enviar(s.texto)}>
+                                        <span className="ai-suggestion-glyph" aria-hidden="true">{s.glifo}</span>
+                                        {s.texto}
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </footer>
+                </>
+            )}
         </main>
     );
 }

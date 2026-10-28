@@ -255,11 +255,10 @@ padding: 0 18px;
 }
 
 /* ── RESPONSIVE ── */
-.sb-toggle,
-.sb-close,
-.sb-overlay {
-    display: none;
-}
+.sb-overlay { z-index: 900; }
+.sidebar    { z-index: 1000; }
+.sb-toggle  { z-index: 800; }   /* queda bajo el overlay, está bien si se oculta al abrir */
+
 
 @media (max-width: 899px) {
    aside.sidebar {
