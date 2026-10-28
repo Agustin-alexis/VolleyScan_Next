@@ -9,7 +9,8 @@ import google from "@/app/public/img/google.jpg"
 import facebook from "@/app/public/img/facebook.jpg"
 import { iniciarSesion } from '@/app/services/panelApi'
 
-import { api, guardarSesion, ApiError } from '@/lib/api'
+
+import {api, guardarSesion, ApiError} from '@/lib/api'
 import './page.css'
 
 
