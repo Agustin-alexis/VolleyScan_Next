@@ -394,8 +394,18 @@
 .video-modal__screen {
   position: relative;
   aspect-ratio: 16/9;
+  width: 100%;
   overflow: hidden;
   background: #000;
+}
+
+.video-modal__frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
 }
 
 .video-modal__thumb {

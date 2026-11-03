@@ -65,8 +65,6 @@ body {
 }
 
 
-
-
 .login-container h1 {
   text-align: center;
   margin-bottom: 5px;
@@ -261,37 +259,33 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
 /* ── Social ── */
 .social-buttons {
   display: flex;
-  gap: 12px;
   justify-content: center;
+  width: 100%;
+  margin-top: 16px;
 }
 
-.social-btn {
+.btn-social {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 11px 20px;
+  gap: 12px;
+  width: 100%;
+  max-width: 320px;
+  background-color: #ffffff;
+  color: #1e293b;
+  border: none;
   border-radius: 10px;
-  border: 1px solid #333;
-  background: white;
-  color: black;
-  font-weight: 500;
-  font-size: 13px;
+  padding: 12px 20px;
+  font-weight: 600;
+  font-size: 0.95rem;
   cursor: pointer;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  flex: 1;
-  transition: background .2s, transform .2s;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s ease, background-color 0.15s ease;
 }
 
-.social-btn img {
-  width: 18px;
-  height: 18px;
-  object-fit: contain;
-}
-
-.social-btn:hover {
-  background: #1a2340;
-  transform: translateY(-2px);
+.btn-social:hover {
+  background: gray;
+  transform: translateY(-1px);
 }
 
 /* ── Register ── */

@@ -5,13 +5,10 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Logo from "@/app/public/img/Logo.VS.jpg"
-import google from "@/app/public/img/google.jpg"
-import facebook from "@/app/public/img/facebook.jpg"
-import { iniciarSesion } from '@/app/services/panelApi'
 
-
-import {api, guardarSesion, ApiError} from '@/lib/api'
+import { api, guardarSesion, ApiError } from '@/lib/api'
 import './page.css'
+import BotonGoogle from '../components/BotonGoogle'
 
 
 // A dónde va cada rol después de iniciar sesión
@@ -202,16 +199,15 @@ export default function LoginPage() {
 
           </form>
 
-          <div className="divider"><span>O CONTINÚA CON</span></div>
+          {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && (
+            <>
+              <div className="divider"><span>O CONTINÚA CON</span></div>
 
-          <div className="social-buttons">
-            <button type="button" className="social-btn google" onClick={() => handleSocial('Google')}>
-              <Image src={google} alt="Google" width={20} height={20} /> Google
-            </button>
-            <button type="button" className="social-btn facebook" onClick={() => handleSocial('Facebook')}>
-              <Image src={facebook} alt="Facebook" width={20} height={20} /> Facebook
-            </button>
-          </div>
+              <div className="social-buttons">
+                <BotonGoogle onError={(m) => showToast(m, 'error')} />
+              </div>
+            </>
+          )}
 
           <footer className="register">
             <p>¿Aún no tienes cuenta?

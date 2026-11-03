@@ -7,8 +7,9 @@ import Logo from "@/app/public/img/Logo.VS.jpg"
 import facebook from "@/app/public/img/facebook.jpg"
 import google from "@/app/public/img/google.jpg"
 import Image from 'next/image'
-import {registrarAtleta} from '@/app/services/panelApi'
+import { registrarAtleta } from '@/app/services/panelApi'
 import "./registro.css"
+import BotonGoogle from '../components/BotonGoogle'
 
 function IconoOjo() {
   return (
@@ -238,18 +239,15 @@ export default function RegistroPage() {
             <p>¿Ya tienes cuenta? <Link className="enlace-primario" href="/login">Inicia sesión aquí</Link></p>
           </div>
 
-          {/* Separador */}
-          <div className="separador"><span>O REGÍSTRATE CON</span></div>
+          {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && (
+            <>
+              <div className="separador"><span>O REGÍSTRATE CON</span></div>
 
-          {/* Social */}
-          <div className="botones-sociales">
-            <button type="button" className="boton-social google" onClick={() => handleSocial('Google')}>
-              <Image src={google} alt="Google" /> Google
-            </button>
-            <button type="button" className="boton-social apple" onClick={() => handleSocial('Facebook')}>
-              <Image src={facebook} alt="Facebook" /> Facebook
-            </button>
-          </div>
+              <div className="social-buttons">
+                <BotonGoogle onError={(m) => showToast(m, 'error')} />
+              </div>
+            </>
+          )}
 
         </article>
       </section>

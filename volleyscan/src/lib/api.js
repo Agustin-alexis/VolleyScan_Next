@@ -38,13 +38,15 @@ export async function api(ruta, { method = "GET", body, params } = {}) {
     });
 
     const token = getToken();
+    const esForm = typeof FormData !== "undefined" && body instanceof FormData;
     const res = await fetch(url, {
         method,
         headers: {
-            ...(body ? { "Content-Type": "application/json" } : {}),
+            ...(body && !esForm ? { "Content-Type": "application/json" } : {}),
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: body ? JSON.stringify(body) : undefined,
+        // 👇 AQUÍ ESTABA EL DETALLE: si es FormData, se envía tal cual
+        body: body ? (esForm ? body : JSON.stringify(body)) : undefined,
     });
 
     if (res.status === 204) return null;
@@ -57,4 +59,20 @@ export async function api(ruta, { method = "GET", body, params } = {}) {
     }
     if (!res.ok) throw new ApiError(res.status, data);
     return data;
+}
+
+const ORIGEN = new URL(API).origin;
+
+// La base guarda "/media/fotos/x.jpg"; hay que apuntarla al backend, no al front
+export function urlFoto(ruta) {
+    if (!ruta) return null;
+    return /^https?:\/\//.test(ruta) ? ruta : `${ORIGEN}${ruta}`;
+}
+
+// Actualiza el usuario guardado al iniciar sesión y avisa al Sidebar
+export function actualizarUsuario(parcial) {
+    const actual = getUsuario();
+    if (!actual) return;
+    localStorage.setItem("vs_usuario", JSON.stringify({ ...actual, ...parcial }));
+    window.dispatchEvent(new Event("usuario:cambio"));
 }
