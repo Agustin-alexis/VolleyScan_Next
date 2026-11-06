@@ -1,250 +1,271 @@
-'use client';
+"use client";
 
-import './Gestion.css'
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-    FiEye,
-    FiEdit2,
-    FiTrash2,
-    FiSearch,
-    FiPlus,
-    FiUserX,
-    FiAlertTriangle,
-    FiCheckCircle,
-    FiXCircle
-} from 'react-icons/fi';
+    listarDeportistas,
+    listarSolicitudes,
+    mensajeDeError,
+    responderSolicitud,
+    retirarDeportista,
+} from "@/lib/vinculos/api";
+import s from "./deportistas.module.css";
 
+/* ───────── utilidades ───────── */
 
-
-import { useState } from 'react';
-
-const COLORS = ['#3b82f6', '#7c3aed', '#06b6d4', '#f59e0b', '#22d3a5', '#f43f5e', '#8b5cf6', '#10b981'];
-const initials = n => n.split(' ').map(p => p[0]).join('').substring(0, 2).toUpperCase();
-const colorFor = id => COLORS[(id - 1) % COLORS.length];
-
-const initialAthletes = [
-    { id: 1, nombre: 'Juan Pérez', edad: 17, pos: 'Opuesto', cat: 'Juvenil', nivel: 'Avanzado', estado: 'Activo', perf: 85, trend: 12, asis: 92, ses: 24 },
-    { id: 2, nombre: 'María González', edad: 16, pos: 'Líbero', cat: 'Juvenil', nivel: 'Intermedio', estado: 'Activo', perf: 78, trend: 8, asis: 88, ses: 20 },
-    { id: 3, nombre: 'Carlos Ramírez', edad: 18, pos: 'Central', cat: 'Mayor', nivel: 'Avanzado', estado: 'Activo', perf: 91, trend: 5, asis: 96, ses: 30 },
-    { id: 4, nombre: 'Sofía Ortega', edad: 15, pos: 'Armadora', cat: 'Juvenil', nivel: 'Principiante', estado: 'Inactivo', perf: 62, trend: -3, asis: 70, ses: 12 },
-    { id: 5, nombre: 'Andrés López', edad: 17, pos: 'Receptor', cat: 'Juvenil', nivel: 'Intermedio', estado: 'Activo', perf: 80, trend: 10, asis: 90, ses: 22 },
+const POSICIONES = [
+    { v: "todas", t: "Todas" },
+    { v: "armador", t: "Armador" },
+    { v: "punta", t: "Punta" },
+    { v: "central", t: "Central" },
+    { v: "opuesto", t: "Opuesto" },
+    { v: "libero", t: "Líbero" },
 ];
+const NOMBRE_POS = { armador: "Armador", punta: "Punta", central: "Central", opuesto: "Opuesto", libero: "Líbero" };
+const NOMBRE_NIVEL = { principiante: "Principiante", intermedio: "Intermedio", avanzado: "Avanzado", profesional: "Profesional" };
 
-const emptyForm = { nombre: '', edad: '', pos: '', cat: 'Juvenil', nivel: 'Principiante', estado: 'Activo', perf: '', asis: '', ses: '', trend: '' };
+const fCorta = new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "short", year: "numeric" });
+const fecha = (iso) => {
+    const d = iso ? new Date(iso) : null;
+    return d && !Number.isNaN(d.getTime()) ? fCorta.format(d) : "—";
+};
+const sinTildes = (t) => (t ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+const colorNota = (n) => (n >= 80 ? "#22c55e" : n >= 60 ? "#3b82f6" : "#f97316");
 
-export default function Gestion() {
-    const [athletes, setAthletes] = useState(initialAthletes);
-    const [nextId, setNextId] = useState(6);
-    const [selectedId, setSelectedId] = useState(null);
-    const [search, setSearch] = useState('');
-    const [catFilter, setCatFilter] = useState('');
-    const [stateFilter, setStateFilter] = useState('');
-    const [formModal, setFormModal] = useState(false);
-    const [confirmModal, setConfirmModal] = useState(false);
-    const [editingId, setEditingId] = useState(null);
-    const [deletingId, setDeletingId] = useState(null);
-    const [form, setForm] = useState(emptyForm);
-    const [toast, setToast] = useState({ msg: '', show: false, error: false });
-
-    function showToast(msg, error = false) {
-        setToast({ msg, show: true, error });
-        setTimeout(() => setToast(t => ({ ...t, show: false })), 3000);
+function Avatar({ a, size = 56 }) {
+    const [falla, setFalla] = useState(false);
+    const iniciales = `${a.nombre?.[0] ?? ""}${a.apellido?.[0] ?? ""}`.toUpperCase();
+    if (a.fotoUrl && !falla) {
+        // eslint-disable-next-line @next/next/no-img-element
+        return <img className={s.avatar} style={{ width: size, height: size }} src={a.fotoUrl} alt="" onError={() => setFalla(true)} />;
     }
-
-    const filtered = athletes.filter(a =>
-        (!search || a.nombre.toLowerCase().includes(search.toLowerCase()) || a.pos.toLowerCase().includes(search.toLowerCase())) &&
-        (!catFilter || a.cat === catFilter) &&
-        (!stateFilter || a.estado === stateFilter)
+    return (
+        <span className={`${s.avatar} ${s.avatarIni}`} style={{ width: size, height: size, fontSize: size * 0.36 }} aria-hidden="true">
+            {iniciales}
+        </span>
     );
+}
 
-    const selected = athletes.find(a => a.id === selectedId);
+function Anillo({ valor, size = 48 }) {
+    const g = 5;
+    const r = (size - g) / 2;
+    const c = 2 * Math.PI * r;
+    return (
+        <span className={s.anillo} style={{ width: size, height: size }}>
+            <svg width={size} height={size} aria-hidden="true">
+                <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#1a2233" strokeWidth={g} />
+                <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={colorNota(valor)} strokeWidth={g}
+                        strokeLinecap="round" strokeDasharray={`${(c * Math.min(valor, 100)) / 100} ${c}`} />
+            </svg>
+            <b style={{ fontSize: size * 0.3 }}>{valor}</b>
+        </span>
+    );
+}
 
-    function openAdd() { setEditingId(null); setForm(emptyForm); setFormModal(true); }
-    function openEdit(a, e) { e.stopPropagation(); setEditingId(a.id); setForm({ ...a }); setFormModal(true); }
-    function askDelete(id, e) { e.stopPropagation(); setDeletingId(id); setConfirmModal(true); }
+function Perfil({ a }) {
+    return (
+        <dl className={s.datos}>
+            <div><dt>Edad</dt><dd>{a.edad != null ? `${a.edad} años` : "—"}</dd></div>
+            <div><dt>Peso</dt><dd>{a.pesoKg != null ? `${a.pesoKg} kg` : "—"}</dd></div>
+            <div><dt>Estatura</dt><dd>{a.estaturaM != null ? `${a.estaturaM} m` : "—"}</dd></div>
+        </dl>
+    );
+}
 
-    function saveAthlete() {
-        if (!form.nombre.trim()) { showToast('El nombre es obligatorio', true); return; }
-        if (!form.edad || form.edad < 10 || form.edad > 60) { showToast('Edad inválida (10–60)', true); return; }
-        if (!form.pos.trim()) { showToast('La posición es obligatoria', true); return; }
-        if (editingId) {
-            setAthletes(prev => prev.map(a => a.id === editingId ? { ...a, ...form } : a));
-            showToast(`${form.nombre} actualizado correctamente`);
-        } else {
-            const id = nextId;
-            setAthletes(prev => [...prev, { ...form, id, edad: +form.edad, perf: +form.perf || 0, asis: +form.asis || 0, ses: +form.ses || 0, trend: +form.trend || 0 }]);
-            setNextId(id + 1);
-            showToast(`${form.nombre} agregado correctamente`);
+function Chips({ a }) {
+    return (
+        <div className={s.chips}>
+            {a.posicion && <span className={`${s.chip} ${s.chipPos}`}>{NOMBRE_POS[a.posicion] ?? a.posicion}</span>}
+            {a.nivel && <span className={`${s.chip} ${s[`nivel_${a.nivel}`]}`}>{NOMBRE_NIVEL[a.nivel] ?? a.nivel}</span>}
+        </div>
+    );
+}
+
+/* ───────── página ───────── */
+
+export default function DeportistasPage() {
+    const [deportistas, setDeportistas] = useState([]);
+    const [solicitudes, setSolicitudes] = useState([]);
+    const [estado, setEstado] = useState("cargando");
+    const [error, setError] = useState("");
+    const [aviso, setAviso] = useState("");
+    const [q, setQ] = useState("");
+    const [pos, setPos] = useState("todas");
+    const [ocupado, setOcupado] = useState(null);
+    const [retirando, setRetirando] = useState(null);
+
+    const cargar = useCallback(async () => {
+        const [d, sol] = await Promise.all([listarDeportistas(), listarSolicitudes()]);
+        if (!d.ok || !sol.ok) {
+            setError(mensajeDeError(!d.ok ? d : sol));
+            setEstado("error");
+            return;
         }
-        setFormModal(false);
+        setDeportistas(d.data ?? []);
+        setSolicitudes(sol.data ?? []);
+        setError("");
+        setEstado("listo");
+    }, []);
+
+    useEffect(() => {
+        cargar();
+    }, [cargar]);
+
+    async function responder(a, accion) {
+        setOcupado(a.vinculoId);
+        setAviso("");
+        const r = await responderSolicitud(a.vinculoId, accion);
+        setOcupado(null);
+        if (!r.ok) {
+            setError(mensajeDeError(r));
+            await cargar();
+            return;
+        }
+        await cargar();
+        setAviso(accion === "aceptar" ? `${a.nombre} ya es parte de tus deportistas.` : `Rechazaste la solicitud de ${a.nombre}.`);
     }
 
-    function confirmDelete() {
-        const a = athletes.find(x => x.id === deletingId);
-        setAthletes(prev => prev.filter(x => x.id !== deletingId));
-        if (selectedId === deletingId) setSelectedId(null);
-        showToast(`${a.nombre} eliminado`);
-        setConfirmModal(false);
+    async function retirar(a) {
+        setOcupado(a.vinculoId);
+        const r = await retirarDeportista(a.id);
+        setOcupado(null);
+        setRetirando(null);
+        if (!r.ok) return setError(mensajeDeError(r));
+        await cargar();
+        setAviso(`${a.nombre} ${a.apellido} ya no está en tu lista.`);
     }
+
+    const visibles = useMemo(() => {
+        const t = sinTildes(q.trim());
+        return deportistas.filter(
+            (a) => (pos === "todas" || a.posicion === pos) && (!t || sinTildes(`${a.nombre} ${a.apellido}`).includes(t))
+        );
+    }, [deportistas, q, pos]);
 
     return (
-        <>
-            <section className="app">
-                <main className="gest-main">
-                    <h2 className="page-title">Gestión de Deportistas</h2>
-                    <section className="content-row">
-                        <article className="table-panel">
-                            <header className="toolbar">
-                                <label className="search-wrap">
-                                    <i className="fa-solid fa-magnifying-glass"></i>
-                                    <input className="search-inp" type="text" placeholder="Buscar deportista..." value={search} onChange={e => setSearch(e.target.value)} />
-                                </label>
-                                <select className="filter-sel" value={catFilter} onChange={e => setCatFilter(e.target.value)}>
-                                    <option value="">Categoría</option>
-                                    <option>Juvenil</option><option>Mayor</option><option>Infantil</option>
-                                </select>
-                                <select className="filter-sel" value={stateFilter} onChange={e => setStateFilter(e.target.value)}>
-                                    <option value="">Estado</option>
-                                    <option>Activo</option><option>Inactivo</option>
-                                </select>
-                                <button className="btn-add" onClick={openAdd}>
-                                    <i className="fa-solid fa-plus"></i> Agregar deportista
-                                </button>
-                            </header>
-                            <section className="table-wrap">
-                                <table className="athletes-table">
-                                    <thead>
-                                        <tr><th>Foto</th><th>Nombre</th><th>Edad</th><th>Categoría</th><th>Nivel</th><th>Estado</th><th>Acciones</th></tr>
-                                    </thead>
-                                    <tbody>
-                                        {filtered.map(a => (
-                                            <tr key={a.id} className={selectedId === a.id ? 'selected' : ''} onClick={() => setSelectedId(a.id)}>
-                                                <td><span className="avatar-circle" style={{ background: colorFor(a.id) }}>{initials(a.nombre)}</span></td>
-                                                <td>{a.nombre}</td>
-                                                <td>{a.edad}</td>
-                                                <td>{a.cat}</td>
-                                                <td>{a.nivel}</td>
-                                                <td><span className={`badge ${a.estado === 'Activo' ? 'active' : 'inactive'}`}>{a.estado}</span></td>
-                                                <td>
-                                                    <span className="actions">
-                                                        <button
-                                                            className="action-btn view"
-                                                            onClick={e => {
-                                                                e.stopPropagation();
-                                                                setSelectedId(a.id);
-                                                            }}
-                                                        >
-                                                            <FiEye />
-                                                        </button>
+        <section className={s.page} aria-label="Deportistas">
+            <header className={s.head}>
+                <div>
+                    <span className={s.eyebrow}>Panel del entrenador</span>
+                    <h1>Deportistas</h1>
+                    <p>Los atletas que te eligieron como entrenador, con su perfil y su práctica con la IA.</p>
+                </div>
+                {estado === "listo" && (
+                    <div className={s.contadores}>
+                        <div><b>{deportistas.length}</b><small>deportistas</small></div>
+                        <div className={solicitudes.length ? s.contadorAviso : ""}><b>{solicitudes.length}</b><small>solicitudes</small></div>
+                    </div>
+                )}
+            </header>
 
-                                                        <button
-                                                            className="action-btn edit"
-                                                            onClick={e => openEdit(a, e)}
-                                                        >
-                                                            <FiEdit2 />
-                                                        </button>
+            {error && <p className={`${s.alerta} ${s.alertaMal}`} role="alert">{error}</p>}
+            {aviso && <p className={`${s.alerta} ${s.alertaBien}`} role="status">{aviso}</p>}
+            {estado === "cargando" && <p className={s.estado}>Cargando deportistas…</p>}
+            {estado === "error" && (
+                <button type="button" className={s.btn} onClick={cargar}>Reintentar</button>
+            )}
 
-                                                        <button
-                                                            className="action-btn del"
-                                                            onClick={e => askDelete(a.id, e)}
-                                                        >
-                                                            <FiTrash2 />
-                                                        </button>
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                                {filtered.length === 0 && <p className="empty-msg">No se encontraron deportistas.</p>}
-                            </section>
-                        </article>
+            {estado === "listo" && solicitudes.length > 0 && (
+                <section className={s.bloque} aria-label="Solicitudes pendientes">
+                    <h2>Solicitudes pendientes <span className={s.badge}>{solicitudes.length}</span></h2>
+                    <p className={s.sub}>Estos atletas te eligieron. Acepta para que aparezcan en tu lista.</p>
+                    <ul className={s.solicitudes}>
+                        {solicitudes.map((a) => (
+                            <li key={a.vinculoId} className={s.solicitud}>
+                                <Avatar a={a} />
+                                <div className={s.solInfo}>
+                                    <strong>{a.nombre} {a.apellido}</strong>
+                                    <span className={s.muted}>{a.email} · pidió el {fecha(a.solicitadoEn)}</span>
+                                    <Chips a={a} />
+                                    <Perfil a={a} />
+                                </div>
+                                <div className={s.solAcciones}>
+                                    <button type="button" className={`${s.btn} ${s.btnPrim}`} disabled={ocupado === a.vinculoId}
+                                            onClick={() => responder(a, "aceptar")}>Aceptar</button>
+                                    <button type="button" className={s.btn} disabled={ocupado === a.vinculoId}
+                                            onClick={() => responder(a, "rechazar")}>Rechazar</button>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+            )}
 
-                        <aside className="detail-panel">
-                            {!selected ? (
-                                <section className="detail-empty">
-                                    <i className="fa-solid fa-user-slash" style={{ fontSize: '28px' }}></i>
-                                    <p style={{ fontSize: '13px' }}>Selecciona un deportista para ver su información</p>
-                                </section>
-                            ) : (
-                                <section style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
-                                    <header className="detail-header">
-                                        <span className="detail-av" style={{ background: colorFor(selected.id) }}>{initials(selected.nombre)}</span>
-                                        <p className="detail-name">{selected.nombre}</p>
-                                        <p className="detail-pos">{selected.pos}</p>
-                                        <p className="detail-meta">{selected.edad} años · Categoría: {selected.cat}</p>
+            {estado === "listo" && (
+                <section className={s.bloque} aria-label="Mis deportistas">
+                    <div className={s.filtros}>
+                        <h2>Mis deportistas</h2>
+                        <input className={s.buscar} type="search" placeholder="Buscar por nombre…" value={q}
+                            onChange={(e) => setQ(e.target.value)} aria-label="Buscar deportista" />
+                    </div>
+                    <div className={s.pills} role="group" aria-label="Filtrar por posición">
+                        {POSICIONES.map((p) => (
+                            <button key={p.v} type="button" onClick={() => setPos(p.v)}
+                                    className={`${s.pill} ${pos === p.v ? s.pillOn : ""}`} aria-pressed={pos === p.v}>
+                                {p.t}
+                            </button>
+                        ))}
+                    </div>
+
+                    {deportistas.length === 0 ? (
+                        <div className={s.vacio}>
+                            <h3>Aún no tienes deportistas</h3>
+                            <p>Cuando un atleta te elija como entrenador, su solicitud aparecerá arriba. Al aceptarla, entrará en esta lista con todo su perfil.</p>
+                        </div>
+                    ) : visibles.length === 0 ? (
+                        <p className={s.estado}>Ningún deportista coincide con ese filtro.</p>
+                    ) : (
+                        <ul className={s.grid}>
+                            {visibles.map((a) => (
+                                <li key={a.id} className={s.card}>
+                                    <header className={s.cardHead}>
+                                        <Avatar a={a} size={60} />
+                                        <div>
+                                            <strong>{a.nombre} {a.apellido}</strong>
+                                            <span className={s.muted}>{a.email}</span>
+                                        </div>
                                     </header>
-                                    <section className="detail-stats">
-                                        <p className="stat-block-label">Rendimiento promedio</p>
-                                        <p className="perf-row">
-                                            <span className="perf-big">{selected.perf}%</span>
-                                            <span className="perf-up" style={{ color: selected.trend >= 0 ? 'var(--green)' : 'var(--red)' }}>
-                                                {selected.trend >= 0 ? '↑' : '↓'} {Math.abs(selected.trend)}%
+                                    <Chips a={a} />
+                                    <Perfil a={a} />
+                                    <div className={s.ia}>
+                                        {a.ia ? (
+                                            <>
+                                                {a.ia.promedio != null ? <Anillo valor={a.ia.promedio} /> : <span className={s.sinNota}>—</span>}
+                                                <div>
+                                                    <strong>Práctica con IA</strong>
+                                                    <span className={s.muted}>
+                                                        {a.ia.sesiones} {a.ia.sesiones === 1 ? "sesión" : "sesiones"}
+                                                        {a.ia.mejor != null && a.ia.promedio != null ? ` · mejor ${a.ia.mejor}` : ""}
+                                                    </span>
+                                                    <span className={s.muted}>Última: {fecha(a.ia.ultimaSesion)}</span>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <span className={s.muted}>Aún no ha practicado con la IA.</span>
+                                        )}
+                                    </div>
+                                    <Link className={`${s.btn} ${s.btnPrim} ${s.btnAncho}`} href={`/panel_entrenador/gestion/${a.id}`}>
+                                        Ver análisis{a.ia?.sinRevisar > 0 ? ` · ${a.ia.sinRevisar} sin revisar` : ""}
+                                    </Link>
+                                    <footer className={s.cardPie}>
+                                        <span className={s.muted}>Contigo desde {fecha(a.desde)}</span>
+                                        {retirando === a.id ? (
+                                            <span className={s.confirma}>
+                                                ¿Retirar?
+                                                <button type="button" className={`${s.btn} ${s.btnPeligro}`} disabled={ocupado === a.vinculoId}
+                                                        onClick={() => retirar(a)}>Sí</button>
+                                                <button type="button" className={s.btn} onClick={() => setRetirando(null)}>No</button>
                                             </span>
-                                        </p>
-                                        {[['Asistencia', `${selected.asis}%`], ['Sesiones completadas', selected.ses], ['Nivel', selected.nivel]].map(([k, v]) => (
-                                            <article key={k} className="stat-line">
-                                                <span className="stat-key">{k}</span>
-                                                <span className="stat-val">{v}</span>
-                                            </article>
-                                        ))}
-                                    </section>
-                                    <button className="btn-profile" onClick={() => showToast(`Perfil de ${selected.nombre} — función próximamente 🚀`)}>Ver perfil completo</button>
-                                </section>
-                            )}
-                        </aside>
-                    </section>
-                </main>
-
-                {/* Form Modal */}
-                {formModal && (
-                    <section className="modal-overlay open">
-                        <article className="modal">
-                            <h3 className="modal-title">{editingId ? 'Editar' : 'Agregar'} Deportista</h3>
-                            <section className="form-grid">
-                                {[['Nombre completo', 'nombre', 'text', 'full'], ['Edad', 'edad', 'number'], ['Posición', 'pos', 'text'], ['Rendimiento (%)', 'perf', 'number'], ['Asistencia (%)', 'asis', 'number'], ['Sesiones', 'ses', 'number'], ['Tendencia (%)', 'trend', 'number']].map(([label, key, type, cls]) => (
-                                    <label key={key} className={`field-label ${cls || ''}`}>
-                                        {label}
-                                        <input className="field-inp" type={type} value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} />
-                                    </label>
-                                ))}
-                                {[['Categoría', 'cat', ['Juvenil', 'Mayor', 'Infantil']], ['Nivel', 'nivel', ['Principiante', 'Intermedio', 'Avanzado']], ['Estado', 'estado', ['Activo', 'Inactivo']]].map(([label, key, opts]) => (
-                                    <label key={key} className="field-label">
-                                        {label}
-                                        <select className="field-sel" value={form[key]} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))}>
-                                            {opts.map(o => <option key={o}>{o}</option>)}
-                                        </select>
-                                    </label>
-                                ))}
-                            </section>
-                            <footer className="modal-foot">
-                                <button className="btn-cancel" onClick={() => setFormModal(false)}>Cancelar</button>
-                                <button className="btn-save" onClick={saveAthlete}>Guardar</button>
-                            </footer>
-                        </article>
-                    </section>
-                )}
-
-                {/* Confirm Modal */}
-                {confirmModal && (
-                    <section className="modal-overlay open">
-                        <article className="confirm-box">
-                            <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: '28px', color: 'var(--red)', marginBottom: '12px' }}></i>
-                            <p className="confirm-msg">¿Eliminar deportista?</p>
-                            <p className="confirm-sub">Esta acción eliminará al deportista permanentemente.</p>
-                            <footer className="confirm-foot">
-                                <button className="btn-cancel" onClick={() => setConfirmModal(false)}>Cancelar</button>
-                                <button className="btn-danger" onClick={confirmDelete}>Eliminar</button>
-                            </footer>
-                        </article>
-                    </section>
-                )}
-
-                <aside className={`toast ${toast.show ? 'show' : ''} ${toast.error ? 'error' : ''}`}>
-                    <i className={`fa-solid ${toast.error ? 'fa-circle-xmark' : 'fa-circle-check'}`}></i>
-                    <span>{toast.msg}</span>
-                </aside>
-            </section>
-
-        </>
+                                        ) : (
+                                            <button type="button" className={s.link} onClick={() => setRetirando(a.id)}>Retirar</button>
+                                        )}
+                                    </footer>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </section>
+            )}
+        </section>
     );
 }

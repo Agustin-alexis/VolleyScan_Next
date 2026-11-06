@@ -1,12 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Logo from "@/app/public/img/Logo.VS.jpg"
 
 import { api, guardarSesion, ApiError } from '@/lib/api'
+import google from "@/app/public/img/google.jpg"
+import facebook from "@/app/public/img/facebook.jpg"
+
+import { iniciarSesion, ErrorApi } from '@/app/services/panelApi'
 import './page.css'
 import BotonGoogle from '../components/BotonGoogle'
 
@@ -18,6 +22,13 @@ const DESTINO_POR_ROL = {
   admin: '/admin',
 }
 
+// Si llegaste desde una invitación por correo, al iniciar sesión volvemos a ella.
+// Solo se aceptan rutas /invitacion/<token> (evita redirecciones a sitios externos).
+function destinoDeInvitacion() {
+  if (typeof window === 'undefined') return null
+  const next = new URLSearchParams(window.location.search).get('next')
+  return next && /^\/invitacion\/[A-Za-z0-9_-]{20,100}$/.test(next) ? next : null
+}
 
 const IconEye = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
@@ -47,6 +58,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState({})
   const [toast, setToast] = useState(null)
+  const [siguiente, setSiguiente] = useState(null) // invitación a la que volver (se lee en el navegador)
+  useEffect(() => { setSiguiente(destinoDeInvitacion()) }, [])
 
   function showToast(message, type = 'success') {
     setToast({ message, type })
@@ -76,28 +89,32 @@ export default function LoginPage() {
     setLoading(true)
     setErrors({})
     try {
-      const data = await api('/auth/login', {
-        method: 'POST',
-        body: { email: email.trim(), password }
-      })
-      guardarSesion(data)
-      showToast(`✓ Bienvenido/a, ${data.usuario.nombre}. Redirigiendo…`, 'success')
+      const usuario = await iniciarSesion(email.trim(), password) // guarda la sesión
+      showToast(`✓ Bienvenido/a, ${usuario?.nombre ?? ''}. Redirigiendo…`, 'success')
 
       // Usa tu constante DESTINO_POR_ROL (redirige a '/panel_entrenador' o '/usuario')
-      const destino = DESTINO_POR_ROL[data.usuario.rol] ?? '/usuario'
+      const destino = destinoDeInvitacion() ?? DESTINO_POR_ROL[usuario?.rol] ?? '/usuario'
       setTimeout(() => router.push(destino), 1000)
     } catch (err) {
-      if (!(err instanceof ApiError)) {
-        showToast('No se pudo conectar con el servidor.', 'error')
+      // Queda en la consola del navegador (F12) para poder ver la causa real
+      console.error('Login falló:', err?.status, err?.datos ?? err?.data ?? err)
+
+      if (!(err instanceof ErrorApi) || err.status === 0) {
+        // El navegador no llegó al servidor (apagado, otra dirección o bloqueo CORS)
+        showToast('No se pudo conectar con el servidor. Revisa que esté encendido y que acepte este origen (CORS).', 'error')
       } else if (err.status === 429) {
         showToast('Demasiados intentos. Espera un minuto.', 'error')
-      } else {
+      } else if (err.status === 400 || err.status === 401 || err.status === 403) {
+        // Solo estos códigos significan "credenciales incorrectas"
         setErrors({
           email: 'Correo o contraseña incorrectos.',
           password: 'Correo o contraseña incorrectos.',
         })
         showToast('Credenciales incorrectas. Inténtalo de nuevo.', 'error')
         setPassword('')
+      } else {
+        // 404 (ruta que no existe), 500 (falla del servidor)… ya no se disfrazan de "contraseña mal"
+        showToast(`Error del servidor (código ${err.status}). Inténtalo más tarde.`, 'error')
       }
     } finally {
       setLoading(false)
@@ -211,7 +228,7 @@ export default function LoginPage() {
 
           <footer className="register">
             <p>¿Aún no tienes cuenta?
-              <Link href="/registro">  ¡Regístrate Gratis!</Link></p>
+              <Link href={siguiente ? `/registro?next=${encodeURIComponent(siguiente)}` : '/registro'}>  ¡Regístrate Gratis!</Link></p>
           </footer>
 
         </section>

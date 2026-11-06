@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Logo from "@/app/public/img/Logo.VS.jpg"
 import facebook from "@/app/public/img/facebook.jpg"
@@ -31,7 +31,23 @@ function IconoOjoTachado() {
   )
 }
 
+// Mensaje general del servidor cuando no viene ligado a un campo ({detail}, {non_field_errors}…)
+function mensajeGeneral(datos) {
+  if (!datos || typeof datos !== 'object') return typeof datos === 'string' ? datos : ''
+  const v = datos.detail ?? datos.non_field_errors ?? datos.error ?? datos.mensaje ?? ''
+  return Array.isArray(v) ? String(v[0] ?? '') : String(v)
+}
+
 // Campos del formulario que el servidor puede marcar con error
+
+// Si llegaste desde una invitación por correo, al iniciar sesión volvemos a ella.
+// Solo se aceptan rutas /invitacion/<token> (evita redirecciones a sitios externos).
+function destinoDeInvitacion() {
+  if (typeof window === 'undefined') return null
+  const next = new URLSearchParams(window.location.search).get('next')
+  return next && /^\/invitacion\/[A-Za-z0-9_-]{20,100}$/.test(next) ? next : null
+}
+
 const CAMPOS = ['nombre', 'apellido', 'email', 'password']
 
 // Convierte la respuesta de error del servidor en { campo: 'mensaje' }
@@ -58,6 +74,8 @@ export default function RegistroPage() {
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState(null)
+  const [siguiente, setSiguiente] = useState(null) // invitación a la que volver (se lee en el navegador)
+  useEffect(() => { setSiguiente(destinoDeInvitacion()) }, [])
   const [showPassword, setShowPassword] = useState(false)
 
   /* ── Toast ── */
@@ -109,15 +127,25 @@ export default function RegistroPage() {
         password: form.password,
       })
       showToast(`✓ ¡Bienvenido/a, ${usuario.nombre}! Redirigiendo…`, 'success')
-      setTimeout(() => navigate.push('/usuario'), 1500)
+      setTimeout(() => navigate.push(destinoDeInvitacion() ?? '/usuario/dashboard'), 1500)
     } catch (error) {
-      if (error.status === 400 || error.status === 409) {
-        setErrors(erroresDelServidor(error.datos))
-        showToast('Revisa los datos del formulario.', 'error')
-      } else if (error.status === 429) {
+      // Queda en la consola del navegador (F12) para poder ver la causa real
+      console.error('Registro falló:', error?.status, error?.datos ?? error)
+
+      if (error?.status === 400 || error?.status === 409) {
+        const errs = erroresDelServidor(error.datos)
+        // Correo repetido sin mensaje por campo: se lo decimos junto al correo
+        if (error.status === 409 && !errs.email) errs.email = 'Ese correo ya está registrado.'
+        setErrors(errs)
+        const general = mensajeGeneral(error.datos)
+        showToast(Object.keys(errs).length ? 'Revisa los datos del formulario.' : (general || 'Revisa los datos del formulario.'), 'error')
+      } else if (error?.status === 429) {
         showToast('Demasiados intentos. Inténtalo de nuevo más tarde.', 'error')
+      } else if (!error?.status) {
+        // Sin código HTTP: el navegador no llegó al servidor (apagado, otra dirección o bloqueo CORS)
+        showToast('No se pudo conectar con el servidor. Revisa que esté encendido y que acepte este origen (CORS).', 'error')
       } else {
-        showToast('No se pudo conectar con el servidor. Inténtalo más tarde.', 'error')
+        showToast(`Error del servidor (código ${error.status}). Inténtalo más tarde.`, 'error')
       }
     } finally {
       setLoading(false)
@@ -236,7 +264,7 @@ export default function RegistroPage() {
 
           {/* Redireccion */}
           <div className="redireccion-inicio">
-            <p>¿Ya tienes cuenta? <Link className="enlace-primario" href="/login">Inicia sesión aquí</Link></p>
+            <p>¿Ya tienes cuenta? <Link className="enlace-primario" href={siguiente ? `/login?next=${encodeURIComponent(siguiente)}` : '/login'}>Inicia sesión aquí</Link></p>
           </div>
 
           {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && (

@@ -20,7 +20,7 @@ import {
     FaCog,
     FaBars
 } from 'react-icons/fa';
-import { FaXmark } from 'react-icons/fa6';
+import { FaXmark, FaPeopleGroup } from 'react-icons/fa6';
 
 const nav = [
     {
@@ -40,6 +40,11 @@ const nav = [
                 to: '/panel_entrenador/gestion',
                 icon: FaUsers,
                 label: 'Deportistas'
+            },
+            {
+                to: '/panel_entrenador/equipos',
+                icon: FaPeopleGroup,
+                label: 'Equipos'
             },
             {
                 to: '/panel_entrenador/horario',
@@ -164,7 +169,7 @@ export default function Sidebar({ entrenador: entrenadorProp }) {
                                     href={to}
                                     onClick={() => setOpen(false)}
                                     className={
-                                        pathname === to
+                                        pathname === to || pathname.startsWith(to + '/')
                                             ? 'nav-item active'
                                             : 'nav-item'
                                     }

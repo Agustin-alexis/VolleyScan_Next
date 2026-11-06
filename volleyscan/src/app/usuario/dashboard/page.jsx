@@ -6,6 +6,9 @@ import Image from 'next/image';
 import voleibol from '@/app/public/img/voleibol.jpg';
 import { useApi } from '@/lib/UseApi';
 import { haceCuanto } from '@/lib/formato';
+import { contadorAvisos } from '@/lib/avisos/api';
+import { useProgreso } from '@/lib/progreso/useProgreso';
+import MiProgreso from '@/app/components/progreso/MiProgreso';
 import './Dashboard.css';
 
 import {
@@ -23,15 +26,32 @@ const QUICK_BTNS = [
     { label: 'Ejercicios', icon: FaDumbbell, className: 'quick-btn--purple', to: '/usuario/contenido' },
 ];
 
+/** Variación con su signo real: ↑ si sube, ↓ si baja, nada si no cambia o no hay dato. */
+function delta(valor, sufijo = '') {
+    if (valor == null || Number(valor) === 0 || Number.isNaN(Number(valor))) return null;
+    const n = Number(valor);
+    return { sube: n > 0, texto: `${n > 0 ? '↑' : '↓'} ${Math.abs(n)}${sufijo}` };
+}
+
 export default function Dashboard() {
     const router = useRouter();
     const sparkRef = useRef(null);
     const donutRef = useRef(null);
-    const [notifVisible, setNotifVisible] = useState(true);
+    const [noLeidas, setNoLeidas] = useState(0);
     const [toast, setToast] = useState(null);
 
     // 1. Petición al backend
     const { data, cargando, error } = useApi("/usuario/dashboard/");
+
+    // Progreso real (racha, semana, análisis, rutinas, logros): una sola petición para toda la página
+    const progresoReal = useProgreso();
+
+    // Avisos sin leer (el punto de la campana ya no es un número fijo)
+    useEffect(() => {
+        let vivo = true;
+        contadorAvisos({ todas: true }).then((r) => { if (vivo && r.ok) setNoLeidas(r.data.noLeidas ?? 0); });
+        return () => { vivo = false; };
+    }, []);
 
     /* ── Sparkline conectado a progreso.tendencia ── */
     useEffect(() => {
@@ -41,10 +61,9 @@ export default function Dashboard() {
         const ctx = canvas.getContext('2d');
         const W = canvas.width, H = canvas.height;
 
-        // Usa la lista de números del backend, o una por defecto si aún tiene menos de 2 datos
-        const tendencia = data.progreso?.tendencia?.length > 1
-            ? data.progreso.tendencia
-            : [52, 58, 61, 55, 68, 72, data.progreso?.valor ?? 78];
+        // Solo se dibuja con datos reales del backend (antes se inventaban números si faltaban)
+        const tendencia = data.progreso?.tendencia;
+        if (!Array.isArray(tendencia) || tendencia.length < 2) return;
 
         ctx.clearRect(0, 0, W, H);
         const min = Math.min(...tendencia) - 5;
@@ -123,23 +142,24 @@ export default function Dashboard() {
         {
             label: 'Progreso general',
             value: `${progreso?.valor ?? '—'}%`,
-            delta: progreso?.variacion != null ? `↑ ${progreso.variacion}%` : null,
+            delta: delta(progreso?.variacion, '%'),
             compare: 'vs. semana pasada',
             color: 'stat-icon--blue',
-            sparkline: true,
+            sparkline: Array.isArray(progreso?.tendencia) && progreso.tendencia.length > 1,
             icon: FaArrowTrendUp,
         },
         {
             label: 'Sesiones completadas',
             value: `${sesiones?.semana ?? 0}`,
-            delta: sesiones?.variacion != null ? `↑ ${sesiones.variacion}` : null,
+            delta: delta(sesiones?.variacion),
             compare: 'esta semana',
             color: 'stat-icon--green',
             icon: FaBullseye,
         },
         {
             label: 'Racha actual',
-            value: `${racha_dias ?? 0} días`,
+            // La racha del progreso cuenta análisis y ejercicios; si aún no cargó, la de tu API
+            value: `${progresoReal.datos?.racha?.actual ?? racha_dias ?? 0} días`,
             delta: null,
             compare: '¡Sigue así!',
             color: 'stat-icon--orange',
@@ -157,10 +177,10 @@ export default function Dashboard() {
                     <p className="welcome__subtitle">Sigue entrenando y mejora cada día.</p>
                 </div>
                 <button className="btn-notification" aria-label="Ver notificaciones"
-                    onClick={() => { setNotifVisible(false); router.push('/usuario/notificaciones') }}>
+                    onClick={() => router.push('/usuario/notificaciones')}>
                     <FaBell />
 
-                    {notifVisible && <span className="notification-dot" aria-hidden="true">3</span>}
+                    {noLeidas > 0 && <span className="notification-dot" aria-hidden="true">{noLeidas > 9 ? '9+' : noLeidas}</span>}
                 </button>
             </header>
 
@@ -178,7 +198,7 @@ export default function Dashboard() {
                                 <p className="stat-card__label">{stat.label}</p>
                                 <p className="stat-card__value">
                                     {stat.value}
-                                    {stat.delta && <span className="stat-card__delta stat-card__delta--up">{stat.delta}</span>}
+                                    {stat.delta && <span className={`stat-card__delta stat-card__delta--${stat.delta.sube ? 'up' : 'down'}`}>{stat.delta.texto}</span>}
                                 </p>
                                 <p className="stat-card__compare">{stat.compare}</p>
                                 {stat.sparkline && (
@@ -285,6 +305,9 @@ export default function Dashboard() {
                     })}
                 </div>
             </section>
+
+            {/* Tu progreso: datos reales de análisis, rutinas y racha */}
+            <MiProgreso datos={progresoReal.datos} estado={progresoReal.estado} onReintentar={progresoReal.recargar} />
 
             {/* Toast */}
             {toast && (

@@ -142,6 +142,10 @@
   color: var(--accent-green);
 }
 
+.stat-card__delta--down {
+  color: #f87171;
+}
+
 .stat-card__compare {
   font-size: .72rem;
   color: var(--text-muted);
@@ -349,6 +353,7 @@
 
 .main-content {
   flex: 1;
+  min-width: 0;
   padding: 30px;
   background: var(--bg-base);
   min-height: 100vh;
@@ -477,4 +482,17 @@
   .quick-access__grid {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+/* ── Añadidos: la sección "Tu progreso" lleva sus propios estilos (mi-progreso.module.css) ── */
+.btn-notification:focus-visible,
+.quick-btn:focus-visible,
+.btn:focus-visible { outline: 2px solid var(--accent-blue); outline-offset: 2px; }
+
+@media (max-width: 480px) {
+  .main-content { padding: 18px 14px; }
+  .welcome__title { font-size: 1.35rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stat-card, .btn, .quick-btn, .toast { transition: none; animation: none; }
 }

@@ -9,6 +9,7 @@ import Image from 'next/image';
 import Logo from '@/app/public/img/Logo.VS.jpg';
 import {
     FaHouseUser,
+    FaUserTie,
     FaUser,
     FaMicrochip,
     FaChartLine,
@@ -17,7 +18,7 @@ import {
     FaSignOutAlt,
 } from 'react-icons/fa';
 import {
-    FaDumbbell, FaFileLines, FaGear, FaBars, FaXmark,
+    FaDumbbell, FaFileLines, FaGear, FaBars, FaXmark, FaPeopleGroup, FaCalendarDays,
 } from 'react-icons/fa6';
 
 const nav = [
@@ -25,6 +26,9 @@ const nav = [
         group: 'Principal', items: [
             { to: '/usuario/dashboard', icon: FaHouseUser, label: 'Dashboard' },
             { to: '/usuario/perfil', icon: FaUser, label: 'Perfil' },
+            { to: '/usuario/entrenador', icon: FaUserTie, label: 'Mi entrenador' },
+            { to: '/usuario/equipos', icon: FaPeopleGroup, label: 'Mis equipos' },
+            { to: '/usuario/horario', icon: FaCalendarDays, label: 'Horario' },
         ]
     },
     {

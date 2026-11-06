@@ -1,295 +1,630 @@
-'use client';
+"use client";
 
+// ─────────────────────────────────────────────────────────────
+// Estadísticas y reportes del entrenador — datos reales de SUS deportistas.
+//   KPIs · evolución de la puntuación · por técnica · ranking · errores frecuentes · alertas
+// Exporta el ranking a CSV (se abre en Excel) e imprime un reporte limpio (Guardar como PDF).
+// ─────────────────────────────────────────────────────────────
 
-import { useState, useEffect, useRef } from 'react';
+import Link from "next/link";
+import { useId, useMemo, useState } from "react";
+import {
+    FaArrowTrendDown,
+    FaBullseye,
+    FaChartLine,
+    FaClipboardCheck,
+    FaClockRotateLeft,
+    FaEye,
+    FaFileArrowDown,
+    FaMagnifyingGlass,
+    FaPrint,
+    FaTriangleExclamation,
+    FaUserPlus,
+    FaUsers,
+} from "react-icons/fa6";
+import { useEstadisticas } from "@/lib/estadisticas/useEstadisticas";
+import s from "./estadisticas.module.css";
 
+// ── Constantes y utilidades ───────────────────────────────────
 
-import './Estadisticas.css'
+const PERIODOS = [
+    { dias: 7, corto: "7 días", largo: "los últimos 7 días" },
+    { dias: 30, corto: "30 días", largo: "los últimos 30 días" },
+    { dias: 90, corto: "90 días", largo: "los últimos 90 días" },
+    { dias: 180, corto: "6 meses", largo: "los últimos 6 meses" },
+];
 
+const TECNICAS = { remate: "Remate", saque: "Saque", recepcion: "Recepción", bloqueo: "Bloqueo", pase: "Pase" };
+const SEVERIDAD = { leve: "Leve", moderado: "Moderado", grave: "Grave" };
+const ESTADOS = { activo: "Activo", inactivo: "Inactivo", sin_datos: "Sin datos" };
 
-const DATA_ALL = {
-    players: [
-        { name: 'Juan', perf: 88, color: '#7c5cfc', attendance: 92, gradient: ['#7c5cfc', '#a488ff'] },
-        { name: 'María', perf: 82, color: '#f7b731', gradient: ['#f7b731', '#ffd470'] },
-        { name: 'Carlos', perf: 74, color: '#26de81', gradient: ['#26de81', '#5ef5a0'] },
-        { name: 'Sofía', perf: 65, color: '#00d4ff', gradient: ['#00d4ff', '#7eeeff'] },
-        { name: 'Andrés', perf: 60, color: '#ff6b6b', gradient: ['#ff6b6b', '#ff9f9f'] },
-    ],
-    evolution: {
-        dates: ['4 May', '7 May', '10 May', '13 May', '16 May'],
-        series: [
-            { name: 'Juan', color: '#7c5cfc', values: [72, 80, 78, 85, 90] },
-            { name: 'María', color: '#f7b731', values: [65, 70, 68, 72, 69] },
-            { name: 'Carlos', color: '#26de81', values: [55, 62, 60, 58, 65] },
-        ]
-    },
-    exercises: [
-        { name: 'Saque', pct: 35, color: '#7c5cfc' },
-        { name: 'Recepción', pct: 25, color: '#00d4ff' },
-        { name: 'Remate', pct: 20, color: '#f7b731' },
-        { name: 'Bloqueo', pct: 20, color: '#ff6b6b' },
-    ],
-    errors: [
-        { name: 'Postura incorrecta', pct: 32, color: '#ff6b6b' },
-        { name: 'Brazo bajo en saque', pct: 28, color: '#ff6b6b' },
-        { name: 'Piernas semiflexionadas', pct: 20, color: '#f7b731' },
-        { name: 'Falta de coordinación', pct: 20, color: '#f7b731' },
-    ]
-};
+const fechaCorta = (iso) =>
+    new Date(`${iso}T12:00:00`).toLocaleDateString("es-CO", { day: "numeric", month: "short" }).replace(".", "");
 
-export default function Estadisticas() {
-    const [deportista, setDeportista] = useState('all');
-    const [ejercicio, setEjercicio] = useState('all');
-    const [searchVal, setSearchVal] = useState('');
-    const [hiddenSeries, setHiddenSeries] = useState({});
-    const [tooltip, setTooltip] = useState({ show: false, text: '', x: 0, y: 0 });
+const fechaLarga = (iso) =>
+    new Date(`${iso}T12:00:00`).toLocaleDateString("es-CO", { day: "numeric", month: "long", year: "numeric" });
 
-    function getPlayers() {
-        return DATA_ALL.players.filter(p =>
-            (deportista === 'all' || p.name === deportista) &&
-            (!searchVal || p.name.toLowerCase().includes(searchVal.toLowerCase()))
-        );
-    }
+const sello = (iso) =>
+    new Date(iso).toLocaleString("es-CO", { day: "numeric", month: "long", year: "numeric", hour: "numeric", minute: "2-digit" });
 
-    function getExercises() {
-        const OVERRIDES = {
-            Juan: [{ name: 'Saque', pct: 50, color: '#7c5cfc' }, { name: 'Remate', pct: 30, color: '#f7b731' }, { name: 'Recepción', pct: 20, color: '#00d4ff' }],
-            María: [{ name: 'Recepción', pct: 45, color: '#00d4ff' }, { name: 'Bloqueo', pct: 35, color: '#ff6b6b' }, { name: 'Saque', pct: 20, color: '#7c5cfc' }],
-            Carlos: [{ name: 'Remate', pct: 40, color: '#f7b731' }, { name: 'Bloqueo', pct: 35, color: '#ff6b6b' }, { name: 'Saque', pct: 25, color: '#7c5cfc' }],
-        };
-        const base = OVERRIDES[deportista] || DATA_ALL.exercises;
-        return ejercicio === 'all' ? base : base.filter(e => e.name === ejercicio);
-    }
+/** Color de una puntuación 0–100. */
+const tono = (p) => (p == null ? "off" : p >= 80 ? "ok" : p >= 60 ? "bien" : p >= 40 ? "medio" : "bajo");
 
-    function getEvolution() {
-        return DATA_ALL.evolution.series.filter(s =>
-            (deportista === 'all' || s.name === deportista) &&
-            (!searchVal || s.name.toLowerCase().includes(searchVal.toLowerCase()))
-        );
-    }
+const iniciales = (d) => `${d.nombre?.[0] ?? ""}${d.apellido?.[0] ?? ""}`.toUpperCase();
 
-    const players = getPlayers();
-    const exercises = getExercises();
-    const series = getEvolution();
-    const dates = DATA_ALL.evolution.dates;
+const haceCuanto = (dias) =>
+    dias == null ? "—" : dias === 0 ? "Hoy" : dias === 1 ? "Ayer" : `Hace ${dias} días`;
 
-    const avgPerf = players.length ? Math.round(players.reduce((a, p) => a + p.perf, 0) / players.length) : 0;
-    const avgAtt = players.length ? Math.round(players.reduce((a, p) => a + p.attendance, 0) / players.length) : 0;
+function signo(n) {
+    return n > 0 ? `+${n}` : `${n}`;
+}
 
-    // Donut
-    const cx = 80, cy = 80, r = 60, sw = 16, circ = 2 * Math.PI * r;
-    const filled = circ * (avgAtt / 100), empty = circ - filled;
+// ── Piezas pequeñas ───────────────────────────────────────────
 
-    // Line chart
-    const W = 460, H = 150, padL = 34, padR = 10, padT = 10, padB = 30;
-    const cW = W - padL - padR, cH = H - padT - padB;
-    const vals = series.flatMap(s => s.values);
-    const minV = vals.length ? Math.min(...vals) - 5 : 0;
-    const maxV = vals.length ? Math.max(...vals) + 5 : 100;
-    const xPos = i => padL + (i / (dates.length - 1)) * cW;
-    const yPos = v => padT + cH - ((v - minV) / (maxV - minV)) * cH;
+/** Variación contra el periodo anterior. `unidad` va pegada al número. */
+function Delta({ valor, unidad = "", vacio = "Sin periodo previo" }) {
+    if (valor == null) return <span className={`${s.delta} ${s.dNeutro}`}>{vacio}</span>;
+    if (valor === 0) return <span className={`${s.delta} ${s.dNeutro}`}>= Igual que antes</span>;
+    const sube = valor > 0;
+    return (
+        <span className={`${s.delta} ${sube ? s.dSube : s.dBaja}`}>
+            {sube ? "▲" : "▼"} {signo(valor)}{unidad} <small>vs. periodo anterior</small>
+        </span>
+    );
+}
 
-    function showTip(e, text) {
-        setTooltip({ show: true, text, x: e.clientX + 12, y: e.clientY - 28 });
-    }
+/** Mini línea de tendencia (omite los huecos sin datos). */
+function Spark({ valores, max = 100, color = "var(--blue)" }) {
+    const puntos = valores.map((v, i) => [i, v]).filter(([, v]) => v != null);
+    if (puntos.length < 2) return <div className={s.sparkVacio} aria-hidden="true" />;
+    const W = 96, H = 30, n = valores.length - 1;
+    const top = Math.max(max, ...puntos.map(([, v]) => v), 1);
+    const d = puntos
+        .map(([i, v], k) => `${k ? "L" : "M"}${((i / n) * W).toFixed(1)},${(H - 3 - (v / top) * (H - 6)).toFixed(1)}`)
+        .join(" ");
+    return (
+        <svg className={s.spark} viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
+            <path d={d} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+    );
+}
 
-    function reset() {
-        setDeportista('all'); setEjercicio('all'); setSearchVal('');
+function Kpi({ icono, color, etiqueta, valor, unidad, pie, extra }) {
+    return (
+        <div className={s.kpi} style={{ "--k": color }}>
+            <div className={s.kpiTop}>
+                <span className={s.kpiIcono} aria-hidden="true">{icono}</span>
+                <span className={s.kpiEtiqueta}>{etiqueta}</span>
+            </div>
+            <div className={s.kpiValor}>
+                {valor ?? "—"}
+                {valor != null && unidad && <small>{unidad}</small>}
+            </div>
+            <div className={s.kpiPie}>{pie}</div>
+            {extra}
+        </div>
+    );
+}
+
+// ── Evolución de la puntuación ────────────────────────────────
+
+const W = 720, H = 268, IZQ = 38, DER = 10, TOP = 12, BASE = 186, VOL_TOP = 216, VOL_BASE = 244;
+
+function Evolucion({ puntos, media }) {
+    const uid = useId().replace(/:/g, "");
+    const [hover, setHover] = useState(null);
+    const n = puntos.length;
+    const banda = (W - IZQ - DER) / n;
+    const x = (i) => IZQ + (i + 0.5) * banda;
+    const y = (p) => BASE - (p / 100) * (BASE - TOP);
+    const maxSes = Math.max(1, ...puntos.map((p) => p.sesiones));
+
+    // Tramos continuos (un hueco sin sesiones corta la línea, no se inventa nada)
+    const tramos = [];
+    puntos.forEach((p, i) => {
+        if (p.promedio == null) { tramos.push(null); return; }
+        if (tramos.length === 0 || tramos[tramos.length - 1] === null) tramos.push([]);
+        tramos[tramos.length - 1].push([i, p.promedio]);
+    });
+    const lineas = tramos.filter(Boolean);
+    const trazo = (t) => t.map(([i, p], k) => `${k ? "L" : "M"}${x(i).toFixed(1)},${y(p).toFixed(1)}`).join(" ");
+    const area = (t) => `${trazo(t)} L${x(t[t.length - 1][0]).toFixed(1)},${BASE} L${x(t[0][0]).toFixed(1)},${BASE} Z`;
+
+    const paso = Math.ceil(n / 6);
+    // Una fecha cada `paso` puntos; la última solo si no queda pegada a la anterior
+    const etiqueta = (i) => i % paso === 0 || (i === n - 1 && (n - 1) % paso >= Math.ceil(paso / 2));
+    const conDatos = puntos.some((p) => p.promedio != null);
+    const h = hover != null ? puntos[hover] : null;
+
+    function mover(e) {
+        const r = e.currentTarget.getBoundingClientRect();
+        const px = ((e.clientX - r.left) / r.width) * W;
+        setHover(Math.min(n - 1, Math.max(0, Math.floor((px - IZQ) / banda))));
     }
 
     return (
+        <div className={s.chartBox}>
+            <svg
+                className={s.chart}
+                viewBox={`0 0 ${W} ${H}`}
+                role="img"
+                aria-label={conDatos ? "Evolución de la puntuación media del periodo" : "Sin análisis en el periodo"}
+                onPointerMove={mover}
+                onPointerLeave={() => setHover(null)}
+            >
+                <defs>
+                    <linearGradient id={`a${uid}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="var(--blue)" stopOpacity=".38" />
+                        <stop offset="100%" stopColor="var(--blue)" stopOpacity="0" />
+                    </linearGradient>
+                </defs>
+
+                {[0, 25, 50, 75, 100].map((v) => (
+                    <g key={v}>
+                        <line x1={IZQ} x2={W - DER} y1={y(v)} y2={y(v)} className={s.rejilla} />
+                        <text x={IZQ - 8} y={y(v) + 3.5} textAnchor="end" className={s.eje}>{v}</text>
+                    </g>
+                ))}
+
+                {conDatos && media != null && (
+                    <line x1={IZQ} x2={W - DER} y1={y(media)} y2={y(media)} className={s.media} />
+                )}
+
+                {lineas.filter((t) => t.length > 1).map((t, k) => <path key={`ar${k}`} d={area(t)} fill={`url(#a${uid})`} />)}
+                {lineas.filter((t) => t.length > 1).map((t, k) => (
+                    <path key={`li${k}`} d={trazo(t)} className={s.linea} />
+                ))}
+                {puntos.map((p, i) => p.promedio != null && (
+                    <circle key={`pt${i}`} cx={x(i)} cy={y(p.promedio)} r={hover === i ? 5.5 : 3.4} className={s.punto} />
+                ))}
+
+                {/* Volumen: cuántos análisis hubo en cada punto */}
+                <text x={IZQ} y={VOL_TOP - 6} className={s.eje}>Análisis por punto</text>
+                {puntos.map((p, i) => {
+                    const alto = p.sesiones ? Math.max(3, (p.sesiones / maxSes) * (VOL_BASE - VOL_TOP)) : 0;
+                    return p.sesiones > 0 && (
+                        <rect key={`v${i}`} x={x(i) - Math.min(banda * 0.28, 9)} width={Math.min(banda * 0.56, 18)}
+                              y={VOL_BASE - alto} height={alto} rx="2.5" className={hover === i ? s.volOn : s.vol} />
+                    );
+                })}
+                <line x1={IZQ} x2={W - DER} y1={VOL_BASE + 0.5} y2={VOL_BASE + 0.5} className={s.rejilla} />
+
+                {puntos.map((p, i) => etiqueta(i) && (
+                    <text key={`x${i}`} x={x(i)} y={H - 8} textAnchor="middle" className={s.eje}>{fechaCorta(p.hasta)}</text>
+                ))}
+
+                {hover != null && <line x1={x(hover)} x2={x(hover)} y1={TOP} y2={VOL_BASE} className={s.guia} />}
+            </svg>
+
+            {h && (
+                <div className={s.tip} style={{ left: `${(x(hover) / W) * 100}%` }}>
+                    <b>{h.desde === h.hasta ? fechaCorta(h.desde) : `${fechaCorta(h.desde)} – ${fechaCorta(h.hasta)}`}</b>
+                    <span>{h.promedio != null ? <>Puntuación media <strong>{h.promedio}</strong></> : "Sin análisis"}</span>
+                    <span>{h.sesiones} análisis</span>
+                </div>
+            )}
+
+            {conDatos && (
+                <ul className={s.leyenda} aria-hidden="true">
+                    <li><i className={s.lgLinea} /> Puntuación media</li>
+                    {media != null && <li><i className={s.lgMedia} /> Media del periodo: <b>{media}</b></li>}
+                    <li><i className={s.lgVol} /> Cantidad de análisis</li>
+                </ul>
+            )}
+
+            {!conDatos && (
+                <div className={s.vacioSobre}>
+                    <b>Aún no hay análisis en este periodo</b>
+                    Cuando tus deportistas analicen su técnica con la IA, verás aquí su evolución.
+                </div>
+            )}
+        </div>
+    );
+}
+
+// ── Por técnica ───────────────────────────────────────────────
+
+function PorTecnica({ lista }) {
+    const hay = lista.some((t) => t.sesiones > 0);
+    if (!hay) return <div className={s.vacio}><b>Sin análisis por técnica</b>Aparecerán cuando haya sesiones en el periodo.</div>;
+    return (
+        <ul className={s.tecnicas}>
+            {lista.map((t) => (
+                <li key={t.tecnica} className={t.sesiones ? "" : s.apagada}>
+                    <div className={s.tecTop}>
+                        <span className={s.tecNombre}>{TECNICAS[t.tecnica]}</span>
+                        <span className={s.tecMeta}>
+                            {t.sesiones} análisis
+                            {t.delta != null && t.delta !== 0 && (
+                                <em className={t.delta > 0 ? s.sube : s.baja}>{t.delta > 0 ? "▲" : "▼"} {Math.abs(t.delta)}</em>
+                            )}
+                        </span>
+                        <span className={`${s.tecNota} ${s[`t_${tono(t.promedio)}`]}`}>{t.promedio ?? "—"}</span>
+                    </div>
+                    <div className={s.barra} role="img" aria-label={`${TECNICAS[t.tecnica]}: ${t.promedio ?? "sin datos"} de 100`}>
+                        <span className={s[`f_${tono(t.promedio)}`]} style={{ width: `${t.promedio ?? 0}%` }} />
+                    </div>
+                </li>
+            ))}
+        </ul>
+    );
+}
+
+// ── Errores frecuentes ────────────────────────────────────────
+
+function Errores({ lista }) {
+    if (!lista.length) {
+        return <div className={s.vacio}><b>Sin errores registrados</b>Los errores que detecte la IA en los análisis aparecerán aquí.</div>;
+    }
+    const max = Math.max(...lista.map((e) => e.sesiones));
+    return (
+        <ol className={s.errores}>
+            {lista.map((e, i) => (
+                <li key={e.nombre}>
+                    <span className={s.errN}>{i + 1}</span>
+                    <div className={s.errCuerpo}>
+                        <div className={s.errTop}>
+                            <b>{e.nombre}</b>
+                            <span className={`${s.sev} ${s[`sev_${e.severidad}`]}`}>{SEVERIDAD[e.severidad]}</span>
+                        </div>
+                        <div className={s.barra}><span className={s.f_err} style={{ width: `${(e.sesiones / max) * 100}%` }} /></div>
+                        <div className={s.errMeta}>
+                            {e.sesiones} análisis · {e.atletas} {e.atletas === 1 ? "deportista" : "deportistas"} · {e.ocurrencias} {e.ocurrencias === 1 ? "vez" : "veces"}
+                        </div>
+                    </div>
+                </li>
+            ))}
+        </ol>
+    );
+}
+
+// ── Alertas ───────────────────────────────────────────────────
+
+const ALERTAS = {
+    baja: { orden: 0, icono: <FaArrowTrendDown />, color: "rojo", texto: (a) => <><b>{a.nombre}</b> bajó {Math.abs(a.delta)} puntos de promedio</> },
+    inactivo: { orden: 1, icono: <FaClockRotateLeft />, color: "naranja", texto: (a) => <><b>{a.nombre}</b> lleva {a.dias} días sin actividad</> },
+    sin_actividad: { orden: 2, icono: <FaClockRotateLeft />, color: "naranja", texto: (a) => <><b>{a.nombre}</b> aún no tiene actividad</> },
+    por_revisar: { orden: 3, icono: <FaEye />, color: "azul", texto: (a) => <><b>{a.nombre}</b> tiene {a.cantidad} análisis sin revisar</> },
+    sin_rutina: { orden: 4, icono: <FaClipboardCheck />, color: "gris", texto: (a) => <><b>{a.nombre}</b> no tiene rutinas pendientes</> },
+};
+const VISIBLES = 6;       // en pantalla, antes de "Ver todas"
+const EN_PAPEL = 10;      // en el reporte impreso
+
+function Alertas({ lista }) {
+    const [todas, setTodas] = useState(false);
+    const ordenadas = useMemo(
+        () => [...lista].sort((a, b) => ALERTAS[a.tipo].orden - ALERTAS[b.tipo].orden || a.nombre.localeCompare(b.nombre)),
+        [lista],
+    );
+    if (!ordenadas.length) {
+        return <div className={s.vacio}><b>Todo en orden</b>Ningún deportista necesita atención ahora mismo.</div>;
+    }
+    return (
         <>
-            <main className="est-main">
-                <div className="page-title">Estadísticas Avanzadas</div>
+            <ul className={s.alertas}>
+                {ordenadas.map((a, i) => {
+                    const cfg = ALERTAS[a.tipo];
+                    return (
+                        <li key={`${a.tipo}-${a.atletaId}`} className={`${!todas && i >= VISIBLES ? s.extra : ""} ${i >= EN_PAPEL ? s.sobra : ""}`}>
+                            <Link href={`/panel_entrenador/gestion/${a.atletaId}`} className={`${s.alerta} ${s[`al_${cfg.color}`]}`}>
+                                <span className={s.alIcono} aria-hidden="true">{cfg.icono}</span>
+                                <span className={s.alTexto}>{cfg.texto(a)}</span>
+                                <span className={s.alVer}>Ver ficha</span>
+                            </Link>
+                        </li>
+                    );
+                })}
+            </ul>
+            {ordenadas.length > EN_PAPEL && (
+                <p className={s.soloImp}>Y {ordenadas.length - EN_PAPEL} avisos más, disponibles en la pantalla de Estadísticas.</p>
+            )}
+            {ordenadas.length > VISIBLES && (
+                <button type="button" className={s.verMas} onClick={() => setTodas((v) => !v)}>
+                    {todas ? "Ver menos" : `Ver las ${ordenadas.length} alertas`}
+                </button>
+            )}
+        </>
+    );
+}
 
-                <section className="filters-bar">
-                    <div className="filter-group">
-                        <label className="filter-label">Deportista</label>
-                        <select className="filter-select" value={deportista} onChange={e => setDeportista(e.target.value)}>
-                            <option value="all">Todos</option>
-                            {DATA_ALL.players.map(p => <option key={p.name}>{p.name}</option>)}
-                        </select>
-                    </div>
-                    <div className="filter-group">
-                        <label className="filter-label">Tipo de ejercicio</label>
-                        <select className="filter-select" value={ejercicio} onChange={e => setEjercicio(e.target.value)}>
-                            <option value="all">Todos</option>
-                            {['Saque', 'Recepción', 'Remate', 'Bloqueo'].map(o => <option key={o}>{o}</option>)}
-                        </select>
-                    </div>
-                    <div className="filter-group">
-                        <label className="filter-label">Buscar</label>
-                        <input className="filter-input" type="text" placeholder="Nombre..." value={searchVal} onChange={e => setSearchVal(e.target.value)} />
-                    </div>
-                    <button className="btn-reset" onClick={reset}>↺ Resetear</button>
-                </section>
+// ── Ranking de deportistas ────────────────────────────────────
 
-                {/* Mini Cards */}
-                <div className="mini-cards">
-                    {[
-                        { label: 'Rendimiento promedio', value: `${avgPerf}%`, delta: '+3.2%', dir: 'up', color: '#7c5cfc' },
-                        { label: 'Asistencia promedio', value: `${avgAtt}%`, delta: '-1.1%', dir: 'down', color: '#00d4ff' },
-                        { label: 'Deportistas activos', value: players.length, delta: `${players.length} de 5`, dir: 'up', color: '#26de81' },
-                        { label: 'Sesiones registradas', value: 24, delta: '+4 este mes', dir: 'up', color: '#f7b731' },
-                    ].map((c, i) => (
-                        <div key={i} className="mini-card">
-                            <div className="mini-label">{c.label}</div>
-                            <div className="mini-value" style={{ color: c.color }}>{c.value}</div>
-                            <div className={`mini-delta ${c.dir}`}>{c.dir === 'up' ? '▲' : '▼'} {c.delta}</div>
+const COLUMNAS = [
+    { id: "nombre", etiqueta: "Deportista" },
+    { id: "sesiones", etiqueta: "Análisis" },
+    { id: "promedio", etiqueta: "Puntuación" },
+    { id: "delta", etiqueta: "Tendencia" },
+    { id: "cumplimiento", etiqueta: "Rutinas" },
+    { id: "diasSinActividad", etiqueta: "Actividad" },
+];
+
+/** Los valores vacíos siempre van al final, sin importar el sentido. */
+function ordenar(lista, col, dir) {
+    const valor = (d) => (col === "nombre" ? `${d.nombre} ${d.apellido}`.toLowerCase() : d[col]);
+    return [...lista].sort((a, b) => {
+        const va = valor(a), vb = valor(b);
+        if (va == null && vb == null) return 0;
+        if (va == null) return 1;
+        if (vb == null) return -1;
+        const c = typeof va === "string" ? va.localeCompare(vb, "es") : va - vb;
+        return dir === "asc" ? c : -c;
+    });
+}
+
+function Ranking({ lista }) {
+    const [busca, setBusca] = useState("");
+    const [estado, setEstado] = useState("todos");
+    const [col, setCol] = useState("promedio");
+    const [dir, setDir] = useState("desc");
+
+    const cuenta = useMemo(() => ({
+        todos: lista.length,
+        activo: lista.filter((d) => d.estado === "activo").length,
+        inactivo: lista.filter((d) => d.estado === "inactivo").length,
+        sin_datos: lista.filter((d) => d.estado === "sin_datos").length,
+    }), [lista]);
+
+    const filas = useMemo(() => {
+        const q = busca.trim().toLowerCase();
+        const f = lista.filter((d) =>
+            (estado === "todos" || d.estado === estado) &&
+            (!q || `${d.nombre} ${d.apellido}`.toLowerCase().includes(q)));
+        return ordenar(f, col, dir);
+    }, [lista, busca, estado, col, dir]);
+
+    function cambiar(id) {
+        if (id === col) setDir((d) => (d === "asc" ? "desc" : "asc"));
+        else { setCol(id); setDir(id === "nombre" || id === "diasSinActividad" ? "asc" : "desc"); }
+    }
+
+    return (
+        <div className={s.rank}>
+            <div className={s.rankBarra}>
+                <label className={s.buscar}>
+                    <FaMagnifyingGlass aria-hidden="true" />
+                    <input type="search" value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar deportista…" aria-label="Buscar deportista" />
+                </label>
+                <div className={s.chips} role="group" aria-label="Filtrar por estado">
+                    {[["todos", "Todos"], ["activo", "Activos"], ["inactivo", "Inactivos"], ["sin_datos", "Sin datos"]].map(([id, txt]) => (
+                        <button key={id} type="button" aria-pressed={estado === id} className={estado === id ? s.chipOn : s.chip} onClick={() => setEstado(id)}>
+                            {txt} <span>{cuenta[id]}</span>
+                        </button>
+                    ))}
+                </div>
+                <label className={s.ordenMovil}>
+                    <span>Ordenar por</span>
+                    <select value={`${col}:${dir}`} onChange={(e) => { const [c, d] = e.target.value.split(":"); setCol(c); setDir(d); }}>
+                        <option value="promedio:desc">Mejor puntuación</option>
+                        <option value="promedio:asc">Menor puntuación</option>
+                        <option value="delta:desc">Mayor mejora</option>
+                        <option value="delta:asc">Mayor caída</option>
+                        <option value="sesiones:desc">Más análisis</option>
+                        <option value="cumplimiento:desc">Mejor cumplimiento</option>
+                        <option value="diasSinActividad:asc">Actividad reciente</option>
+                        <option value="nombre:asc">Nombre (A–Z)</option>
+                    </select>
+                </label>
+            </div>
+
+            <div className={s.tabla} role="table" aria-label="Ranking de deportistas">
+                <div className={`${s.fila} ${s.cab}`} role="row">
+                    {COLUMNAS.map((c) => (
+                        <div key={c.id} role="columnheader" aria-sort={col === c.id ? (dir === "asc" ? "ascending" : "descending") : "none"}>
+                            <button type="button" className={col === c.id ? s.thOn : s.th} onClick={() => cambiar(c.id)}>
+                                {c.etiqueta}<i aria-hidden="true">{col === c.id ? (dir === "asc" ? "↑" : "↓") : "↕"}</i>
+                            </button>
                         </div>
                     ))}
                 </div>
 
-                <div className="grid-top">
-                    {/* Bar chart */}
-                    <article className="card">
-                        <header className="card-title">Rendimiento promedio</header>
-                        <div className="bar-chart-wrapper">
-                            <div className="y-axis">
-                                {['100%', '75%', '50%', '25%', '0%'].map(l => <div key={l} className="y-label">{l}</div>)}
-                            </div>
-                            <div className="bar-chart">
-                                {players.length === 0 ? <div className="no-data"><div className="no-data-icon">📊</div><span>Sin datos</span></div>
-                                    : players.map(p => {
-                                        const h = Math.round((p.perf / 100) * 110);
-                                        return (
-                                            <div key={p.name} className="bar-col">
-                                                <div className="bar-value">{p.perf}%</div>
-                                                <div className="bar-wrap">
-                                                    <svg style={{ width: '100%', height: '110px' }} viewBox="0 0 40 110" preserveAspectRatio="none">
-                                                        <defs>
-                                                            <linearGradient id={`g-${p.name}`} x1="0" y1="0" x2="0" y2="1">
-                                                                <stop offset="0%" stopColor={p.gradient[0]} />
-                                                                <stop offset="100%" stopColor={p.gradient[1]} stopOpacity=".7" />
-                                                            </linearGradient>
-                                                        </defs>
-                                                        <rect x="2" y={110 - h} width="36" rx="4" height={h} fill={`url(#g-${p.name})`}
-                                                            onMouseEnter={e => showTip(e, `${p.name}: ${p.perf}%`)}
-                                                            onMouseLeave={() => setTooltip(t => ({ ...t, show: false }))}
-                                                            style={{ cursor: 'pointer', transition: 'opacity .2s' }}
-                                                        />
-                                                    </svg>
-                                                </div>
-                                                <div className="bar-label">{p.name}</div>
-                                            </div>
-                                        );
-                                    })}
-                            </div>
+                {filas.map((d, i) => (
+                    <Link key={d.id} href={`/panel_entrenador/gestion/${d.id}`} className={s.fila} role="row">
+                        <div className={s.quien} role="cell">
+                            <span className={s.pos}>{i + 1}</span>
+                            {d.fotoUrl
+                                ? <img className={s.avatar} src={d.fotoUrl} alt="" />
+                                : <span className={s.avatar} aria-hidden="true">{iniciales(d)}</span>}
+                            <span className={s.quienTxt}>
+                                <b>{d.nombre} {d.apellido}</b>
+                                <small>
+                                    <em className={`${s.estado} ${s[`e_${d.estado}`]}`}>{ESTADOS[d.estado]}</em>
+                                    {d.posicion && <span className={s.posicion}>{d.posicion}</span>}
+                                </small>
+                            </span>
                         </div>
-                    </article>
-
-                    {/* Line chart */}
-                    <article className="card">
-                        <header className="card-title">Evolución de rendimiento</header>
-                        <div className="line-chart-container">
-                            <svg className="line-chart-svg" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
-                                <defs>
-                                    {series.map(s => (
-                                        <linearGradient key={s.name} id={`lg-${s.name}`} x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor={s.color} stopOpacity=".25" />
-                                            <stop offset="100%" stopColor={s.color} stopOpacity="0" />
-                                        </linearGradient>
-                                    ))}
-                                </defs>
-                                {[0, .25, .5, .75, 1].map(t => {
-                                    const y = padT + cH * (1 - t);
-                                    return <g key={t}>
-                                        <line x1={padL} y1={y} x2={W - padR} y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-                                        <text x={padL - 4} y={y + 4} fill="#7a7f9a" fontSize="9" textAnchor="end">{Math.round(minV + t * (maxV - minV))}%</text>
-                                    </g>;
-                                })}
-                                {dates.map((d, i) => <text key={d} x={xPos(i)} y={H - 4} fill="#7a7f9a" fontSize="9" textAnchor="middle">{d}</text>)}
-                                {series.filter(s => !hiddenSeries[s.name]).map(s => {
-                                    const pts = s.values.slice(0, dates.length);
-                                    const area = `M ${xPos(0)},${yPos(pts[0])} ${pts.map((v, i) => `L ${xPos(i)},${yPos(v)}`).join(' ')} L ${xPos(dates.length - 1)},${padT + cH} L ${xPos(0)},${padT + cH} Z`;
-                                    const line = pts.map((v, i) => (i === 0 ? 'M' : 'L') + ` ${xPos(i)} ${yPos(v)}`).join(' ');
-                                    return <g key={s.name}>
-                                        <path d={area} fill={`url(#lg-${s.name})`} opacity=".7" />
-                                        <path d={line} stroke={s.color} strokeWidth="2" fill="none" strokeLinejoin="round" strokeLinecap="round" />
-                                        {pts.map((v, i) => <circle key={i} cx={xPos(i)} cy={yPos(v)} r="4" fill={s.color} stroke="#181c30" strokeWidth="2"
-                                            onMouseEnter={e => showTip(e, `${s.name} (${dates[i]}): ${v}%`)}
-                                            onMouseLeave={() => setTooltip(t => ({ ...t, show: false }))}
-                                            style={{ cursor: 'pointer' }} />)}
-                                    </g>;
-                                })}
-                            </svg>
-                            <div className="chart-legend">
-                                {series.map(s => (
-                                    <div key={s.name} className={`legend-item ${hiddenSeries[s.name] ? 'hidden' : ''}`} onClick={() => setHiddenSeries(h => ({ ...h, [s.name]: !h[s.name] }))}>
-                                        <div className="legend-dot" style={{ background: s.color }}></div>{s.name}
-                                    </div>
-                                ))}
-                            </div>
+                        <div data-l="Análisis" role="cell" className={s.num}>{d.sesiones}</div>
+                        <div data-l="Puntuación" role="cell">
+                            {d.promedio != null
+                                ? <span className={`${s.nota} ${s[`t_${tono(d.promedio)}`]}`}>{d.promedio}<small>/100</small></span>
+                                : <span className={s.sin}>—</span>}
                         </div>
-                    </article>
-                </div>
-
-                <div className="grid-bottom">
-                    {/* Donut */}
-                    <article className="card">
-                        <header className="card-title">Asistencia</header>
-                        <div className="donut-wrapper">
-                            <svg className="donut-svg" viewBox="0 0 160 160">
-                                <defs>
-                                    <linearGradient id="dg" x1="0" y1="0" x2="1" y2="1">
-                                        <stop offset="0%" stopColor="#7c5cfc" /><stop offset="100%" stopColor="#26de81" />
-                                    </linearGradient>
-                                </defs>
-                                <circle cx={cx} cy={cy} r={r} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={sw} />
-                                <circle cx={cx} cy={cy} r={r} fill="none" stroke="url(#dg)" strokeWidth={sw}
-                                    strokeDasharray={`${filled} ${empty}`} strokeDashoffset={circ * 0.25} strokeLinecap="round" />
-                            </svg>
-                            <div className="donut-label">
-                                <div className="donut-value">{avgAtt}%</div>
-                                <div className="donut-sub">Promedio</div>
-                            </div>
+                        <div data-l="Tendencia" role="cell">
+                            {d.delta == null ? <span className={s.sin}>—</span>
+                                : d.delta === 0 ? <span className={s.sin}>= 0</span>
+                                : <span className={d.delta > 0 ? s.sube : s.baja}>{d.delta > 0 ? "▲" : "▼"} {Math.abs(d.delta)}</span>}
                         </div>
-                    </article>
-
-                    {/* Exercises */}
-                    <article className="card">
-                        <header className="card-title">Tipos de ejercicios</header>
-                        <div className="exercise-list">
-                            {exercises.length === 0 ? <div className="no-data"><div className="no-data-icon">🏐</div><span>Sin datos</span></div>
-                                : exercises.map(e => (
-                                    <div key={e.name} className="exercise-item">
-                                        <div className="ex-dot" style={{ background: e.color }}></div>
-                                        <div className="ex-name">{e.name}</div>
-                                        <div className="ex-pct">{e.pct}%</div>
-                                    </div>
-                                ))}
+                        <div data-l="Rutinas" role="cell">
+                            {d.cumplimiento != null ? (
+                                <span className={s.cump}>
+                                    <span className={s.barra}><span className={s.f_bien} style={{ width: `${d.cumplimiento}%` }} /></span>
+                                    <b>{d.cumplimiento}%</b>
+                                </span>
+                            ) : <span className={s.sin}>Sin rutinas</span>}
                         </div>
-                    </article>
+                        <div data-l="Actividad" role="cell" className={s.act}>{haceCuanto(d.diasSinActividad)}</div>
+                    </Link>
+                ))}
 
-                    {/* Errors */}
-                    <article className="card">
-                        <header className="card-title">Errores comunes</header>
-                        <div className="error-list">
-                            {DATA_ALL.errors.map(e => {
-                                const off = { Juan: 5, María: -3, Carlos: 2, Sofía: -5, Andrés: 8 }[deportista] || 0;
-                                const pct = Math.max(5, Math.min(99, e.pct + off));
-                                return (
-                                    <div key={e.name} className="error-item">
-                                        <div className="error-header">
-                                            <span className="error-name">{e.name}</span>
-                                            <span className="error-pct">{pct}%</span>
-                                        </div>
-                                        <div className="error-track">
-                                            <div className="error-fill" style={{ width: `${pct}%`, background: e.color }}></div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </article>
-                </div>
-
-                {/* Tooltip */}
-                {tooltip.show && (
-                    <div className="tooltip show" style={{ left: tooltip.x, top: tooltip.y, position: 'fixed' }}>{tooltip.text}</div>
+                {!filas.length && (
+                    <div className={s.vacio}><b>Ningún deportista coincide</b>Prueba con otro nombre o quita el filtro.</div>
                 )}
-            </main>
+            </div>
+        </div>
+    );
+}
 
-        </>
+// ── Exportar ──────────────────────────────────────────────────
+
+function descargarCsv(datos) {
+    const celda = (v) => {
+        const t = v == null ? "" : String(v);
+        return /[";\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+    };
+    const cab = ["Deportista", "Posición", "Nivel", "Análisis", "Puntuación media", "Variación vs. periodo anterior", "Mejor puntuación",
+        "Cumplimiento de rutinas (%)", "Ejercicios hechos", "Ejercicios totales", "Última actividad", "Estado"];
+    const filas = datos.ranking.map((d) => [
+        `${d.nombre} ${d.apellido}`, d.posicion, d.nivel, d.sesiones, d.promedio, d.delta, d.mejor,
+        d.cumplimiento, d.ejerciciosHechos, d.ejerciciosTotales, d.ultimaActividad ? d.ultimaActividad.slice(0, 10) : "", ESTADOS[d.estado],
+    ]);
+    // Separador ";" y BOM UTF-8: así Excel en español abre las columnas y las tildes bien
+    const texto = "﻿" + [cab, ...filas].map((f) => f.map(celda).join(";")).join("\r\n");
+    const url = URL.createObjectURL(new Blob([texto], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `volleyscan-estadisticas_${datos.periodo.desde}_a_${datos.periodo.hasta}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ── Página ────────────────────────────────────────────────────
+
+export default function EstadisticasPage() {
+    const [dias, setDias] = useState(30);
+    const { datos, estado, refrescando, recargar } = useEstadisticas(dias);
+
+    const periodo = PERIODOS.find((p) => p.dias === dias);
+    const k = datos?.kpis;
+
+    return (
+        <main className={s.wrap} aria-busy={refrescando}>
+            <header className={s.head}>
+                <div>
+                    <h1 className={s.titulo}>Estadísticas</h1>
+                    <p className={s.sub}>
+                        {datos
+                            ? <>Rendimiento de tus deportistas en {periodo.largo} · {fechaCorta(datos.periodo.desde)} – {fechaCorta(datos.periodo.hasta)}</>
+                            : "Rendimiento de tus deportistas"}
+                    </p>
+                </div>
+                <div className={s.acciones}>
+                    <div className={s.periodos} role="radiogroup" aria-label="Periodo">
+                        {PERIODOS.map((p) => (
+                            <button key={p.dias} type="button" role="radio" aria-checked={dias === p.dias}
+                                    className={dias === p.dias ? s.perOn : s.per} onClick={() => setDias(p.dias)}>
+                                {p.corto}
+                            </button>
+                        ))}
+                    </div>
+                    <button type="button" className={s.btn} disabled={!datos?.ranking.length} onClick={() => descargarCsv(datos)}>
+                        <FaFileArrowDown aria-hidden="true" /> <span>Exportar CSV</span>
+                    </button>
+                    <button type="button" className={s.btnPri} disabled={!datos} onClick={() => window.print()}>
+                        <FaPrint aria-hidden="true" /> <span>Imprimir reporte</span>
+                    </button>
+                </div>
+            </header>
+
+            {/* Solo se ve al imprimir */}
+            {datos && (
+                <div className={s.portada}>
+                    <div className={s.portadaMarca}>VolleyScan</div>
+                    <h2>Reporte de rendimiento del equipo</h2>
+                    <p>
+                        {datos.entrenador ? <>Entrenador: <b>{datos.entrenador.nombre} {datos.entrenador.apellido}</b> · </> : null}
+                        Periodo: <b>{fechaLarga(datos.periodo.desde)}</b> al <b>{fechaLarga(datos.periodo.hasta)}</b> · Generado el {sello(datos.generado)}
+                    </p>
+                </div>
+            )}
+
+            {estado === "cargando" && (
+                <div className={s.esqueleto} aria-label="Cargando estadísticas">
+                    <div className={s.skRow}>{[0, 1, 2, 3, 4].map((i) => <span key={i} className={s.sk} style={{ height: 118 }} />)}</div>
+                    <span className={s.sk} style={{ height: 320 }} />
+                </div>
+            )}
+
+            {estado === "error" && (
+                <div className={s.error} role="alert">
+                    <FaTriangleExclamation aria-hidden="true" />
+                    <div><b>No se pudieron cargar las estadísticas</b><p>Revisa tu conexión o que el servidor esté encendido e inténtalo de nuevo.</p></div>
+                    <button type="button" className={s.btnPri} onClick={recargar}>Reintentar</button>
+                </div>
+            )}
+
+            {datos && k && k.deportistas === 0 && (
+                <div className={s.sinEquipo}>
+                    <span aria-hidden="true"><FaUsers /></span>
+                    <h2>Aún no tienes deportistas vinculados</h2>
+                    <p>Las estadísticas se calculan con los análisis y rutinas de los deportistas que aceptaste. Cuando tengas el primero, verás todo aquí.</p>
+                    <Link href="/panel_entrenador/gestion" className={s.btnPri}><FaUserPlus aria-hidden="true" /> Ir a Deportistas</Link>
+                </div>
+            )}
+
+            {datos && k && k.deportistas > 0 && (
+                <div className={refrescando ? s.cargando : ""}>
+                    <section className={s.kpis} aria-label="Resumen">
+                        <Kpi icono={<FaUsers />} color="var(--blue)" etiqueta="Deportistas activos" valor={k.activos} unidad={`/ ${k.deportistas}`}
+                             pie={<span className={`${s.delta} ${s.dNeutro}`}>Con actividad en el periodo</span>} />
+                        <Kpi icono={<FaBullseye />} color="var(--teal)" etiqueta="Análisis de IA" valor={k.analisis}
+                             pie={<Delta valor={k.analisisDelta} />}
+                             extra={<Spark valores={datos.evolucion.map((p) => p.sesiones)} max={1} color="var(--teal)" />} />
+                        <Kpi icono={<FaChartLine />} color="var(--green)" etiqueta="Puntuación media" valor={k.puntuacionMedia} unidad="/100"
+                             pie={<Delta valor={k.puntuacionDelta} unidad=" pts" />}
+                             extra={<Spark valores={datos.evolucion.map((p) => p.promedio)} color="var(--green)" />} />
+                        <Kpi icono={<FaClipboardCheck />} color="var(--amber)" etiqueta="Cumplimiento de rutinas" valor={k.cumplimiento} unidad="%"
+                             pie={k.ejerciciosTotales
+                                 ? <><Delta valor={k.cumplimientoDelta} unidad=" pts" vacio={`${k.ejerciciosHechos} de ${k.ejerciciosTotales} ejercicios`} />
+                                     {k.cumplimientoDelta != null && <span className={s.kpiNota}>{k.ejerciciosHechos} de {k.ejerciciosTotales} ejercicios</span>}</>
+                                 : <span className={`${s.delta} ${s.dNeutro}`}>Sin rutinas en el periodo</span>} />
+                        <Kpi icono={<FaEye />} color="var(--orange)" etiqueta="Análisis por revisar" valor={k.porRevisar}
+                             pie={<span className={`${s.delta} ${s.dNeutro}`}>{k.porRevisar ? "Esperan tu revisión" : "Estás al día"}</span>} />
+                    </section>
+
+                    <div className={s.grid}>
+                        <section className={`${s.card} ${s.c8}`}>
+                            <div className={s.ct}>
+                                <h2 className={s.cardTitulo}>Evolución de la puntuación</h2>
+                                <span className={s.tag}>Media de todos tus deportistas</span>
+                            </div>
+                            <Evolucion puntos={datos.evolucion} media={k.puntuacionMedia} />
+                        </section>
+
+                        <section className={`${s.card} ${s.c4}`}>
+                            <div className={s.ct}>
+                                <h2 className={s.cardTitulo}>Por técnica</h2>
+                                <span className={s.tag}>Puntuación media</span>
+                            </div>
+                            <PorTecnica lista={datos.porTecnica} />
+                        </section>
+
+                        <section className={`${s.card} ${s.c12}`}>
+                            <div className={s.ct}>
+                                <h2 className={s.cardTitulo}>Ranking de deportistas</h2>
+                                <span className={s.tag}>{datos.ranking.length} {datos.ranking.length === 1 ? "deportista" : "deportistas"} · toca una fila para abrir su ficha</span>
+                            </div>
+                            <Ranking lista={datos.ranking} />
+                        </section>
+
+                        <section className={`${s.card} ${s.c6}`}>
+                            <div className={s.ct}>
+                                <h2 className={s.cardTitulo}>Requiere atención</h2>
+                                {datos.alertas.length > 0 && <span className={s.contador}>{datos.alertas.length}</span>}
+                            </div>
+                            <Alertas lista={datos.alertas} />
+                        </section>
+
+                        <section className={`${s.card} ${s.c6}`}>
+                            <div className={s.ct}>
+                                <h2 className={s.cardTitulo}>Errores más frecuentes</h2>
+                                <span className={s.tag}>Detectados por la IA</span>
+                            </div>
+                            <Errores lista={datos.erroresFrecuentes} />
+                        </section>
+                    </div>
+                </div>
+            )}
+        </main>
     );
 }

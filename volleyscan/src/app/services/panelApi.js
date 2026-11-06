@@ -1,9 +1,12 @@
-// Cliente del backend Django (login con token y panel del entrenador).
+// Cliente del backend Django (login, registro y panel del entrenador).
 // El chat con la IA (FastAPI) sigue en api.js.
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8001/api'
+//
+// IMPORTANTE: la sesión se guarda en localStorage con las MISMAS claves que usa
+// @/lib/api (vs_token y vs_usuario). Antes se guardaba en sessionStorage y el
+// resto de la app (dashboard, rutinas, historial) no encontraba el token.
+import { guardarSesion, getToken, cerrarSesion as cerrarSesionBase } from '@/lib/api'
 
-const CLAVE_TOKEN = 'vs_token'
-const CLAVES_SESION = [CLAVE_TOKEN, 'vs_rol', 'vs_nombre']
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8001/api'
 
 export class ErrorApi extends Error {
     constructor(mensaje, estado, datos) {
@@ -11,17 +14,19 @@ export class ErrorApi extends Error {
         this.name = 'ErrorApi'
         this.status = estado // 0 = no se pudo conectar
         this.datos = datos // cuerpo de la respuesta (errores por campo, etc.)
+        this.data = datos // alias, igual que ApiError de @/lib/api
     }
 }
 
 export function obtenerToken() {
-    if (typeof window === 'undefined') return null
-    return sessionStorage.getItem(CLAVE_TOKEN)
+    return getToken()
 }
 
 export function cerrarSesion() {
+    cerrarSesionBase()
     if (typeof window === 'undefined') return
-    CLAVES_SESION.forEach((clave) => sessionStorage.removeItem(clave))
+    // Limpia también las claves antiguas por si quedaron de versiones anteriores
+    ;['vs_token', 'vs_rol', 'vs_nombre'].forEach((k) => sessionStorage.removeItem(k))
 }
 
 async function leerRespuesta(respuesta) {
@@ -67,26 +72,28 @@ export async function apiFetch(ruta, { metodo = 'GET', cuerpo, token = obtenerTo
     return datos
 }
 
-/** Inicia sesión, guarda el token en sessionStorage y devuelve el usuario. */
+/** Guarda la sesión (localStorage, formato de @/lib/api) y devuelve el usuario. */
+function abrirSesion(datos) {
+    guardarSesion(datos) // vs_token + vs_usuario
+    return datos.usuario
+}
+
+/** Inicia sesión y devuelve el usuario. */
 export async function iniciarSesion(email, password) {
     const datos = await apiFetch('/auth/login', {
         metodo: 'POST',
         cuerpo: { email, password },
         token: null,
     })
-    sessionStorage.setItem(CLAVE_TOKEN, datos.access)
-    sessionStorage.setItem('vs_rol', datos.usuario.rol)
-    sessionStorage.setItem('vs_nombre', datos.usuario.nombre)
-    return datos.usuario
+    return abrirSesion(datos)
 }
 
+/** Registra una cuenta nueva, abre la sesión y devuelve el usuario. */
 export async function registrarAtleta(campos) {
-    const datos = await apiFetch ('/auth/registro', {
+    const datos = await apiFetch('/auth/registro', {
         metodo: 'POST',
         cuerpo: campos,
         token: null,
     })
-    guardarSesion(datos)
-    return datos.usuario
-    
+    return abrirSesion(datos)
 }

@@ -712,3 +712,47 @@ html, body { height: 100%; font-family: 'Sora', sans-serif; background: var(--bg
     min-width: 588px;
   }
 }
+
+
+/* ═══════════════════════════════════════
+   AÑADIDO — Horario conectado a equipos
+   (los tipos ahora se identifican por su clave de la base de datos)
+═══════════════════════════════════════ */
+.event-block.tipo-entrenamiento { background: #1c3461; border-left: 3px solid #3b82f6; }
+.event-block.tipo-partido       { background: #4a1020; border-left: 3px solid #dc2626; }
+.event-block.tipo-evaluacion    { background: #3a2a0d; border-left: 3px solid #f59e0b; }
+.event-block.tipo-reunion       { background: #1a2e1a; border-left: 3px solid #10b981; }
+.event-block.tipo-otro          { background: #2a1f40; border-left: 3px solid #8b5cf6; }
+
+.month-ev-dot.tipo-entrenamiento { background: #1c3461; border-left: 2px solid var(--blue); }
+.month-ev-dot.tipo-partido       { background: #4a1020; border-left: 2px solid #dc2626; }
+.month-ev-dot.tipo-evaluacion    { background: #3a2a0d; border-left: 2px solid #f59e0b; }
+.month-ev-dot.tipo-reunion       { background: #1a2e1a; border-left: 2px solid var(--green); }
+.month-ev-dot.tipo-otro          { background: #2a1f40; border-left: 2px solid var(--purple2); }
+
+.ep-dot.tipo-entrenamiento { background: rgba(59,130,246,.15); color: var(--blue2); }
+.ep-dot.tipo-partido       { background: rgba(220,38,38,.15);  color: #f87171; }
+.ep-dot.tipo-evaluacion    { background: rgba(245,158,11,.15); color: #fbbf24; }
+.ep-dot.tipo-reunion       { background: rgba(16,185,129,.15); color: #34d399; }
+.ep-dot.tipo-otro          { background: rgba(139,92,246,.15); color: var(--purple2); }
+
+.ev-team { font-size: 9.5px; color: rgba(255,255,255,.45); margin-top: 1px; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Cancelados / completados */
+.event-block.est-cancelado, .month-ev-dot.est-cancelado { opacity: .45; }
+.event-block.est-cancelado .ev-title, .month-ev-dot.est-cancelado { text-decoration: line-through; }
+.event-block.est-completado { filter: saturate(.55); }
+.ep-item.est-cancelado { opacity: .5; }
+.ep-item.est-cancelado .ep-name { text-decoration: line-through; }
+.ep-estado { display: inline-block; margin-left: 6px; font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 99px; background: rgba(220,38,38,.18); color: #f87171; text-transform: uppercase; letter-spacing: .05em; vertical-align: middle; }
+
+/* Estado de carga / error */
+.hor-estado { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 10px; font-size: 12px; color: var(--t2); }
+.hor-estado.mal { color: #fdba74; background: rgba(249,115,22,.08); border: 1px solid rgba(249,115,22,.35); border-radius: var(--radius-sm); padding: 8px 12px; }
+.hor-estado button { background: none; border: 0; color: var(--blue2); text-decoration: underline; cursor: pointer; font: inherit; }
+.hor-pulso { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); animation: horPulso 1s ease-in-out infinite; }
+@keyframes horPulso { 0%,100% { opacity: .25; transform: scale(.8); } 50% { opacity: 1; transform: scale(1.1); } }
+
+/* Formulario: pista y botón con carga */
+.field-hint { font-size: 11px; color: var(--t2); line-height: 1.4; }
+.btn-primary:disabled, .btn-ghost:disabled, .btn-danger-sm:disabled { opacity: .5; cursor: default; }
