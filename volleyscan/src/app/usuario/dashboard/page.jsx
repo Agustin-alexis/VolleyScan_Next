@@ -176,12 +176,7 @@ export default function Dashboard() {
                     <h1 className="welcome__title">¡Hola, {usuario?.nombre || 'Atleta'}! 👋</h1>
                     <p className="welcome__subtitle">Sigue entrenando y mejora cada día.</p>
                 </div>
-                <button className="btn-notification" aria-label="Ver notificaciones"
-                    onClick={() => router.push('/usuario/notificaciones')}>
-                    <FaBell />
-
-                    {noLeidas > 0 && <span className="notification-dot" aria-hidden="true">{noLeidas > 9 ? '9+' : noLeidas}</span>}
-                </button>
+                
             </header>
 
             {/* Stats */}
