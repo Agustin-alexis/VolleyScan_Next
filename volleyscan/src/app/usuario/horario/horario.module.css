@@ -1,0 +1,65 @@
+/* Agenda del deportista (solo lectura) */
+.page {
+  --card: #111827; --card2: #0e1422; --border: #1f2634; --blue: #3b82f6; --blue-l: #60a5fa; --violet: #6366f1;
+  --red: #f87171; --amber: #fbbf24; --green: #34d399; --purple: #a78bfa;
+  --text: #f1f5f9; --text2: #cbd5e1; --muted: #94a3b8; --faint: #475569;
+  max-width: 920px; margin: 0 auto; padding: 28px 20px 90px; color: var(--text2); line-height: 1.45;
+}
+.page *, .page *::before, .page *::after { box-sizing: border-box; }
+:where(.page) :where(h1, h2, h3, p, ul) { margin: 0; padding: 0; }
+.page ul { list-style: none; }
+.page button { font: inherit; cursor: pointer; }
+
+.head { margin-bottom: 22px; }
+.eyebrow { font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: var(--blue-l); font-weight: 700; }
+.head h1 { font-size: clamp(1.7rem, 3.4vw, 2.3rem); color: var(--text); letter-spacing: -.02em; margin-top: 4px; }
+.head p { color: var(--muted); margin-top: 4px; }
+
+.alerta { border-radius: 14px; padding: 12px 16px; margin-bottom: 16px; background: rgba(249,115,22,.1); border: 1px solid rgba(249,115,22,.4); color: #fdba74; }
+.estado { color: var(--muted); padding: 18px 0; }
+
+/* Próximo evento */
+.proximo { position: relative; display: grid; gap: 10px; background: linear-gradient(135deg, rgba(99,102,241,.22), var(--card) 70%); border: 1px solid rgba(99,102,241,.5); border-radius: 24px; padding: 22px 24px; margin-bottom: 26px; overflow: hidden; }
+.proximo small { font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: var(--blue-l); font-weight: 800; }
+.proximo h2 { color: var(--text); font-size: clamp(1.3rem, 3vw, 1.7rem); letter-spacing: -.02em; }
+.cuando { color: var(--text); font-weight: 600; }
+.cuenta { display: inline-block; background: rgba(59,130,246,.18); color: var(--blue-l); font-size: .78rem; font-weight: 700; padding: 3px 11px; border-radius: 99px; width: fit-content; }
+.notas { background: rgba(15,23,42,.6); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; color: var(--text2); white-space: pre-wrap; }
+
+/* Navegación del mes */
+.nav { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.nav h2 { color: var(--text); font-size: 1.15rem; flex: 1; min-width: 150px; }
+.btn { border: 1px solid var(--border); background: var(--card); color: var(--text2); border-radius: 12px; padding: 7px 14px; transition: .15s; }
+.btn:hover { border-color: var(--blue); color: var(--text); }
+
+/* Días y eventos */
+.dia { display: grid; grid-template-columns: 64px 1fr; gap: 14px; margin-bottom: 14px; }
+.fecha { text-align: center; padding-top: 6px; }
+.fecha b { display: block; font-size: 1.7rem; color: var(--text); line-height: 1; }
+.fecha span { font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.fechaHoy b { color: var(--blue-l); }
+.eventos { display: grid; gap: 10px; }
+.evento { position: relative; background: linear-gradient(160deg, var(--card), var(--card2)); border: 1px solid var(--border); border-left: 4px solid var(--blue); border-radius: 16px; padding: 14px 16px; display: grid; gap: 6px; }
+.t_entrenamiento { border-left-color: var(--blue); }
+.t_partido { border-left-color: #dc2626; }
+.t_evaluacion { border-left-color: #f59e0b; }
+.t_reunion { border-left-color: #10b981; }
+.t_otro { border-left-color: #8b5cf6; }
+.evento h3 { color: var(--text); font-size: 1.02rem; }
+.fila { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; color: var(--muted); font-size: .86rem; }
+.fila b { color: var(--text2); font-weight: 600; }
+.chip { font-size: .72rem; padding: 2px 10px; border-radius: 99px; background: rgba(148,163,184,.14); color: var(--text2); font-weight: 600; white-space: nowrap; }
+.chipTipo { background: rgba(59,130,246,.16); color: var(--blue-l); }
+.chipCancelado { background: rgba(248,113,113,.16); color: var(--red); }
+.chipHecho { background: rgba(52,211,153,.14); color: var(--green); }
+.cancelado { opacity: .55; }
+.cancelado h3 { text-decoration: line-through; }
+.indicaciones { color: var(--text2); background: rgba(148,163,184,.07); border-radius: 12px; padding: 9px 12px; font-size: .9rem; white-space: pre-wrap; }
+.vacio { text-align: center; padding: 42px 20px; border: 1px dashed var(--border); border-radius: 22px; color: var(--muted); }
+.vacio h3 { color: var(--text); font-size: 1.15rem; margin-bottom: 6px; }
+
+@media (max-width: 520px) {
+  .page { padding: 20px 14px 80px; }
+  .dia { grid-template-columns: 46px 1fr; gap: 10px; }
+  .fecha b { font-size: 1.3rem; }
+}

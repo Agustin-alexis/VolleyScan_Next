@@ -673,3 +673,84 @@ body::before {
     padding: 24px 16px;
   }
 }
+
+/* =============================================
+   AÑADIDOS · rutinas reales (no cambian tu diseño)
+   ============================================= */
+
+/* Botones que antes eran <div>: mismo aspecto, ahora accesibles con teclado */
+button.ex-tag, button.dur-pill, button.preset-card { font: inherit; text-align: left; }
+button.dur-pill { font-family: var(--font-head); font-size: 14px; font-weight: 600; }
+button.preset-card { display: block; color: inherit; }
+button.ex-tag:focus-visible, button.dur-pill:focus-visible, button.preset-card:focus-visible,
+.act-btn:focus-visible, .btn-primary:focus-visible, .btn-secondary:focus-visible, .btn-danger:focus-visible,
+.fpill:focus-visible, .ex-x:focus-visible { outline: 2px solid var(--accent2); outline-offset: 2px; }
+
+input[type="date"].field-input { color-scheme: dark; }
+.btn-primary:disabled { opacity: .6; cursor: progress; transform: none; box-shadow: none; }
+.field-select:disabled { opacity: .6; cursor: not-allowed; }
+
+/* Estados */
+.state-box { background: var(--panel2); border: 1px solid var(--border); border-radius: 14px; padding: 28px; text-align: center; color: var(--muted); }
+.state-box--error { border-color: rgba(255, 107, 107, .35); color: var(--accent3); }
+.warn-note { background: rgba(247, 183, 49, .08); border: 1px solid rgba(247, 183, 49, .3); color: var(--accent4); border-radius: 10px; padding: 14px; font-size: 13px; line-height: 1.5; }
+.link-btn { background: none; border: 0; padding: 0; color: var(--accent2); font: inherit; font-weight: 600; cursor: pointer; text-decoration: underline; }
+
+/* Ejercicios elegidos, con series y repeticiones */
+.ex-add-row { display: flex; gap: 8px; }
+.ex-add-row .field-input { flex: 1; min-width: 0; }
+.ex-vacio { font-size: 12px; color: var(--muted); padding: 10px 0; }
+.ex-sel-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.ex-sel-row { display: flex; align-items: center; gap: 10px; background: var(--panel3); border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; }
+.ex-sel-n { width: 22px; height: 22px; border-radius: 6px; background: rgba(124, 92, 252, .2); color: var(--accent); font: 700 12px var(--font-head); display: grid; place-items: center; flex: none; }
+.ex-sel-name { flex: 1; min-width: 0; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ex-num { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); }
+.ex-num input { width: 46px; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; color: var(--text); font: 700 14px var(--font-head); text-align: center; padding: 4px 2px; outline: none; }
+.ex-num input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+.ex-x { width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; flex: none; }
+.ex-x:hover { border-color: var(--accent3); color: var(--accent3); }
+@media (max-width: 480px) { .ex-sel-row { flex-wrap: wrap; } .ex-sel-name { flex-basis: calc(100% - 40px); } }
+
+/* Avance del deportista en cada tarjeta */
+.re-tag.done { color: var(--accent5); background: rgba(38, 222, 129, .1); }
+.progress-line { margin-bottom: 12px; }
+.progress-track { height: 5px; background: rgba(255, 255, 255, .06); border-radius: 99px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent5), var(--accent2)); border-radius: 99px; transition: width .6s cubic-bezier(.4, 0, .2, 1); }
+.act-btn[aria-disabled="true"] { opacity: .35; cursor: not-allowed; }
+
+/* Botones secundarios y de peligro */
+.btn-secondary { padding: 10px 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel3); color: var(--text); font: 600 13px var(--font-body); cursor: pointer; transition: border-color .18s, background .18s; }
+.btn-secondary:hover:not(:disabled) { border-color: var(--muted2); background: var(--panel); }
+.btn-secondary:disabled, .btn-danger:disabled { opacity: .6; cursor: progress; }
+.btn-block { width: 100%; margin-top: 8px; }
+.btn-danger { padding: 10px 18px; border-radius: 10px; border: 1px solid rgba(255, 107, 107, .5); background: rgba(255, 107, 107, .15); color: var(--accent3); font: 700 13px var(--font-body); cursor: pointer; }
+.btn-danger:hover:not(:disabled) { background: var(--accent3); color: #fff; }
+
+/* Cuadro de confirmación */
+.modal-text { font-size: 14px; color: var(--muted); line-height: 1.6; margin-bottom: 22px; }
+.modal-text strong { color: var(--accent3); }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+/* Aviso de error */
+.toast--error { border-color: rgba(255, 107, 107, .5); }
+
+@media (prefers-reduced-motion: reduce) { .progress-fill, .intensity-bar-fill { transition: none; } .card, .routine-card, .stat-mini { animation: none; } }
+
+/* Móvil: la fila de prediseñadas (scroll horizontal) no debe ensanchar la rejilla */
+.layout { grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); }
+.layout > * { min-width: 0; }
+.card-glow { pointer-events: none; }
+
+@media (max-width: 560px) {
+  .rut-main { padding: 14px; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .form-grid { grid-template-columns: 1fr; }
+  .page-title { font-size: 20px; }
+}
+
+/* Selector "Ver rutinas de": la lista, las cifras y el calendario muestran solo a ese deportista */
+.ver-atleta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ver-atleta .field-label { white-space: nowrap; }
+.ver-atleta .field-select { min-width: 200px; }
+@media (max-width: 560px) { .ver-atleta { width: 100%; } .ver-atleta .field-select { flex: 1; min-width: 0; } }
+.routines-header { flex-wrap: wrap; gap: 12px; }

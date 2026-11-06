@@ -1,0 +1,53 @@
+/* Campana de avisos — CSS Module, paleta del dashboard */
+.raiz { position: relative; display: inline-block; }
+.flotante { position: fixed; top: 14px; right: 18px; z-index: 60; }
+
+.campana {
+    position: relative; display: grid; place-items: center; width: 44px; height: 44px;
+    border-radius: 14px; border: 1px solid #1f2634; background: #111827; color: #cbd5e1; cursor: pointer;
+    transition: border-color .15s, color .15s, background .15s, transform .15s;
+}
+.campana:hover { border-color: #2b3a55; color: #fff; background: #141d30; }
+.campana:active { transform: scale(.96); }
+.campana:focus-visible, .item:focus-visible, .leerTodos:focus-visible { outline: 2px solid #3b82f6; outline-offset: 2px; }
+.campanaAbierta { border-color: #3b82f6; color: #fff; }
+
+.contador {
+    position: absolute; top: -6px; right: -6px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px;
+    display: grid; place-items: center; font: 700 .7rem/1 system-ui, sans-serif; color: #fff;
+    background: linear-gradient(135deg, #f97316, #ef4444); border: 2px solid #0b0f1a;
+}
+
+.panel {
+    position: absolute; top: calc(100% + 10px); right: 0; width: min(380px, calc(100vw - 24px)); max-height: min(520px, 75dvh);
+    display: flex; flex-direction: column; overflow: hidden; border-radius: 18px; border: 1px solid #1f2634;
+    background: #0f1626; box-shadow: 0 24px 60px rgba(0, 0, 0, .55); font-family: system-ui, sans-serif;
+    animation: entra .16s ease-out;
+}
+@keyframes entra { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .panel { animation: none; } .campana { transition: none; } }
+/* En móvil el panel se ancla al borde de la pantalla, no a la campana */
+@media (max-width: 520px) { .flotante .panel { position: fixed; top: 66px; right: 12px; left: 12px; width: auto; } }
+
+.cabecera { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid #1f2634; color: #f1f5f9; }
+.leerTodos { background: none; border: 0; padding: 4px 6px; border-radius: 8px; color: #60a5fa; font: 600 .8rem system-ui, sans-serif; cursor: pointer; }
+.leerTodos:hover { text-decoration: underline; }
+
+.vacio { margin: 0; padding: 28px 18px; text-align: center; color: #94a3b8; font-size: .9rem; }
+
+.lista { list-style: none; margin: 0; padding: 6px; overflow-y: auto; display: grid; gap: 2px; }
+.item {
+    width: 100%; display: flex; align-items: flex-start; gap: 12px; text-align: left; padding: 12px; border: 0; border-radius: 12px;
+    background: transparent; color: #cbd5e1; cursor: pointer; font-family: inherit;
+}
+.item:hover { background: #151f35; }
+.nuevo { background: rgba(59, 130, 246, .08); }
+.icono { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; }
+.icoVinculo { background: rgba(59, 130, 246, .16); color: #60a5fa; }
+.icoAnalisis { background: rgba(34, 197, 94, .16); color: #4ade80; }
+.icoRutina { background: rgba(247, 183, 49, .16); color: #fbbf24; }
+.texto { flex: 1; min-width: 0; display: grid; gap: 3px; }
+.texto strong { color: #f1f5f9; font-size: .92rem; line-height: 1.3; }
+.texto span { color: #94a3b8; font-size: .84rem; line-height: 1.4; }
+.texto small { color: #64748b; font-size: .74rem; }
+.punto { flex: none; width: 9px; height: 9px; margin-top: 6px; border-radius: 50%; background: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, .2); }

@@ -134,6 +134,7 @@
 .notif-icon--racha        { background: rgba(249,115,22,.18); color: var(--accent-orange); }
 .notif-icon--recordatorio { background: rgba(59,130,246,.18); color: var(--accent-blue); }
 .notif-icon--analisis     { background: rgba(234,179,8,.18);  color: var(--accent-yellow); }
+.notif-icon--vinculo      { background: rgba(59,130,246,.18); color: var(--accent-blue); }
 
 /* Body */
 .notif-body { flex: 1; min-width: 0; }

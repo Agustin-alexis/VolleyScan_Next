@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api } from "./api";
+import {api} from '@/lib/api'
 
 export function useApi(ruta, params) {
     const [data, setData] = useState(null);

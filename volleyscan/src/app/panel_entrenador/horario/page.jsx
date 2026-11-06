@@ -2,43 +2,84 @@
 
 import './Horario.css'
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { listarEquipos } from '@/lib/equipos/api';
+import { borrarEvento, crearEvento, editarEvento, fechaISO, listarEventos, mensajeDeError } from '@/lib/horario/api';
+import { listarDeportistas } from '@/lib/vinculos/api';
 
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 6); // 6-23
 const DAY_NAMES = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 const MONTH_SHORT = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
+// Clave de la base de datos → nombre en pantalla e ícono
+const TIPOS = [
+    { v: 'entrenamiento', t: 'Entrenamiento', icon: 'fa-futbol' },
+    { v: 'partido', t: 'Competencia', icon: 'fa-trophy' },
+    { v: 'evaluacion', t: 'Evaluación', icon: 'fa-clipboard-check' },
+    { v: 'reunion', t: 'Reunión', icon: 'fa-users' },
+    { v: 'otro', t: 'Otro', icon: 'fa-calendar-day' },
+];
+const TIPO = Object.fromEntries(TIPOS.map((t) => [t.v, t]));
+const ESTADOS = [
+    { v: 'programado', t: 'Programado' },
+    { v: 'en_curso', t: 'En curso' },
+    { v: 'completado', t: 'Completado' },
+    { v: 'cancelado', t: 'Cancelado' },
+];
+
 function isSameDay(a, b) {
     return a.getDate() === b.getDate() && a.getMonth() === b.getMonth() && a.getFullYear() === b.getFullYear();
 }
 function fmtDate(d) {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return fechaISO(d);
 }
 function fmtTime(d) {
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
-
-function getSampleEvents() {
-    const today = new Date();
-    const y = today.getFullYear(), m = today.getMonth(), d = today.getDate();
-    return [
-        { id: 1, title: 'Entrenamiento técnico', type: 'Entrenamiento', place: 'Cancha Principal', notes: 'Técnica de recepción y saque', start: new Date(y, m, d, 8, 0), end: new Date(y, m, d, 10, 0) },
-        { id: 2, title: 'Partido vs Tigres', type: 'Competencia', place: 'Estadio Municipal', notes: 'Uniforme completo', start: new Date(y, m, d + 1, 15, 0), end: new Date(y, m, d + 1, 17, 30) },
-        { id: 3, title: 'Reunión táctica', type: 'Reunión', place: 'Sala de conferencias', notes: 'Revisión de videos', start: new Date(y, m, d + 3, 19, 0), end: new Date(y, m, d + 3, 20, 30) },
-    ];
+function addDays(d, n) {
+    const x = new Date(d);
+    x.setDate(x.getDate() + n);
+    return x;
 }
 
-const EMPTY_FORM = { title: '', type: 'Entrenamiento', place: '', fecha: '', horaI: '09:00', horaF: '11:00', notes: '' };
+// Evento del servidor → forma que usa el calendario
+function aEvento(e) {
+    return {
+        id: e.id,
+        title: e.titulo,
+        tipo: e.tipo,
+        estado: e.estado,
+        place: e.ubicacion || '',
+        notes: e.notas || '',
+        equipo: e.equipo,
+        deportista: e.deportista,
+        start: new Date(`${e.fecha}T${e.horaInicio}`),
+        end: new Date(`${e.fecha}T${e.horaFin}`),
+    };
+}
+
+const claseTipo = (tipo) => 'tipo-' + (tipo || 'otro');
+const claseEstado = (estado) => (estado === 'cancelado' ? 'est-cancelado' : estado === 'completado' ? 'est-completado' : '');
+const paraQuien = (ev) => (ev.equipo ? ev.equipo.nombre : ev.deportista ? ev.deportista.nombre : '');
+
+const EMPTY_FORM = { title: '', tipo: 'entrenamiento', place: '', fecha: '', horaI: '09:00', horaF: '11:00', notes: '', para: 'personal', estado: 'programado' };
 
 export default function Horario() {
     const [view, setView] = useState('semana');
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [events, setEvents] = useState(getSampleEvents);
+    const [events, setEvents] = useState([]);
+    const [proximos, setProximos] = useState([]);
+    const [cargando, setCargando] = useState(true);
+    const [errorCarga, setErrorCarga] = useState('');
+    const [recarga, setRecarga] = useState(0);
+    const [equipos, setEquipos] = useState([]);
+    const [deportistas, setDeportistas] = useState([]);
     const [modal, setModal] = useState(false);
     const [monthPicker, setMonthPicker] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [form, setForm] = useState(EMPTY_FORM);
+    const [guardando, setGuardando] = useState(false);
     const [toast, setToast] = useState({ show: false, msg: '' });
     const [mpYear, setMpYear] = useState(new Date().getFullYear());
 
@@ -58,52 +99,6 @@ export default function Horario() {
     }
 
     const weekDays = getWeekDates();
-
-    function getEventsForDay(date) {
-        const s = new Date(date); s.setHours(0, 0, 0, 0);
-        const e = new Date(date); e.setHours(23, 59, 59, 999);
-        return events.filter(ev => ev.start <= e && ev.end >= s).sort((a, b) => a.start - b.start);
-    }
-
-    function openNew(date, hour) {
-        const d = date ? fmtDate(date) : fmtDate(new Date());
-        const h = hour != null ? `${String(hour).padStart(2, '0')}:00` : '09:00';
-        const hf = hour != null ? `${String(hour + 2).padStart(2, '0')}:00` : '11:00';
-        setForm({ ...EMPTY_FORM, fecha: d, horaI: h, horaF: hf });
-        setEditingId(null);
-        setModal(true);
-    }
-
-    function openEdit(id) {
-        const ev = events.find(e => e.id === id);
-        if (!ev) return;
-        setForm({ title: ev.title, type: ev.type, place: ev.place || '', fecha: fmtDate(ev.start), horaI: fmtTime(ev.start), horaF: fmtTime(ev.end), notes: ev.notes || '' });
-        setEditingId(id);
-        setModal(true);
-    }
-
-    function saveEvent() {
-        if (!form.title.trim()) { showToast('El nombre es obligatorio'); return; }
-        if (!form.fecha || !form.horaI || !form.horaF) { showToast('Completa fecha y horarios'); return; }
-        const start = new Date(`${form.fecha}T${form.horaI}`);
-        const end = new Date(`${form.fecha}T${form.horaF}`);
-        if (end <= start) { showToast('La hora fin debe ser posterior'); return; }
-        const ev = { id: editingId || Date.now(), title: form.title, type: form.type, place: form.place, notes: form.notes, start, end };
-        if (editingId) {
-            setEvents(prev => prev.map(e => e.id === editingId ? ev : e));
-            showToast('Evento actualizado');
-        } else {
-            setEvents(prev => [...prev, ev]);
-            showToast('Evento creado');
-        }
-        setModal(false);
-    }
-
-    function deleteEvent() {
-        setEvents(prev => prev.filter(e => e.id !== editingId));
-        setModal(false);
-        showToast('Evento eliminado');
-    }
 
     // Month grid
     function getMonthGrid() {
@@ -130,25 +125,157 @@ export default function Horario() {
         return cells;
     }
 
-    const futureEvents = events.filter(e => e.end > new Date()).sort((a, b) => a.start - b.start).slice(0, 10);
+    // Rango que se pide al servidor: lo que se ve en pantalla
+    const rangoVisible = useMemo(() => {
+        if (view === 'semana') {
+            const lun = (() => {
+                const d = new Date(currentDate);
+                const dow = d.getDay();
+                d.setDate(d.getDate() + (dow === 0 ? -6 : 1 - dow));
+                return d;
+            })();
+            return [fmtDate(lun), fmtDate(addDays(lun, 6))];
+        }
+        const y = currentDate.getFullYear(), m = currentDate.getMonth();
+        const dow = new Date(y, m, 1).getDay();
+        const ini = new Date(y, m, 1 - (dow === 0 ? 6 : dow - 1));
+        return [fmtDate(ini), fmtDate(addDays(ini, 41))];
+    }, [view, currentDate]);
 
-    function typeClass(type) { return 'tipo-' + (type || '').replace(/[^a-zA-Z]/g, ''); }
+    const [desde, hasta] = rangoVisible;
+
+    // Eventos del rango visible
+    useEffect(() => {
+        let vivo = true;
+        setCargando(true);
+        listarEventos(desde, hasta).then((r) => {
+            if (!vivo) return;
+            setCargando(false);
+            if (r.ok) {
+                setEvents(r.data.map(aEvento));
+                setErrorCarga('');
+            } else {
+                setErrorCarga(mensajeDeError(r));
+            }
+        });
+        return () => { vivo = false; };
+    }, [desde, hasta, recarga]);
+
+    // Próximos eventos (panel derecho): hoy → 60 días
+    useEffect(() => {
+        let vivo = true;
+        const hoy = new Date();
+        listarEventos(fmtDate(hoy), fmtDate(addDays(hoy, 60))).then((r) => {
+            if (vivo && r.ok) setProximos(r.data.map(aEvento));
+        });
+        return () => { vivo = false; };
+    }, [recarga]);
+
+    // Equipos y deportistas para elegir "para quién" es el evento
+    useEffect(() => {
+        let vivo = true;
+        Promise.all([listarEquipos(), listarDeportistas()]).then(([a, b]) => {
+            if (!vivo) return;
+            if (a.ok) setEquipos(a.data);
+            if (b.ok) setDeportistas(Array.isArray(b.data) ? b.data : b.data?.deportistas ?? []);
+        });
+        return () => { vivo = false; };
+    }, []);
+
+    const refrescar = useCallback(() => setRecarga((n) => n + 1), []);
+
+    function getEventsForDay(date) {
+        const s = new Date(date); s.setHours(0, 0, 0, 0);
+        const e = new Date(date); e.setHours(23, 59, 59, 999);
+        return events.filter(ev => ev.start <= e && ev.end >= s).sort((a, b) => a.start - b.start);
+    }
+
+    function openNew(date, hour) {
+        const d = date ? fmtDate(date) : fmtDate(new Date());
+        const h = hour != null ? `${String(hour).padStart(2, '0')}:00` : '09:00';
+        const hf = hour != null ? `${String(Math.min(hour + 2, 23)).padStart(2, '0')}:${hour + 2 > 23 ? '59' : '00'}` : '11:00';
+        const para = equipos.length > 0 ? `equipo:${equipos[0].id}` : 'personal';
+        setForm({ ...EMPTY_FORM, fecha: d, horaI: h, horaF: hf, para });
+        setEditingId(null);
+        setModal(true);
+    }
+
+    function openEdit(id) {
+        const ev = events.find(e => e.id === id) || proximos.find(e => e.id === id);
+        if (!ev) return;
+        const para = ev.equipo ? `equipo:${ev.equipo.id}` : ev.deportista ? `deportista:${ev.deportista.id}` : 'personal';
+        setForm({ title: ev.title, tipo: ev.tipo, place: ev.place, fecha: fmtDate(ev.start), horaI: fmtTime(ev.start), horaF: fmtTime(ev.end), notes: ev.notes, para, estado: ev.estado });
+        setEditingId(id);
+        setModal(true);
+    }
+
+    async function saveEvent() {
+        if (guardando) return;
+        if (!form.title.trim()) { showToast('El nombre es obligatorio'); return; }
+        if (!form.fecha || !form.horaI || !form.horaF) { showToast('Completa fecha y horarios'); return; }
+        if (form.horaF <= form.horaI) { showToast('La hora fin debe ser posterior'); return; }
+        const [tipoPara, idPara] = form.para.split(':');
+        const cuerpo = {
+            titulo: form.title.trim(), tipo: form.tipo, fecha: form.fecha, horaInicio: form.horaI, horaFin: form.horaF,
+            ubicacion: form.place, notas: form.notes, estado: form.estado,
+            equipoId: tipoPara === 'equipo' ? Number(idPara) : null,
+            deportistaId: tipoPara === 'deportista' ? Number(idPara) : null,
+        };
+        setGuardando(true);
+        const r = editingId ? await editarEvento(editingId, cuerpo) : await crearEvento(cuerpo);
+        setGuardando(false);
+        if (!r.ok) { showToast(mensajeDeError(r)); return; }
+        showToast(editingId ? 'Evento actualizado' : 'Evento creado');
+        setModal(false);
+        refrescar();
+    }
+
+    async function deleteEvent() {
+        if (guardando || !editingId) return;
+        if (!window.confirm('¿Eliminar este evento? Si es de un equipo o de un deportista, se les avisará.')) return;
+        setGuardando(true);
+        const r = await borrarEvento(editingId);
+        setGuardando(false);
+        if (!r.ok) { showToast(mensajeDeError(r)); return; }
+        setModal(false);
+        showToast('Evento eliminado');
+        refrescar();
+    }
+
+    const futureEvents = proximos.filter(e => e.end > new Date() && e.estado !== 'cancelado').slice(0, 10);
+
+    // Fila de la semana donde se dibuja el evento (los de antes de las 6:00 se dibujan en la primera fila)
+    const filaDe = (ev) => Math.min(23, Math.max(6, ev.start.getHours()));
+
+    const avisoPara = form.para.startsWith('equipo:')
+        ? 'Los deportistas del equipo verán este evento y recibirán un aviso.'
+        : form.para.startsWith('deportista:')
+            ? 'Solo ese deportista lo verá y recibirá un aviso.'
+            : 'Solo tú verás este evento.';
 
     return (
         <>
                 <main className="hor-main">
             <section className="main">
                 <h2 className="page-section-label">Calendario / Horario</h2>
+
+                {errorCarga && (
+                    <div className="hor-estado mal" role="alert">
+                        {errorCarga} <button onClick={refrescar}>Reintentar</button>
+                    </div>
+                )}
+                {cargando && !errorCarga && <div className="hor-estado" role="status"><span className="hor-pulso" />Cargando horario…</div>}
+
                 <section className="cal-layout">
 
                     {/* Calendar */}
                     <article className="cal-area">
                         <header className="cal-controls">
                             <section className="ctrl-left">
-                                <button className="ctrl-btn" onClick={() => { const d = new Date(currentDate); view === 'semana' ? d.setDate(d.getDate() - 7) : d.setMonth(d.getMonth() - 1); setCurrentDate(d); }}>
+                                <button className="ctrl-btn" aria-label="Anterior" onClick={() => { const d = new Date(currentDate); view === 'semana' ? d.setDate(d.getDate() - 7) : d.setMonth(d.getMonth() - 1); setCurrentDate(d); }}>
                                     <i className="fa-solid fa-chevron-left"></i>
                                 </button>
-                                <button className="ctrl-btn" onClick={() => { const d = new Date(currentDate); view === 'semana' ? d.setDate(d.getDate() + 7) : d.setMonth(d.getMonth() + 1); setCurrentDate(d); }}>
+                                <button className="ctrl-btn" aria-label="Siguiente" onClick={() => { const d = new Date(currentDate); view === 'semana' ? d.setDate(d.getDate() + 7) : d.setMonth(d.getMonth() + 1); setCurrentDate(d); }}>
                                     <i className="fa-solid fa-chevron-right"></i>
                                 </button>
                                 <button className="ctrl-pill" onClick={() => setCurrentDate(new Date())}>Hoy</button>
@@ -185,18 +312,20 @@ export default function Horario() {
                                             {HOURS.map(hour => (
                                                 <div key={hour} className="hour-row" style={{ gridTemplateColumns: 'repeat(7,1fr)' }}>
                                                     {weekDays.map((day, col) => {
-                                                        const dayEvs = getEventsForDay(day).filter(ev => ev.start.getHours() === hour);
+                                                        const dayEvs = getEventsForDay(day).filter(ev => filaDe(ev) === hour);
                                                         return (
                                                             <div key={col} className="hour-cell" onClick={() => openNew(day, hour)}>
                                                                 {dayEvs.map(ev => {
                                                                     const dur = (ev.end - ev.start) / 3600000;
+                                                                    const mismaFila = ev.start.getHours() === hour;
                                                                     return (
-                                                                        <div key={ev.id} className={`event-block ${typeClass(ev.type)}`}
-                                                                            style={{ height: `${Math.max(dur * 56, 42)}px`, top: `${(ev.start.getMinutes() / 60) * 56}px` }}
+                                                                        <div key={ev.id} className={`event-block ${claseTipo(ev.tipo)} ${claseEstado(ev.estado)}`}
+                                                                            style={{ height: `${Math.max(dur * 56, 42)}px`, top: `${mismaFila ? (ev.start.getMinutes() / 60) * 56 : 0}px` }}
                                                                             onClick={e => { e.stopPropagation(); openEdit(ev.id); }}>
                                                                             <div className="ev-title">{ev.title}</div>
                                                                             <div className="ev-time">{fmtTime(ev.start)} - {fmtTime(ev.end)}</div>
                                                                             {ev.place && <div className="ev-place">{ev.place}</div>}
+                                                                            {paraQuien(ev) && <div className="ev-team">{paraQuien(ev)}</div>}
                                                                         </div>
                                                                     );
                                                                 })}
@@ -218,16 +347,20 @@ export default function Horario() {
                                             {DAY_NAMES.map(d => <div key={d} className="month-header-cell">{d}</div>)}
                                         </div>
                                         <div className="month-days-grid">
-                                            {getMonthGrid().map(({ date, isCurrentMonth }, i) => (
-                                                <div key={i} className={`month-day ${isSameDay(date, new Date()) ? 'today' : ''} ${!isCurrentMonth ? 'other-month' : ''}`} onClick={() => openNew(date)}>
-                                                    <span className="month-day-num">{date.getDate()}</span>
-                                                    {getEventsForDay(date).slice(0, 3).map(ev => (
-                                                        <div key={ev.id} className={`month-ev-dot ${typeClass(ev.type)}`} onClick={e => { e.stopPropagation(); openEdit(ev.id); }}>
-                                                            {String(ev.start.getHours()).padStart(2, '0')}:{String(ev.start.getMinutes()).padStart(2, '0')} {ev.title.slice(0, 12)}{ev.title.length > 12 ? '...' : ''}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            ))}
+                                            {getMonthGrid().map(({ date, isCurrentMonth }, i) => {
+                                                const delDia = getEventsForDay(date);
+                                                return (
+                                                    <div key={i} className={`month-day ${isSameDay(date, new Date()) ? 'today' : ''} ${!isCurrentMonth ? 'other-month' : ''}`} onClick={() => openNew(date)}>
+                                                        <span className="month-day-num">{date.getDate()}</span>
+                                                        {delDia.slice(0, 3).map(ev => (
+                                                            <div key={ev.id} className={`month-ev-dot ${claseTipo(ev.tipo)} ${claseEstado(ev.estado)}`} onClick={e => { e.stopPropagation(); openEdit(ev.id); }}>
+                                                                {fmtTime(ev.start)} {ev.title.slice(0, 12)}{ev.title.length > 12 ? '...' : ''}
+                                                            </div>
+                                                        ))}
+                                                        {delDia.length > 3 && <div className="muted" style={{ fontSize: 10, color: 'var(--t2)' }}>+{delDia.length - 3} más</div>}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
                                     </section>
                                 </section>
@@ -242,14 +375,15 @@ export default function Horario() {
                             {futureEvents.length === 0
                                 ? <div style={{ textAlign: 'center', color: 'var(--t3)', padding: '20px', fontSize: '12px' }}>No hay eventos próximos</div>
                                 : futureEvents.map(ev => (
-                                    <div key={ev.id} className="ep-item" onClick={() => openEdit(ev.id)}>
-                                        <div className={`ep-dot ${typeClass(ev.type)}`}>
-                                            <i className={`fa-solid ${ev.type === 'Competencia' ? 'fa-trophy' : ev.type === 'Reunión' ? 'fa-users' : 'fa-futbol'}`} style={{ fontSize: '11px' }}></i>
+                                    <div key={ev.id} className={`ep-item ${claseEstado(ev.estado)}`} onClick={() => openEdit(ev.id)}>
+                                        <div className={`ep-dot ${claseTipo(ev.tipo)}`}>
+                                            <i className={`fa-solid ${(TIPO[ev.tipo] ?? TIPO.otro).icon}`} style={{ fontSize: '11px' }}></i>
                                         </div>
                                         <div style={{ flex: 1, minWidth: 0 }}>
                                             <div className="ep-name">{ev.title}</div>
                                             <div className="ep-when">{ev.start.getDate()} {MONTH_SHORT[ev.start.getMonth()]} • {fmtTime(ev.start)}</div>
                                             {ev.place && <div className="ep-place">{ev.place}</div>}
+                                            {paraQuien(ev) && <div className="ep-place">{paraQuien(ev)}</div>}
                                         </div>
                                     </div>
                                 ))
@@ -300,17 +434,34 @@ export default function Horario() {
                         <div className="form-grid">
                             <label className="field form-full">
                                 <span className="field-label">Nombre del evento</span>
-                                <input className="field-inp" value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Ej. Entrenamiento técnico" />
+                                <input className="field-inp" value={form.title} maxLength={150} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Ej. Entrenamiento técnico" />
+                            </label>
+                            <label className="field form-full">
+                                <span className="field-label">Para</span>
+                                <select className="field-sel" value={form.para} onChange={e => setForm(f => ({ ...f, para: e.target.value }))}>
+                                    {equipos.length > 0 && (
+                                        <optgroup label="Equipos">
+                                            {equipos.map(eq => <option key={eq.id} value={`equipo:${eq.id}`}>{eq.nombre}</option>)}
+                                        </optgroup>
+                                    )}
+                                    {deportistas.length > 0 && (
+                                        <optgroup label="Un deportista">
+                                            {deportistas.map(d => <option key={d.id} value={`deportista:${d.id}`}>{d.nombre} {d.apellido}</option>)}
+                                        </optgroup>
+                                    )}
+                                    <option value="personal">Solo para mí</option>
+                                </select>
+                                <span className="field-hint">{avisoPara}</span>
                             </label>
                             <label className="field">
                                 <span className="field-label">Tipo</span>
-                                <select className="field-sel" value={form.type} onChange={e => setForm(f => ({ ...f, type: e.target.value }))}>
-                                    {['Entrenamiento', 'Competencia', 'Reunión', 'Otro'].map(o => <option key={o}>{o}</option>)}
+                                <select className="field-sel" value={form.tipo} onChange={e => setForm(f => ({ ...f, tipo: e.target.value }))}>
+                                    {TIPOS.map(o => <option key={o.v} value={o.v}>{o.t}</option>)}
                                 </select>
                             </label>
                             <label className="field">
                                 <span className="field-label">Lugar</span>
-                                <input className="field-inp" value={form.place} onChange={e => setForm(f => ({ ...f, place: e.target.value }))} placeholder="Cancha 1…" />
+                                <input className="field-inp" value={form.place} maxLength={150} onChange={e => setForm(f => ({ ...f, place: e.target.value }))} placeholder="Cancha 1…" />
                             </label>
                             <label className="field">
                                 <span className="field-label">Fecha</span>
@@ -324,15 +475,23 @@ export default function Horario() {
                                 <span className="field-label">Hora fin</span>
                                 <input className="field-inp" type="time" value={form.horaF} onChange={e => setForm(f => ({ ...f, horaF: e.target.value }))} />
                             </label>
+                            {editingId && (
+                                <label className="field">
+                                    <span className="field-label">Estado</span>
+                                    <select className="field-sel" value={form.estado} onChange={e => setForm(f => ({ ...f, estado: e.target.value }))}>
+                                        {ESTADOS.map(o => <option key={o.v} value={o.v}>{o.t}</option>)}
+                                    </select>
+                                </label>
+                            )}
                             <label className="field form-full">
-                                <span className="field-label">Notas</span>
-                                <textarea className="field-ta" rows="2" value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Detalles adicionales…"></textarea>
+                                <span className="field-label">Indicaciones</span>
+                                <textarea className="field-ta" rows="3" maxLength={2000} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Qué llevar, qué se va a trabajar, punto de encuentro… (los deportistas lo ven)"></textarea>
                             </label>
                         </div>
                         <footer className="modal-foot">
-                            {editingId && <button className="btn-danger-sm" onClick={deleteEvent}><i className="fa-solid fa-trash"></i> Eliminar</button>}
-                            <button className="btn-ghost" onClick={() => setModal(false)}>Cancelar</button>
-                            <button className="btn-primary" onClick={saveEvent}>Guardar</button>
+                            {editingId && <button className="btn-danger-sm" disabled={guardando} onClick={deleteEvent}><i className="fa-solid fa-trash"></i> Eliminar</button>}
+                            <button className="btn-ghost" disabled={guardando} onClick={() => setModal(false)}>Cancelar</button>
+                            <button className="btn-primary" disabled={guardando} onClick={saveEvent}>{guardando ? 'Guardando…' : 'Guardar'}</button>
                         </footer>
                     </article>
                 </aside>

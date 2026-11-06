@@ -1,0 +1,5 @@
+.chips { display: flex; gap: 8px; overflow-x: auto; padding: 2px 0 14px; margin-bottom: 4px; scrollbar-width: thin; }
+.chip { flex: none; max-width: 240px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 8px 14px; border-radius: 999px; border: 1px solid #1e293b; background: #0f172a; color: #94a3b8; font-family: inherit; font-weight: 600; font-size: .85rem; cursor: pointer; transition: border-color .15s, color .15s, background .15s; }
+.chip:hover { border-color: #334155; color: #e2e8f0; }
+.chip.on { background: rgba(59, 130, 246, .16); border-color: #3b82f6; color: #bfdbfe; }
+.chip:focus-visible { outline: 2px solid #3b82f6; outline-offset: 2px; }
