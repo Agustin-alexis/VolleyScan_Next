@@ -12,7 +12,7 @@ import {
 } from "react-icons/fa6";
 
 import { useApi } from "@/lib/UseApi";
-import { api, cerrarSesion } from "@/lib/api";
+import { api, cerrarSesionCompleta } from "@/lib/api";
 
 import "./configuracion.css";
 
@@ -105,8 +105,8 @@ export default function Configuracion() {
         setModal({
             message: "¿Seguro que quieres cerrar sesión en VolleyScan?",
             confirmar: "Cerrar sesión",
-            onConfirm: () => {
-                cerrarSesion();
+            onConfirm: async () => {
+                await cerrarSesionCompleta();
                 router.push("/login");
             },
         });

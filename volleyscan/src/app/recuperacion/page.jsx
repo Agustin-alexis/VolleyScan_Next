@@ -1,50 +1,68 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Logo from  "@/app/public/img/Logo.VS.jpg"
 import Image from 'next/image'
+import Logo from '@/app/public/img/Logo.VS.jpg'
 import './recuperacio.css'
+import { FaEnvelopeCircleCheck } from 'react-icons/fa6'
 
+const API = process.env.NEXT_PUBLIC_API_URL
 
-export default function page() {
-  const [email,   setEmail]   = useState('')
-  const [error,   setError]   = useState('')
+export default function RecuperarPage() {
+  const [email, setEmail] = useState('')
+  const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const [sent,    setSent]    = useState(false)
-  const [toast,   setToast]   = useState(null)
+  const [sent, setSent] = useState(false)
+  const [toast, setToast] = useState(null)
 
   function showToast(message, type = 'success') {
     setToast({ message, type })
     setTimeout(() => setToast(null), 3500)
   }
 
-  function isValidEmail(email) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  function isValidEmail(value) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     setError('')
 
-    if (!email) {
+    const correo = email.trim()
+    if (!correo) {
       setError('El correo es obligatorio.')
       return
     }
-    if (!isValidEmail(email)) {
+    if (!isValidEmail(correo)) {
       setError('Introduce un correo válido.')
       return
     }
 
     setLoading(true)
+    try {
+      const res = await fetch(`${API}/auth/recuperar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: correo }),
+      })
 
-    // Simula envío del enlace
-    setTimeout(() => {
-      setLoading(false)
+      if (res.status === 429) {
+        setError('Demasiados intentos. Espera un momento e inténtalo de nuevo.')
+        return
+      }
+      if (!res.ok) {
+        setError('No pudimos procesar la solicitud. Inténtalo de nuevo.')
+        return
+      }
+
       setSent(true)
-      showToast('✓ Enlace enviado. Revisa tu correo.', 'success')
-    }, 1200)
+      showToast('✓ Solicitud enviada. Revisa tu correo.', 'success')
+    } catch {
+      setError('No hay conexión con el servidor.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const toastColors = { success: '#22c55e', error: '#ef4444', info: '#3b82f6' }
@@ -56,7 +74,7 @@ export default function page() {
       <header className="login-header">
         <div className="logo">
           <Link href="/">
-            <Image src={Logo} alt="Logo" className='img' width={50} />
+            <Image src={Logo} alt="Logo" className="img" width={50} />
           </Link>
           <h2>VolleyScan</h2>
         </div>
@@ -94,15 +112,15 @@ export default function page() {
               </form>
             </>
           ) : (
-            /* Estado: enlace enviado */
+            /* Estado: solicitud enviada */
             <div className="sent-state">
               <div className="sent-state__icon" aria-hidden="true">
-                <i className="fa-solid fa-envelope-circle-check" />
+                <FaEnvelopeCircleCheck className="fa-solid fa-envelope-circle-check" />
               </div>
-              <h1 className="sent-state__title">¡Correo enviado!</h1>
+              <h1 className="sent-state__title">Revisa tu correo</h1>
               <p className="sent-state__msg">
-                Hemos enviado un enlace de recuperación a <strong>{email}</strong>.
-                Revisa tu bandeja de entrada y sigue las instrucciones.
+                Si <strong>{email.trim()}</strong> está registrado, recibirás un enlace para
+                restablecer tu contraseña. El enlace vale 30 minutos.
               </p>
               <button
                 className="btn-login"
@@ -117,8 +135,7 @@ export default function page() {
           {/* Volver */}
           <footer className="register">
             <p>
-              <a href="../login">¿Recordaste tu contraseña?</a>
-          
+              <Link href="/login">¿Recordaste tu contraseña?</Link>
             </p>
           </footer>
         </section>

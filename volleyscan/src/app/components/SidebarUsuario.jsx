@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { cerrarSesion, getUsuario, urlFoto } from '@/lib/api';
+import { cerrarSesionCompleta, getUsuario, urlFoto } from '@/lib/api';
 import { useApi } from '@/lib/UseApi';
 import './SidebarUsuario.css';
 import Image from 'next/image';
@@ -80,8 +80,8 @@ export default function SidebarUsuario() {
     }, [pathname]);
 
     // Función para cerrar sesión y mandar al login
-    function handleLogout() {
-        cerrarSesion();
+    async function handleLogout() {
+        await cerrarSesionCompleta();
         router.replace('/login');
     }
 

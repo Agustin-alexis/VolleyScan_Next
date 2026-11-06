@@ -76,3 +76,13 @@ export function actualizarUsuario(parcial) {
     localStorage.setItem("vs_usuario", JSON.stringify({ ...actual, ...parcial }));
     window.dispatchEvent(new Event("usuario:cambio"));
 }
+
+// Cierra la sesión en el servidor (marca el dispositivo como inactivo) y luego en el navegador
+export async function cerrarSesionCompleta() {
+    try {
+        await api("/usuario/dispositivos/cerrar-actual/", { method: "POST" });
+    } catch {
+        // si falla (token ya vencido, sin red), igual se cierra localmente
+    }
+    cerrarSesion();
+}

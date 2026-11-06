@@ -41,15 +41,6 @@ export default function SeccionGeneral({
                             { value: "pt", label: "Português" },
                         ]} />
 
-                    <SettingSelect label="Tema" id="tema"
-                        value={config.tema}
-                        onChange={(v) => cambiar("tema", v)}
-                        options={[
-                            { value: "dark", label: "Oscuro" },
-                            { value: "light", label: "Claro" },
-                            { value: "auto", label: "Automático" },
-                        ]} />
-
                     <SettingSelect label="Calidad de video para análisis" id="calidadVideo"
                         value={config.calidad_video}
                         onChange={(v) => cambiar("calidad_video", v)}

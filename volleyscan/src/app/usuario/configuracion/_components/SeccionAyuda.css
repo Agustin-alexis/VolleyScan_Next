@@ -1,0 +1,197 @@
+/* Complementa configuracion.css (reutiliza .modal, .btn, .field-*, etc.) */
+
+.help-item:focus-visible {
+    outline: 2px solid var(--accent-blue);
+    outline-offset: 2px;
+}
+
+/* ── Modal ── */
+.modal--lg {
+    max-width: 520px;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+.modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.modal__close {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background var(--transition), color var(--transition);
+}
+
+.modal__close:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+
+.modal .btn:disabled,
+.modal__close:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ── Formulario soporte ── */
+.soporte-form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.soporte-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+}
+
+.select-wrap--full {
+    width: 100%;
+}
+
+.field-input.soporte-input {
+    max-width: none;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.soporte-textarea {
+    resize: vertical;
+    min-height: 110px;
+    line-height: 1.5;
+}
+
+.soporte-count {
+    align-self: flex-end;
+    font-size: .7rem;
+    color: var(--text-muted);
+}
+
+.soporte-error {
+    font-size: .8rem;
+    color: var(--accent-red);
+}
+
+/* ── FAQ ── */
+.faq-search {
+    position: relative;
+}
+
+.faq-search__icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: .8rem;
+    pointer-events: none;
+}
+
+.field-input.faq-search__input {
+    padding-left: 34px;
+}
+
+.faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.faq-item {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    transition: border-color var(--transition);
+}
+
+.faq-item[open],
+.faq-item:hover {
+    border-color: var(--border-bright);
+}
+
+.faq-item__q {
+    list-style: none;
+    cursor: pointer;
+    padding: 12px 14px;
+    font-size: .86rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.faq-item__q::-webkit-details-marker {
+    display: none;
+}
+
+.faq-item__q::after {
+    content: "+";
+    color: var(--accent-blue);
+    font-size: 1.1rem;
+    font-weight: 400;
+    flex-shrink: 0;
+}
+
+.faq-item[open] .faq-item__q::after {
+    content: "–";
+}
+
+.faq-item__a {
+    padding: 0 14px 14px;
+    font-size: .83rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.faq-empty {
+    font-size: .84rem;
+    color: var(--text-muted);
+    text-align: center;
+    padding: 16px 0;
+}
+
+/* ── Versión ── */
+.version-list {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.version-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: .86rem;
+}
+
+.version-row:last-child {
+    border-bottom: none;
+}
+
+.version-row dt {
+    color: var(--text-muted);
+}
+
+.version-row dd {
+    margin: 0;
+    color: var(--text-primary);
+    font-weight: 600;
+}

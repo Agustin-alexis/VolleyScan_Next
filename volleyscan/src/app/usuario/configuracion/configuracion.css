@@ -322,7 +322,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 }
 
 .btn--danger {
-  background: var(--accent-red);
+  background: red;
   color: #fff;
 }
 
@@ -333,7 +333,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 }
 
 .btn--danger-outline:hover {
-  background: rgba(239, 68, 68, .08);
+  background: red;
   filter: none;
 }
 
