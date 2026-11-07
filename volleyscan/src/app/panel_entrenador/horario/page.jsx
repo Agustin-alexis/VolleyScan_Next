@@ -4,7 +4,7 @@ import './Horario.css'
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { listarEquipos } from '@/lib/equipos/api';
-import { borrarEvento, crearEvento, editarEvento, fechaISO, listarEventos, mensajeDeError } from '@/lib/horario/api';
+import { asistenciaDeEvento, borrarEvento, crearEvento, editarEvento, fechaISO, guardarAsistencia, listarEventos, mensajeDeError } from '@/lib/horario/api';
 import { listarDeportistas } from '@/lib/vinculos/api';
 
 const HOURS = Array.from({ length: 18 }, (_, i) => i + 6); // 6-23
@@ -50,6 +50,8 @@ function aEvento(e) {
         title: e.titulo,
         tipo: e.tipo,
         estado: e.estado,
+        marcados: e.asistenciaMarcada || 0,
+        conLista: Boolean(e.equipo || e.deportista),
         place: e.ubicacion || '',
         notes: e.notas || '',
         equipo: e.equipo,
@@ -58,6 +60,13 @@ function aEvento(e) {
         end: new Date(`${e.fecha}T${e.horaFin}`),
     };
 }
+
+const ASISTENCIA = [
+    { v: 'presente', t: 'Presente', c: 'p' },
+    { v: 'tarde', t: 'Tarde', c: 't' },
+    { v: 'ausente', t: 'Ausente', c: 'a' },
+    { v: 'justificado', t: 'Justificado', c: 'j' },
+];
 
 const claseTipo = (tipo) => 'tipo-' + (tipo || 'otro');
 const claseEstado = (estado) => (estado === 'cancelado' ? 'est-cancelado' : estado === 'completado' ? 'est-completado' : '');
@@ -82,6 +91,11 @@ export default function Horario() {
     const [guardando, setGuardando] = useState(false);
     const [toast, setToast] = useState({ show: false, msg: '' });
     const [mpYear, setMpYear] = useState(new Date().getFullYear());
+    // Asistencia
+    const [asis, setAsis] = useState(null); // { evento, deportistas, resumen, puedePasarLista } | 'cargando' | null
+    const [asisFilas, setAsisFilas] = useState({});
+    const [asisError, setAsisError] = useState('');
+    const [asisNota, setAsisNota] = useState({}); // ids con el cuadro de nota abierto
 
     function showToast(msg) {
         setToast({ show: true, msg });
@@ -242,6 +256,52 @@ export default function Horario() {
         refrescar();
     }
 
+    const eventoAsis = asis && asis !== 'cargando' ? asis : null;
+
+    async function abrirAsistencia() {
+        if (!editingId) return;
+        setModal(false);
+        setAsis('cargando');
+        setAsisError('');
+        setAsisNota({});
+        const r = await asistenciaDeEvento(editingId);
+        if (!r.ok) { setAsis(null); showToast(mensajeDeError(r)); return; }
+        setAsis(r.data);
+        setAsisFilas(Object.fromEntries(r.data.deportistas.map(d => [d.id, { estado: d.estado, observacion: d.observacion, observacionVisible: d.observacionVisible }])));
+        setAsisNota(Object.fromEntries(r.data.deportistas.filter(d => d.observacion).map(d => [d.id, true])));
+    }
+
+    function marcar(id, estado) {
+        setAsisFilas(f => ({ ...f, [id]: { ...f[id], estado: f[id].estado === estado ? null : estado } }));
+    }
+    function marcarTodos(estado) {
+        setAsisFilas(f => Object.fromEntries(Object.entries(f).map(([id, v]) => [id, { ...v, estado: eventoAsis.deportistas.find(d => d.id === Number(id))?.activo ? estado : v.estado }])));
+    }
+    const asisCambios = eventoAsis
+        ? eventoAsis.deportistas.filter(d => {
+            const f = asisFilas[d.id];
+            return f && (f.estado !== d.estado || (f.observacion || '') !== (d.observacion || '') || (f.observacion?.trim() ? f.observacionVisible : false) !== d.observacionVisible);
+        })
+        : [];
+
+    async function guardarLista() {
+        if (guardando || asisCambios.length === 0) return;
+        setGuardando(true);
+        setAsisError('');
+        const registros = asisCambios.map(d => ({ deportistaId: d.id, estado: asisFilas[d.id].estado, observacion: asisFilas[d.id].observacion || '', observacionVisible: asisFilas[d.id].observacionVisible }));
+        const r = await guardarAsistencia(eventoAsis.evento.id, registros);
+        setGuardando(false);
+        if (!r.ok) { setAsisError(mensajeDeError(r)); return; }
+        showToast('Asistencia guardada');
+        setAsis(null);
+        refrescar();
+    }
+
+    function cerrarAsistencia() {
+        if (asisCambios.length > 0 && !window.confirm('Tienes cambios sin guardar. ¿Salir de todos modos?')) return;
+        setAsis(null);
+    }
+
     const futureEvents = proximos.filter(e => e.end > new Date() && e.estado !== 'cancelado').slice(0, 10);
 
     // Fila de la semana donde se dibuja el evento (los de antes de las 6:00 se dibujan en la primera fila)
@@ -326,6 +386,7 @@ export default function Horario() {
                                                                             <div className="ev-time">{fmtTime(ev.start)} - {fmtTime(ev.end)}</div>
                                                                             {ev.place && <div className="ev-place">{ev.place}</div>}
                                                                             {paraQuien(ev) && <div className="ev-team">{paraQuien(ev)}</div>}
+                                                                            {ev.marcados > 0 && <div className="ev-lista">✓ Lista · {ev.marcados}</div>}
                                                                         </div>
                                                                     );
                                                                 })}
@@ -490,9 +551,86 @@ export default function Horario() {
                         </div>
                         <footer className="modal-foot">
                             {editingId && <button className="btn-danger-sm" disabled={guardando} onClick={deleteEvent}><i className="fa-solid fa-trash"></i> Eliminar</button>}
+                            {editingId && events.concat(proximos).find(e => e.id === editingId)?.conLista && form.estado !== 'cancelado' && (
+                                <button className="btn-ghost" disabled={guardando} onClick={abrirAsistencia}>
+                                    <i className="fa-solid fa-clipboard-user"></i> Asistencia
+                                </button>
+                            )}
                             <button className="btn-ghost" disabled={guardando} onClick={() => setModal(false)}>Cancelar</button>
                             <button className="btn-primary" disabled={guardando} onClick={saveEvent}>{guardando ? 'Guardando…' : 'Guardar'}</button>
                         </footer>
+                    </article>
+                </aside>
+            )}
+
+            {asis && (
+                <aside className="overlay open" onClick={e => e.target === e.currentTarget && eventoAsis && cerrarAsistencia()}>
+                    <article className="modal modal-lg" onClick={e => e.stopPropagation()}>
+                        <header className="modal-head">
+                            <h4 className="modal-title"><i className="fa-solid fa-clipboard-user"></i> {eventoAsis ? `Asistencia · ${eventoAsis.evento.titulo}` : 'Asistencia'}</h4>
+                            <button className="modal-close" onClick={() => (eventoAsis ? cerrarAsistencia() : setAsis(null))}><i className="fa-solid fa-xmark"></i></button>
+                        </header>
+                        {!eventoAsis && <div className="hor-estado" role="status"><span className="hor-pulso" />Cargando lista…</div>}
+                        {eventoAsis && (
+                            <>
+                                <p className="as-sub">
+                                    {eventoAsis.evento.fecha.split('-').reverse().join('/')} · {eventoAsis.evento.horaInicio} – {eventoAsis.evento.horaFin}
+                                    {eventoAsis.evento.equipo ? ` · ${eventoAsis.evento.equipo.nombre}` : ''}
+                                </p>
+                                {!eventoAsis.puedePasarLista && <div className="hor-estado mal" role="status">Solo puedes pasar lista de eventos que ya llegaron.</div>}
+                                {asisError && <div className="hor-estado mal" role="alert">{asisError}</div>}
+                                <div className="as-resumen">
+                                    {ASISTENCIA.map(o => (
+                                        <span key={o.v} className={`as-chip as-${o.c}`}>{o.t} · {Object.values(asisFilas).filter(f => f.estado === o.v).length}</span>
+                                    ))}
+                                    <span className="as-chip">Sin marcar · {Object.values(asisFilas).filter(f => !f.estado).length}</span>
+                                    {eventoAsis.puedePasarLista && <button className="as-todos" onClick={() => marcarTodos('presente')}>Marcar a todos presentes</button>}
+                                </div>
+                                {eventoAsis.deportistas.length === 0 && <div className="as-vacio">Este evento no tiene deportistas todavía.</div>}
+                                <ul className="as-lista">
+                                    {eventoAsis.deportistas.map(d => {
+                                        const f = asisFilas[d.id] || {};
+                                        const notaAbierta = asisNota[d.id] || f.observacion;
+                                        return (
+                                            <li key={d.id} className={`as-fila ${d.activo ? '' : 'as-inactivo'}`}>
+                                                <div className="as-persona">
+                                                    <span className="as-avatar">{`${d.nombre?.[0] ?? ''}${d.apellido?.[0] ?? ''}`.toUpperCase()}</span>
+                                                    <div>
+                                                        <strong>{d.nombre} {d.apellido}</strong>
+                                                        <small>{d.activo ? [d.posicion, d.numeroCamiseta != null && `N.º ${d.numeroCamiseta}`].filter(Boolean).join(' · ') || ' ' : 'Ya no está en el equipo'}</small>
+                                                    </div>
+                                                </div>
+                                                <div className="as-botones" role="group" aria-label={`Asistencia de ${d.nombre}`}>
+                                                    {ASISTENCIA.map(o => (
+                                                        <button key={o.v} type="button" disabled={!eventoAsis.puedePasarLista} aria-pressed={f.estado === o.v}
+                                                            className={`as-op as-${o.c} ${f.estado === o.v ? 'on' : ''}`} onClick={() => marcar(d.id, o.v)}>{o.t}</button>
+                                                    ))}
+                                                    <button type="button" className={`as-nota-btn ${notaAbierta ? 'on' : ''}`} onClick={() => setAsisNota(n => ({ ...n, [d.id]: !n[d.id] }))} title="Observación" aria-label={`Observación de ${d.nombre}`}>
+                                                        <i className="fa-solid fa-comment-dots"></i>
+                                                    </button>
+                                                </div>
+                                                {notaAbierta && (
+                                                    <div className="as-nota">
+                                                        <textarea className="field-ta" rows="2" maxLength={1000} value={f.observacion || ''} placeholder="Observación sobre este deportista en este evento…"
+                                                            onChange={e => setAsisFilas(x => ({ ...x, [d.id]: { ...x[d.id], observacion: e.target.value } }))}></textarea>
+                                                        <label className="as-visible">
+                                                            <input type="checkbox" checked={!!f.observacionVisible} onChange={e => setAsisFilas(x => ({ ...x, [d.id]: { ...x[d.id], observacionVisible: e.target.checked } }))} />
+                                                            Visible para el deportista {f.observacionVisible ? '(le llegará un aviso)' : '(solo tú la ves)'}
+                                                        </label>
+                                                    </div>
+                                                )}
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                                <footer className="modal-foot">
+                                    <button className="btn-ghost" disabled={guardando} onClick={cerrarAsistencia}>Cerrar</button>
+                                    <button className="btn-primary" disabled={guardando || asisCambios.length === 0} onClick={guardarLista}>
+                                        {guardando ? 'Guardando…' : asisCambios.length ? `Guardar (${asisCambios.length})` : 'Guardar'}
+                                    </button>
+                                </footer>
+                            </>
+                        )}
                     </article>
                 </aside>
             )}

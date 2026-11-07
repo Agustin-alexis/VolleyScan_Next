@@ -8,7 +8,7 @@ import { estadisticasEntrenador } from "./api";
  * (`refrescando: true`) para que la pantalla no parpadee.
  * `estado`: "cargando" (primera vez) | "listo" | "error".
  */
-export function useEstadisticas(dias) {
+export function useEstadisticas(dias, equipoId = null) {
     const [datos, setDatos] = useState(null);
     const [estado, setEstado] = useState("cargando");
     const [refrescando, setRefrescando] = useState(false);
@@ -17,13 +17,13 @@ export function useEstadisticas(dias) {
     useEffect(() => {
         let cancelado = false;
         setRefrescando(true);
-        estadisticasEntrenador(dias).then((r) => {
+        estadisticasEntrenador(dias, equipoId).then((r) => {
             if (cancelado) return;
             if (r.ok) { setDatos(r.data); setEstado("listo"); } else { setEstado((e) => (e === "listo" ? e : "error")); }
             setRefrescando(false);
         });
         return () => { cancelado = true; };
-    }, [dias, version]);
+    }, [dias, equipoId, version]);
 
     const recargar = useCallback(() => { setEstado("cargando"); setVersion((v) => v + 1); }, []);
 

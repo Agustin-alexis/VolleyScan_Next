@@ -5,6 +5,12 @@ import { fechaISO, mensajeDeError, miAgenda } from "@/lib/horario/api";
 import s from "./horario.module.css";
 
 const TIPOS = { entrenamiento: "Entrenamiento", partido: "Competencia", evaluacion: "Evaluación", reunion: "Reunión", otro: "Evento" };
+const ASISTENCIA = {
+    presente: { texto: "Asististe", clase: "chipPresente" },
+    tarde: { texto: "Llegaste tarde", clase: "chipTarde" },
+    ausente: { texto: "Faltaste", clase: "chipAusente" },
+    justificado: { texto: "Falta justificada", clase: "chipJustificado" },
+};
 const fMes = new Intl.DateTimeFormat("es-CO", { month: "long", year: "numeric" });
 const fDiaLargo = new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "long" });
 const fDiaCorto = new Intl.DateTimeFormat("es-CO", { weekday: "short" });
@@ -32,6 +38,7 @@ function Evento({ e }) {
                 {cancelado && <span className={`${s.chip} ${s.chipCancelado}`}>Cancelado</span>}
                 {e.estado === "completado" && <span className={`${s.chip} ${s.chipHecho}`}>Realizado</span>}
                 {e.equipo && <span className={s.chip}>{e.equipo.nombre}</span>}
+                {e.miAsistencia && <span className={`${s.chip} ${s[ASISTENCIA[e.miAsistencia].clase]}`}>{ASISTENCIA[e.miAsistencia].texto}</span>}
             </div>
             <h3>{e.titulo}</h3>
             <div className={s.fila}>
@@ -40,6 +47,12 @@ function Evento({ e }) {
                 <span>· {e.entrenador}</span>
             </div>
             {e.notas && <p className={s.indicaciones}>{e.notas}</p>}
+            {e.miObservacion && (
+                <p className={s.observacion}>
+                    <b>Observación de tu entrenador</b>
+                    {e.miObservacion}
+                </p>
+            )}
         </li>
     );
 }
@@ -84,6 +97,12 @@ export default function MiHorarioPage() {
         return [...mapa.entries()].sort(([a], [b]) => (a < b ? -1 : 1));
     }, [eventos]);
 
+    const resumenMes = useMemo(() => {
+        const marcados = eventos.filter((e) => e.miAsistencia);
+        const fue = marcados.filter((e) => e.miAsistencia === "presente" || e.miAsistencia === "tarde").length;
+        return { total: marcados.length, fue };
+    }, [eventos]);
+
     const hoyISO = fechaISO(new Date());
     const cambiarMes = (n) => setMes(new Date(mes.getFullYear(), mes.getMonth() + n, 1));
 
@@ -121,6 +140,12 @@ export default function MiHorarioPage() {
                 <button className={s.btn} onClick={() => { const h = new Date(); setMes(new Date(h.getFullYear(), h.getMonth(), 1)); }}>Hoy</button>
                 <button className={s.btn} onClick={() => cambiarMes(1)} aria-label="Mes siguiente">→</button>
             </div>
+
+            {resumenMes.total > 0 && (
+                <p className={s.resumen}>
+                    <b>{resumenMes.fue} de {resumenMes.total}</b> eventos con asistencia este mes ({Math.round((resumenMes.fue / resumenMes.total) * 100)}%)
+                </p>
+            )}
 
             {cargando && <p className={s.estado}>Cargando agenda…</p>}
 

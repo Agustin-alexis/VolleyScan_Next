@@ -52,6 +52,14 @@
 .chipTipo { background: rgba(59,130,246,.16); color: var(--blue-l); }
 .chipCancelado { background: rgba(248,113,113,.16); color: var(--red); }
 .chipHecho { background: rgba(52,211,153,.14); color: var(--green); }
+.chipPresente { background: rgba(52,211,153,.16); color: var(--green); }
+.chipTarde { background: rgba(251,191,36,.16); color: var(--amber); }
+.chipAusente { background: rgba(248,113,113,.16); color: var(--red); }
+.chipJustificado { background: rgba(96,165,250,.16); color: var(--blue-l); }
+.observacion { background: rgba(167,139,250,.1); border: 1px solid rgba(167,139,250,.3); border-radius: 12px; padding: 9px 12px; font-size: .9rem; color: var(--text2); white-space: pre-wrap; }
+.observacion b { display: block; font-size: .68rem; letter-spacing: .1em; text-transform: uppercase; color: var(--purple); margin-bottom: 3px; }
+.resumen { color: var(--muted); font-size: .9rem; margin: -4px 0 14px; }
+.resumen b { color: var(--text); }
 .cancelado { opacity: .55; }
 .cancelado h3 { text-decoration: line-through; }
 .indicaciones { color: var(--text2); background: rgba(148,163,184,.07); border-radius: 12px; padding: 9px 12px; font-size: .9rem; white-space: pre-wrap; }

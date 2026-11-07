@@ -16,6 +16,10 @@ export const crearEvento = (datos) => llamar("/horario", { metodo: "POST", cuerp
 export const editarEvento = (id, datos) => llamar(`/horario/${id}`, { metodo: "PUT", cuerpo: datos });
 export const borrarEvento = (id) => llamar(`/horario/${id}`, { metodo: "DELETE" });
 
+// Asistencia (entrenador)
+export const asistenciaDeEvento = (id) => llamar(`/horario/${id}/asistencia`);
+export const guardarAsistencia = (id, registros) => llamar(`/horario/${id}/asistencia`, { metodo: "PUT", cuerpo: { registros } });
+
 // Deportista
 export const miAgenda = (desde, hasta) => llamar(`/mi-horario${rango(desde, hasta)}`);
 

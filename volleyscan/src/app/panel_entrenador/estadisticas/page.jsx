@@ -19,7 +19,9 @@ import {
     FaMagnifyingGlass,
     FaPrint,
     FaTriangleExclamation,
+    FaUserCheck,
     FaUserPlus,
+    FaUserXmark,
     FaUsers,
 } from "react-icons/fa6";
 import { useEstadisticas } from "@/lib/estadisticas/useEstadisticas";
@@ -285,6 +287,8 @@ const ALERTAS = {
     inactivo: { orden: 1, icono: <FaClockRotateLeft />, color: "naranja", texto: (a) => <><b>{a.nombre}</b> lleva {a.dias} días sin actividad</> },
     sin_actividad: { orden: 2, icono: <FaClockRotateLeft />, color: "naranja", texto: (a) => <><b>{a.nombre}</b> aún no tiene actividad</> },
     por_revisar: { orden: 3, icono: <FaEye />, color: "azul", texto: (a) => <><b>{a.nombre}</b> tiene {a.cantidad} análisis sin revisar</> },
+    inasistencia: { orden: 0, icono: <FaUserXmark />, color: "rojo", texto: (a) => <><b>{a.nombre}</b> faltó a {a.faltas} de sus últimos {a.de} eventos</> },
+    asistencia_baja: { orden: 1, icono: <FaUserXmark />, color: "naranja", texto: (a) => <><b>{a.nombre}</b> asiste solo al {a.porcentaje}% de los eventos</> },
     sin_rutina: { orden: 4, icono: <FaClipboardCheck />, color: "gris", texto: (a) => <><b>{a.nombre}</b> no tiene rutinas pendientes</> },
 };
 const VISIBLES = 6;       // en pantalla, antes de "Ver todas"
@@ -335,6 +339,7 @@ const COLUMNAS = [
     { id: "promedio", etiqueta: "Puntuación" },
     { id: "delta", etiqueta: "Tendencia" },
     { id: "cumplimiento", etiqueta: "Rutinas" },
+    { id: "asistencia", etiqueta: "Asistencia" },
     { id: "diasSinActividad", etiqueta: "Actividad" },
 ];
 
@@ -400,6 +405,8 @@ function Ranking({ lista }) {
                         <option value="delta:asc">Mayor caída</option>
                         <option value="sesiones:desc">Más análisis</option>
                         <option value="cumplimiento:desc">Mejor cumplimiento</option>
+                        <option value="asistencia:desc">Mejor asistencia</option>
+                        <option value="asistencia:asc">Peor asistencia</option>
                         <option value="diasSinActividad:asc">Actividad reciente</option>
                         <option value="nombre:asc">Nombre (A–Z)</option>
                     </select>
@@ -451,6 +458,14 @@ function Ranking({ lista }) {
                                 </span>
                             ) : <span className={s.sin}>Sin rutinas</span>}
                         </div>
+                        <div data-l="Asistencia" role="cell">
+                            {d.asistencia != null ? (
+                                <span className={s.cump} title={`${d.asistio} asistió · ${d.falto} faltó · ${d.justificadas} justificadas`}>
+                                    <span className={s.barra}><span className={d.asistencia >= 60 ? s.f_ok : s.f_baja} style={{ width: `${d.asistencia}%` }} /></span>
+                                    <b>{d.asistencia}%</b>
+                                </span>
+                            ) : <span className={s.sin}>{d.eventosConLista ? "Solo justif." : "Sin lista"}</span>}
+                        </div>
                         <div data-l="Actividad" role="cell" className={s.act}>{haceCuanto(d.diasSinActividad)}</div>
                     </Link>
                 ))}
@@ -471,17 +486,18 @@ function descargarCsv(datos) {
         return /[";\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
     };
     const cab = ["Deportista", "Posición", "Nivel", "Análisis", "Puntuación media", "Variación vs. periodo anterior", "Mejor puntuación",
-        "Cumplimiento de rutinas (%)", "Ejercicios hechos", "Ejercicios totales", "Última actividad", "Estado"];
+        "Cumplimiento de rutinas (%)", "Ejercicios hechos", "Ejercicios totales",
+        "Asistencia (%)", "Asistió", "Faltó", "Justificadas", "Última actividad", "Estado"];
     const filas = datos.ranking.map((d) => [
         `${d.nombre} ${d.apellido}`, d.posicion, d.nivel, d.sesiones, d.promedio, d.delta, d.mejor,
-        d.cumplimiento, d.ejerciciosHechos, d.ejerciciosTotales, d.ultimaActividad ? d.ultimaActividad.slice(0, 10) : "", ESTADOS[d.estado],
+        d.cumplimiento, d.ejerciciosHechos, d.ejerciciosTotales, d.asistencia, d.asistio, d.falto, d.justificadas, d.ultimaActividad ? d.ultimaActividad.slice(0, 10) : "", ESTADOS[d.estado],
     ]);
     // Separador ";" y BOM UTF-8: así Excel en español abre las columnas y las tildes bien
     const texto = "﻿" + [cab, ...filas].map((f) => f.map(celda).join(";")).join("\r\n");
     const url = URL.createObjectURL(new Blob([texto], { type: "text/csv;charset=utf-8" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = `volleyscan-estadisticas_${datos.periodo.desde}_a_${datos.periodo.hasta}.csv`;
+    a.download = `volleyscan-estadisticas${datos.equipo ? "_" + datos.equipo.nombre.replace(/[^\w-]+/g, "-") : ""}_${datos.periodo.desde}_a_${datos.periodo.hasta}.csv`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -492,7 +508,8 @@ function descargarCsv(datos) {
 
 export default function EstadisticasPage() {
     const [dias, setDias] = useState(30);
-    const { datos, estado, refrescando, recargar } = useEstadisticas(dias);
+    const [equipoId, setEquipoId] = useState(null);
+    const { datos, estado, refrescando, recargar } = useEstadisticas(dias, equipoId);
 
     const periodo = PERIODOS.find((p) => p.dias === dias);
     const k = datos?.kpis;
@@ -504,11 +521,21 @@ export default function EstadisticasPage() {
                     <h1 className={s.titulo}>Estadísticas</h1>
                     <p className={s.sub}>
                         {datos
-                            ? <>Rendimiento de tus deportistas en {periodo.largo} · {fechaCorta(datos.periodo.desde)} – {fechaCorta(datos.periodo.hasta)}</>
+                            ? <>Rendimiento {datos.equipo ? <>de <b>{datos.equipo.nombre}</b></> : "de tus deportistas"} en {periodo.largo} · {fechaCorta(datos.periodo.desde)} – {fechaCorta(datos.periodo.hasta)}</>
                             : "Rendimiento de tus deportistas"}
                     </p>
                 </div>
                 <div className={s.acciones}>
+                    {datos?.equipos?.length > 0 && (
+                        <label className={s.selEquipo}>
+                            <FaUsers aria-hidden="true" />
+                            <span className={s.srOnly}>Equipo</span>
+                            <select value={equipoId ?? ""} onChange={(e) => setEquipoId(e.target.value ? Number(e.target.value) : null)}>
+                                <option value="">Todos mis deportistas</option>
+                                {datos.equipos.map((e) => <option key={e.id} value={e.id}>{e.nombre}</option>)}
+                            </select>
+                        </label>
+                    )}
                     <div className={s.periodos} role="radiogroup" aria-label="Periodo">
                         {PERIODOS.map((p) => (
                             <button key={p.dias} type="button" role="radio" aria-checked={dias === p.dias}
@@ -530,7 +557,7 @@ export default function EstadisticasPage() {
             {datos && (
                 <div className={s.portada}>
                     <div className={s.portadaMarca}>VolleyScan</div>
-                    <h2>Reporte de rendimiento del equipo</h2>
+                    <h2>Reporte de rendimiento{datos.equipo ? ` · ${datos.equipo.nombre}` : " del equipo"}</h2>
                     <p>
                         {datos.entrenador ? <>Entrenador: <b>{datos.entrenador.nombre} {datos.entrenador.apellido}</b> · </> : null}
                         Periodo: <b>{fechaLarga(datos.periodo.desde)}</b> al <b>{fechaLarga(datos.periodo.hasta)}</b> · Generado el {sello(datos.generado)}
@@ -553,7 +580,16 @@ export default function EstadisticasPage() {
                 </div>
             )}
 
-            {datos && k && k.deportistas === 0 && (
+            {datos && k && k.deportistas === 0 && datos.equipo && (
+                <div className={s.sinEquipo}>
+                    <span aria-hidden="true"><FaUsers /></span>
+                    <h2>{datos.equipo.nombre} no tiene deportistas vinculados</h2>
+                    <p>Aquí solo aparecen los deportistas del equipo con los que tienes vínculo aceptado. Elige otro equipo o invita deportistas.</p>
+                    <button type="button" className={s.btnPri} onClick={() => setEquipoId(null)}>Ver todos mis deportistas</button>
+                </div>
+            )}
+
+            {datos && k && k.deportistas === 0 && !datos.equipo && (
                 <div className={s.sinEquipo}>
                     <span aria-hidden="true"><FaUsers /></span>
                     <h2>Aún no tienes deportistas vinculados</h2>
@@ -578,6 +614,11 @@ export default function EstadisticasPage() {
                                  ? <><Delta valor={k.cumplimientoDelta} unidad=" pts" vacio={`${k.ejerciciosHechos} de ${k.ejerciciosTotales} ejercicios`} />
                                      {k.cumplimientoDelta != null && <span className={s.kpiNota}>{k.ejerciciosHechos} de {k.ejerciciosTotales} ejercicios</span>}</>
                                  : <span className={`${s.delta} ${s.dNeutro}`}>Sin rutinas en el periodo</span>} />
+                        <Kpi icono={<FaUserCheck />} color="var(--teal)" etiqueta="Asistencia" valor={k.asistencia} unidad="%"
+                             pie={k.asistencia != null
+                                 ? <><Delta valor={k.asistenciaDelta} unidad=" pts" vacio={`${k.asistenciaPresentes} asistencias`} />
+                                     <span className={s.kpiNota}>{k.asistenciaPresentes} asistió · {k.asistenciaAusencias} faltó</span></>
+                                 : <span className={`${s.delta} ${s.dNeutro}`}>Sin listas pasadas</span>} />
                         <Kpi icono={<FaEye />} color="var(--orange)" etiqueta="Análisis por revisar" valor={k.porRevisar}
                              pie={<span className={`${s.delta} ${s.dNeutro}`}>{k.porRevisar ? "Esperan tu revisión" : "Estás al día"}</span>} />
                     </section>

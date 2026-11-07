@@ -53,7 +53,7 @@
 
 /* ── Estados ── */
 .esqueleto { display: flex; flex-direction: column; gap: 16px; }
-.skRow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+.skRow { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; }
 .sk { display: block; border-radius: 14px; background: linear-gradient(90deg, var(--card) 25%, rgba(255, 255, 255, .06) 50%, var(--card) 75%); background-size: 200% 100%; animation: brillo 1.3s infinite linear; }
 @keyframes brillo { to { background-position: -200% 0; } }
 
@@ -70,7 +70,7 @@
 .sinEquipo .btnPri { margin-top: 8px; }
 
 /* ── KPIs ── */
-.kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
+.kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
 .kpi { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 16px 18px 14px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); overflow: hidden; min-width: 0; }
 .kpi::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 3px; background: var(--k); opacity: .85; }
 .kpi::after { content: ""; position: absolute; right: -28px; top: -28px; width: 96px; height: 96px; border-radius: 50%; background: var(--k); opacity: .07; }
@@ -193,7 +193,7 @@
 .ordenMovil select { flex: 1; height: 36px; border-radius: 10px; background: var(--card2); border: 1px solid var(--line); color: var(--text); padding: 0 10px; font: inherit; }
 
 .tabla { display: flex; flex-direction: column; }
-.fila { display: grid; grid-template-columns: minmax(200px, 2.6fr) .8fr 1fr .9fr 1.5fr 1.1fr; align-items: center; gap: 12px; padding: 11px 10px; border-radius: 12px; text-decoration: none; color: var(--text); font-size: .86rem; transition: background .15s; }
+.fila { display: grid; grid-template-columns: minmax(200px, 2.6fr) .8fr 1fr .9fr 1.4fr 1.4fr 1.1fr; align-items: center; gap: 12px; padding: 11px 10px; border-radius: 12px; text-decoration: none; color: var(--text); font-size: .86rem; transition: background .15s; }
 a.fila:hover { background: rgba(255, 255, 255, .045); }
 a.fila:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
 .cab { padding: 4px 10px 8px; border-bottom: 1px solid var(--line); border-radius: 0; }
@@ -224,7 +224,7 @@ a.fila:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
 .portada { display: none; }
 .sk { min-width: 0; }
 
-@media (max-width: 1280px) {
+@media (max-width: 1380px) {
   .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .skRow { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
@@ -249,6 +249,7 @@ a.fila:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
   .fila { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 10px; padding: 14px 12px; border: 1px solid var(--line); background: var(--card2); margin-top: 8px; }
   .fila > div:first-child { grid-column: 1 / -1; }
   .fila > div:nth-child(5) { grid-column: span 2; }
+  .fila > div:nth-child(7) { grid-column: 1 / -1; }
   .fila > div[data-l]::before { content: attr(data-l); display: block; font-size: .64rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); margin-bottom: 2px; }
   .tabla { gap: 0; }
 }
@@ -272,7 +273,7 @@ a.fila:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
   .titulo, .kpiValor, .cardTitulo, .alerta b, .quienTxt b, .num, .nota, .cump b, .tecNombre, .errTop b, .tip b { color: #111827 !important; }
   .card, .kpi, .alerta, .fila { box-shadow: none !important; break-inside: avoid; page-break-inside: avoid; }
   .card { border: 1px solid #dfe5ee; background: #fff; }
-  .kpis { grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .kpis { grid-template-columns: repeat(6, 1fr); gap: 8px; }
   .kpi { padding: 10px 10px 8px; }
   .kpiValor { font-size: 1.4rem; }
   .spark, .kpi::after { display: none !important; }
@@ -282,7 +283,7 @@ a.fila:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
   .extra { display: flex !important; }
   .sobra { display: none !important; }
   .soloImp { display: block !important; font-size: .74rem; color: #6b7280; margin-top: 6px; }
-  .fila { grid-template-columns: minmax(170px, 2.6fr) .8fr 1fr .9fr 1.5fr 1.1fr !important; border: 0; background: transparent !important; margin-top: 0; padding: 5px 6px; gap: 8px; border-bottom: 1px solid #eef1f6; border-radius: 0; font-size: .78rem; }
+  .fila { grid-template-columns: minmax(170px, 2.6fr) .8fr 1fr .9fr 1.4fr 1.4fr 1.1fr !important; border: 0; background: transparent !important; margin-top: 0; padding: 5px 6px; gap: 8px; border-bottom: 1px solid #eef1f6; border-radius: 0; font-size: .78rem; }
   .fila > div:first-child { grid-column: auto !important; }
   .fila > div[data-l]::before { display: none; }
   .cab { display: grid !important; }
@@ -298,3 +299,13 @@ a.fila:focus-visible { outline: 2px solid var(--blue); outline-offset: -2px; }
   .t_ok { color: #15803d; } .t_bien { color: #1d4ed8; } .t_medio { color: #b45309; } .t_bajo { color: #b91c1c; }
   @page { size: A4; margin: 12mm; }
 }
+
+/* ── Asistencia y selector de equipo ── */
+.f_ok { background: linear-gradient(90deg, #0d9488, var(--teal)); }
+.f_baja { background: linear-gradient(90deg, #dc2626, #f87171); }
+.selEquipo { display: inline-flex; align-items: center; gap: 8px; padding: 0 10px 0 12px; height: 38px; border-radius: 11px; background: var(--card2); border: 1px solid var(--line2); color: var(--muted); font-size: .82rem; max-width: 100%; }
+.selEquipo select { background: transparent; border: 0; color: var(--text); font: inherit; font-weight: 600; padding: 0 4px; max-width: 200px; text-overflow: ellipsis; outline: none; cursor: pointer; }
+.selEquipo select option { background: #111827; color: #fff; }
+.selEquipo:focus-within { border-color: var(--blue); }
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (max-width: 640px) { .selEquipo { width: 100%; } .selEquipo select { flex: 1; max-width: none; } }
