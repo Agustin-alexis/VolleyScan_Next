@@ -1,67 +1,78 @@
 "use client";
 
-import { GoogleOAuthProvider, useGoogleLogin } from "@react-oauth/google";
+/**
+ * BotonGoogle — "Continuar con Google".
+ *
+ * Flujo (coincide con panel_usuario/google.py):
+ *   1. El botón oficial de Google (<GoogleLogin>) devuelve una `credential` (id_token firmado por Google).
+ *   2. La mandamos a POST /auth/google como { credential }.
+ *   3. El backend verifica la firma y responde con TU sesión ({ access, usuario }), igual que /auth/login.
+ *
+ * Nota: Google dibuja este botón en un iframe propio, por eso su aspecto se ajusta con las
+ * opciones de abajo (tema, texto, forma, ancho) y no con CSS.
+ */
+import { useEffect, useRef, useState } from "react";
+import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 import { useRouter } from "next/navigation";
 import { api, guardarSesion, ApiError } from "@/lib/api";
-import '@/app/login/page.css'
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
+const DESTINO_POR_ROL = { atleta: "/usuario", entrenador: "/panel_entrenador", admin: "/admin" };
+
+// Volver a la invitación / panel de donde venías (solo rutas internas conocidas)
+function destinoSolicitado() {
+    const next = new URLSearchParams(window.location.search).get("next");
+    return next && /^\/(invitacion\/[A-Za-z0-9_-]{20,100}|(panel_entrenador|usuario)(\/[A-Za-z0-9_\-\/]*)?)$/.test(next)
+        ? next : null;
+}
+
 function GoogleAuthButton({ onError }) {
     const router = useRouter();
+    const caja = useRef(null);
+    const [ancho, setAncho] = useState(320);
 
-    const login = useGoogleLogin({
-        onSuccess: async (tokenResponse) => {
-            try {
-                const data = await api("/auth/google", {
-                    method: "POST",
-                    body: { access_token: tokenResponse.access_token },
-                });
-                guardarSesion(data);
-                router.push("/usuario/dashboard");
-            } catch (err) {
-                onError?.(
-                    err instanceof ApiError && err.data?.detail
-                        ? err.data.detail
-                        : "No se pudo iniciar sesión con Google."
-                );
-            }
-        },
-        onError: () => onError?.("Google canceló el inicio de sesión."),
-    });
+    // Google exige el ancho en píxeles (máx. 400): se ajusta al de la tarjeta de login
+    useEffect(() => {
+        const medir = () => caja.current && setAncho(Math.max(200, Math.min(400, Math.floor(caja.current.clientWidth))));
+        medir();
+        window.addEventListener("resize", medir);
+        return () => window.removeEventListener("resize", medir);
+    }, []);
+
+    async function alRecibirCredencial({ credential }) {
+        try {
+            const data = await api("/auth/google", { method: "POST", body: { credential } });
+            guardarSesion(data);
+            router.push(destinoSolicitado() ?? DESTINO_POR_ROL[data?.usuario?.rol] ?? "/usuario");
+        } catch (err) {
+            // La causa real queda en la consola (F12) para poder diagnosticarla
+            console.error("Google → /auth/google falló:", err?.status, err?.data ?? err);
+            if (err instanceof ApiError && err.data?.detail) onError?.(err.data.detail);   // ej. "Esta cuenta debe iniciar sesión con correo y contraseña."
+            else if (err instanceof ApiError && err.status === 429) onError?.("Demasiados intentos. Espera un minuto.");
+            else if (err instanceof ApiError) onError?.(`Error del servidor al entrar con Google (código ${err.status}).`);
+            else onError?.("No se pudo conectar con el servidor. Revisa que esté encendido y CORS.");
+        }
+    }
 
     return (
-        <button
-            type="button"
-            onClick={() => login()}
-            className="btn-social"
-        >
-            <svg width="20" height="20" viewBox="0 0 24 24">
-                <path
-                    fill="#4285F4"
-                    d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17Z"
-                />
-                <path
-                    fill="#34A853"
-                    d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.34 24 12 24Z"
-                />
-                <path
-                    fill="#FBBC05"
-                    d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 9.99 0 12s.45 3.82 1.25 5.42l4.03-3.15Z"
-                />
-                <path
-                    fill="#EA4335"
-                    d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.34 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98Z"
-                />
-            </svg>
-            <span>Continuar con Google</span>
-        </button>
+        <div ref={caja} style={{ width: "100%", display: "flex", justifyContent: "center" }}>
+            <GoogleLogin
+                onSuccess={alRecibirCredencial}
+                onError={() => onError?.("Google no completó el inicio de sesión (revisa los orígenes autorizados).")}
+                theme="filled_black"
+                size="large"
+                shape="pill"
+                text="continue_with"
+                locale="es"
+                width={ancho}
+            />
+        </div>
     );
 }
 
 export default function BotonGoogle({ onError }) {
     if (!CLIENT_ID) return null;
-
     return (
         <GoogleOAuthProvider clientId={CLIENT_ID}>
             <GoogleAuthButton onError={onError} />

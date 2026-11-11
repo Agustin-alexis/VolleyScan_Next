@@ -7,8 +7,6 @@ import Image from 'next/image'
 import Logo from "@/app/public/img/Logo.VS.jpg"
 
 import { api, guardarSesion, ApiError } from '@/lib/api'
-import google from "@/app/public/img/google.jpg"
-import facebook from "@/app/public/img/facebook.jpg"
 
 import { iniciarSesion, ErrorApi } from '@/app/services/panelApi'
 import './page.css'
@@ -20,6 +18,7 @@ const DESTINO_POR_ROL = {
   atleta: '/usuario',
   entrenador: '/panel_entrenador',
   admin: '/admin',
+  administrador: '/admin',
 }
 
 // Si llegaste desde una invitación por correo, al iniciar sesión volvemos a ella.
@@ -27,7 +26,7 @@ const DESTINO_POR_ROL = {
 function destinoDeInvitacion() {
   if (typeof window === 'undefined') return null
   const next = new URLSearchParams(window.location.search).get('next')
-  return next && /^\/invitacion\/[A-Za-z0-9_-]{20,100}$/.test(next) ? next : null
+  return next && /^\/(invitacion\/[A-Za-z0-9_-]{20,100}|(panel_entrenador|usuario)(\/[A-Za-z0-9_\-\/]*)?)$/.test(next) ? next : null
 }
 
 const IconEye = () => (
@@ -60,6 +59,18 @@ export default function LoginPage() {
   const [toast, setToast] = useState(null)
   const [siguiente, setSiguiente] = useState(null) // invitación a la que volver (se lee en el navegador)
   useEffect(() => { setSiguiente(destinoDeInvitacion()) }, [])
+
+  // Si ya hay una sesión válida (token sin vencer), no tiene sentido ver el login: vamos a tu panel.
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem('vs_token')
+      const usuario = JSON.parse(localStorage.getItem('vs_usuario') || 'null')
+      if (!token || !usuario?.rol) return
+      const carga = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')))
+      if (carga.exp && carga.exp * 1000 <= Date.now()) return   // vencido: se queda en el login
+      router.replace(destinoDeInvitacion() ?? DESTINO_POR_ROL[usuario.rol] ?? '/usuario')
+    } catch { /* localStorage bloqueado o token ilegible: se queda en el login */ }
+  }, [router])
 
   function showToast(message, type = 'success') {
     setToast({ message, type })
@@ -119,18 +130,6 @@ export default function LoginPage() {
     } finally {
       setLoading(false)
     }
-  }
-
-  function handleSocial(provider) {
-
-    if (provider === 'Google') {
-      window.location.href = 'https://accounts.google.com/';
-    }
-
-    if (provider === 'Facebook') {
-      window.location.href = 'https://www.facebook.com/';
-    }
-
   }
 
   const toastColors = { success: '#22c55e', error: '#ef4444', info: '#3b82f6' }
@@ -220,7 +219,7 @@ export default function LoginPage() {
             <>
               <div className="divider"><span>O CONTINÚA CON</span></div>
 
-              <div className="social-buttons">
+              <div className="social-buttons ">
                 <BotonGoogle onError={(m) => showToast(m, 'error')} />
               </div>
             </>
