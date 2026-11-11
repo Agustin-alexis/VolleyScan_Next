@@ -2,8 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { api, ApiError } from "@/lib/api";
+import { api, ApiError, getToken, actualizarUsuario, cerrarSesion as limpiarSesion, cerrarSesionCompleta } from "@/lib/api";
 import "./page.css";
+
+function rolDe(yo) {
+    const crudo = yo?.rol ?? yo?.role ?? yo?.user?.rol ?? yo?.usuario?.rol ?? "";
+    return String(crudo).trim().toLowerCase();
+}
 
 export default function AdminEntrenadoresPage() {
     const router = useRouter();
@@ -24,21 +29,44 @@ export default function AdminEntrenadoresPage() {
     const [errores, setErrores] = useState({});
 
     useEffect(() => {
+        let cancelado = false;
+
         async function verificarAcceso() {
+            if (!getToken()) {
+                router.replace("/login");
+                return;
+            }
             try {
                 const yo = await api("/auth/me");
-                if (yo.rol !== "admin") {
-                    router.replace(yo.rol === "entrenador" ? "/panel_entrenador" : "/usuario");
+                if (cancelado) return;
+
+                actualizarUsuario(yo);
+                const rol = rolDe(yo);
+
+                if (rol !== "admin") {
+                    if (rol === "entrenador" || rol === "coach") {
+                        router.replace("/panel_entrenador");
+                    } else if (rol === "atleta") {
+                        router.replace("/usuario");
+                    } else {
+                        limpiarSesion();
+                        router.replace("/login");
+                    }
                     return;
                 }
                 setAdminInfo(yo);
                 setAutorizado(true);
                 cargarEntrenadores();
             } catch {
+                if (cancelado) return;
+                limpiarSesion();
                 router.replace("/login");
             }
         }
         verificarAcceso();
+        return () => {
+            cancelado = true;
+        };
     }, [router]);
 
     async function cargarEntrenadores() {
@@ -131,9 +159,9 @@ export default function AdminEntrenadoresPage() {
         }
     }
 
-    function cerrarSesion() {
-        localStorage.clear();
-        router.push("/login");
+    async function cerrarSesion() {
+        await cerrarSesionCompleta();
+        router.replace("/login");
     }
 
     if (!autorizado) {

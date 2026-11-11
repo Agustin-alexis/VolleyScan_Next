@@ -32,6 +32,7 @@ function GoogleAuthButton({ onError }) {
     const caja = useRef(null);
     const [ancho, setAncho] = useState(320);
 
+<<<<<<< HEAD
     // Google exige el ancho en píxeles (máx. 400): se ajusta al de la tarjeta de login
     useEffect(() => {
         const medir = () => caja.current && setAncho(Math.max(200, Math.min(400, Math.floor(caja.current.clientWidth))));
@@ -54,6 +55,34 @@ function GoogleAuthButton({ onError }) {
             else onError?.("No se pudo conectar con el servidor. Revisa que esté encendido y CORS.");
         }
     }
+=======
+    const login = useGoogleLogin({
+        onSuccess: async (tokenResponse) => {
+            try {
+                const data = await api("/auth/google", {
+                    method: "POST",
+                    body: { access_token: tokenResponse.access_token },
+                });
+                guardarSesion(data);
+                const rol = String(data?.usuario?.rol ?? "").trim().toLowerCase();
+                const destino =
+                    rol === "admin"
+                        ? "/admin"
+                        : rol === "entrenador" || rol === "coach"
+                            ? "/panel_entrenador"
+                            : "/usuario/dashboard";
+                router.replace(destino);
+            } catch (err) {
+                onError?.(
+                    err instanceof ApiError && err.data?.detail
+                        ? err.data.detail
+                        : "No se pudo iniciar sesión con Google."
+                );
+            }
+        },
+        onError: () => onError?.("Google canceló el inicio de sesión."),
+    });
+>>>>>>> 60248a05bb151d70397b31feb4d471e068ffd05c
 
     return (
         <div ref={caja} style={{ width: "100%", display: "flex", justifyContent: "center" }}>

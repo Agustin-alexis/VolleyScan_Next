@@ -10,9 +10,22 @@ export default function UsuarioLayout({ children }) {
     const [listo, setListo] = useState(false);
 
     useEffect(() => {
+        const token = getToken();
+        const rol = String(getUsuario()?.rol ?? "").trim().toLowerCase();
+
         // Verifica si NO hay token o si el rol NO es "atleta"
-        if (!getToken() || getUsuario()?.rol !== "atleta") {
+        if (!token) {
             router.replace("/login");
+            return;
+        }
+        if (rol !== "atleta") {
+            if (rol === "admin") {
+                router.replace("/admin");
+            } else if (rol === "entrenador" || rol === "coach") {
+                router.replace("/panel_entrenador");
+            } else {
+                router.replace("/login");
+            }
             return;
         }
         setListo(true);
