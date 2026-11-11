@@ -18,7 +18,14 @@ function GoogleAuthButton({ onError }) {
                     body: { access_token: tokenResponse.access_token },
                 });
                 guardarSesion(data);
-                router.push("/usuario/dashboard");
+                const rol = String(data?.usuario?.rol ?? "").trim().toLowerCase();
+                const destino =
+                    rol === "admin"
+                        ? "/admin"
+                        : rol === "entrenador" || rol === "coach"
+                            ? "/panel_entrenador"
+                            : "/usuario/dashboard";
+                router.replace(destino);
             } catch (err) {
                 onError?.(
                     err instanceof ApiError && err.data?.detail

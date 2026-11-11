@@ -5,11 +5,6 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Logo from "@/app/public/img/Logo.VS.jpg"
-
-import { api, guardarSesion, ApiError } from '@/lib/api'
-import google from "@/app/public/img/google.jpg"
-import facebook from "@/app/public/img/facebook.jpg"
-
 import { iniciarSesion, ErrorApi } from '@/app/services/panelApi'
 import './page.css'
 import BotonGoogle from '../components/BotonGoogle'
@@ -92,9 +87,10 @@ export default function LoginPage() {
       const usuario = await iniciarSesion(email.trim(), password) // guarda la sesión
       showToast(`✓ Bienvenido/a, ${usuario?.nombre ?? ''}. Redirigiendo…`, 'success')
 
-      // Usa tu constante DESTINO_POR_ROL (redirige a '/panel_entrenador' o '/usuario')
-      const destino = destinoDeInvitacion() ?? DESTINO_POR_ROL[usuario?.rol] ?? '/usuario'
-      setTimeout(() => router.push(destino), 1000)
+      // Usa tu constante DESTINO_POR_ROL (redirige a '/admin', '/panel_entrenador' o '/usuario')
+      const rol = String(usuario?.rol ?? '').trim().toLowerCase()
+      const destino = destinoDeInvitacion() ?? DESTINO_POR_ROL[rol] ?? '/usuario'
+      setTimeout(() => router.replace(destino), 600)
     } catch (err) {
       // Queda en la consola del navegador (F12) para poder ver la causa real
       console.error('Login falló:', err?.status, err?.datos ?? err?.data ?? err)
@@ -228,7 +224,7 @@ export default function LoginPage() {
 
           <footer className="register">
             <p>¿Aún no tienes cuenta?
-              <Link href={siguiente ? `/registro?next=${encodeURIComponent(siguiente)}` : '/registro'}>  ¡Regístrate Gratis!</Link></p>
+              <Link href={siguiente ? `/registro?next=${encodeURIComponent(siguiente)}` : '/registro'}>¡Regístrate Gratis!</Link></p>
           </footer>
 
         </section>

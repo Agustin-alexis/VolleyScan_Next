@@ -55,7 +55,9 @@ export async function api(ruta, { method = "GET", body, params } = {}) {
     if (res.status === 401 && token) {
         // token vencido o inválido
         cerrarSesion();
-        window.location.href = "/login";
+        if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+            window.location.href = "/login";
+        }
     }
     if (!res.ok) throw new ApiError(res.status, data);
     return data;
@@ -71,8 +73,8 @@ export function urlFoto(ruta) {
 
 // Actualiza el usuario guardado al iniciar sesión y avisa al Sidebar
 export function actualizarUsuario(parcial) {
-    const actual = getUsuario();
-    if (!actual) return;
+    if (!parcial || typeof window === "undefined") return;
+    const actual = getUsuario() ?? {};
     localStorage.setItem("vs_usuario", JSON.stringify({ ...actual, ...parcial }));
     window.dispatchEvent(new Event("usuario:cambio"));
 }

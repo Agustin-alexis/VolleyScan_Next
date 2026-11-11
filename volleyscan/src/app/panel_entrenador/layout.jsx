@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/app/components/Sidebar";
 import CampanaAvisos from "@/app/components/avisos/CampanaAvisos";
-import { api } from "@/lib/api";
+import { api, getToken, actualizarUsuario, cerrarSesion } from "@/lib/api";
 
 // Saca el rol sin importar si viene como rol / role o anidado en user / usuario.
 function rolDe(yo) {
@@ -21,16 +21,28 @@ export default function PanelLayout({ children }) {
     let cancelado = false;
 
     async function verificarEntrenador() {
+      if (!getToken()) {
+        router.replace("/login");
+        return;
+      }
       try {
         const yo = await api("/auth/me");
         if (cancelado) return;
 
+        actualizarUsuario(yo);
         const rol = rolDe(yo);
 
         // Si intenta entrar alguien que no es entrenador, lo redirigimos a su panel
         if (rol !== "entrenador" && rol !== "coach") {
           console.warn("[PanelLayout] /auth/me no devolvió rol de entrenador:", yo);
-          router.replace(rol === "admin" ? "/admin" : "/usuario");
+          if (rol === "admin") {
+            router.replace("/admin");
+          } else if (rol === "atleta") {
+            router.replace("/usuario");
+          } else {
+            cerrarSesion();
+            router.replace("/login");
+          }
           return;
         }
 
@@ -39,6 +51,7 @@ export default function PanelLayout({ children }) {
       } catch {
         if (cancelado) return;
         // Si no ha iniciado sesión o el token venció, lo mandamos al login
+        cerrarSesion();
         router.replace("/login");
       }
     }

@@ -2,11 +2,11 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import './Sidebar.css';
 import Image from 'next/image';
 import logo from '@/app/public/img/Logo.VS.jpg';
-import { api } from '@/lib/api';
+import { api, cerrarSesionCompleta, urlFoto } from '@/lib/api';
 
 import {
     FaHome,
@@ -18,7 +18,8 @@ import {
     FaFileAlt,
     FaMicrochip,
     FaCog,
-    FaBars
+    FaBars,
+    FaSignOutAlt
 } from 'react-icons/fa';
 import { FaXmark, FaPeopleGroup } from 'react-icons/fa6';
 
@@ -92,8 +93,14 @@ const nav = [
 
 export default function Sidebar({ entrenador: entrenadorProp }) {
     const pathname = usePathname();
+    const router = useRouter();
     const [open, setOpen] = useState(false);
     const [usuario, setUsuario] = useState(entrenadorProp || null);
+
+    async function handleLogout() {
+        await cerrarSesionCompleta();
+        router.replace('/login');
+    }
 
     // Si el layout le pasa el entrenador, lo usamos; si no, lo consultamos
     useEffect(() => {
@@ -186,7 +193,7 @@ export default function Sidebar({ entrenador: entrenadorProp }) {
                     <div className="sb-avatar">
                         {usuario?.foto_url ? (
                             <img
-                                src={usuario.foto_url}
+                                src={urlFoto(usuario.foto_url)}
                                 alt={nombreCompleto}
                                 style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
                             />
@@ -206,6 +213,24 @@ export default function Sidebar({ entrenador: entrenadorProp }) {
                     </div>
 
                     <span className="sb-online-dot"></span>
+
+                    <button
+                        type="button"
+                        onClick={handleLogout}
+                        title="Cerrar sesión"
+                        style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#ef4444',
+                            cursor: 'pointer',
+                            marginLeft: 'auto',
+                            display: 'flex',
+                            alignItems: 'center',
+                            padding: '4px'
+                        }}
+                    >
+                        <FaSignOutAlt size={16} />
+                    </button>
                 </div>
 
             </aside>

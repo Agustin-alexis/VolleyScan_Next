@@ -1,7 +1,8 @@
 'use client';
 import './Configuracion.css'
-import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { cerrarSesionCompleta } from '@/lib/api';
 
 
 
@@ -25,6 +26,7 @@ const NOTIF_TYPES = [
 ];
 
 export default function Configuracion() {
+    const router = useRouter();
     const [section, setSection] = useState('General');
     const [dirty, setDirty] = useState(false);
     const [toasts, setToasts] = useState([]);
@@ -159,12 +161,18 @@ export default function Configuracion() {
                                                     </label>
                                                 </div>
                                             ))}
-                                            <Link href = "/login">
-                                            <button className="btn btn-danger" style={{ width: '100%', marginTop: '16px', justifyContent: 'center' }}
-                                                onClick={() => toast('👋', 'Sesión cerrada', 'var(--danger)')}>
+                                            <button
+                                                type="button"
+                                                className="btn btn-danger"
+                                                style={{ width: '100%', marginTop: '16px', justifyContent: 'center' }}
+                                                onClick={async () => {
+                                                    toast('👋', 'Sesión cerrada', 'var(--danger)');
+                                                    await cerrarSesionCompleta();
+                                                    router.replace('/login');
+                                                }}
+                                            >
                                                 Cerrar sesión
                                             </button>
-                                            </Link>
                                         </div>
                                     </div>
                                 </div>
