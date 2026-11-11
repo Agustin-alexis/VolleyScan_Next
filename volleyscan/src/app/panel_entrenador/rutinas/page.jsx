@@ -24,7 +24,16 @@ const PRESETS = [
     { emoji: '🧘', name: 'Regeneración', type: 'Recuperación', desc: 'Post-partido, recuperación muscular.', dur: '30 min', intensity: 3, exs: ['Foam roller', 'Estiramientos activos'] },
 ];
 const DURACIONES = { '30 min': 30, '45 min': 45, '60 min': 60, '90 min': 90, '2 hrs': 120 };
-const FORM_VACIO = { athlete: '', type: '', name: '', hour: '08', min: '00', intensity: 6, objetivo: '', notes: '', fecha: '' };
+const NIVELES = [
+    { v: 'principiante', t: 'Principiante' },
+    { v: 'intermedio', t: 'Intermedio' },
+    { v: 'avanzado', t: 'Avanzado' },
+    { v: 'profesional', t: 'Profesional' },
+    { v: 'todos', t: 'Todos los niveles' },
+];
+const nombreNivel = v => NIVELES.find(n => n.v === v)?.t ?? 'Intermedio';
+
+const FORM_VACIO = { athlete: '', type: '', nivel: 'intermedio', name: '', hour: '08', min: '00', intensity: 6, objetivo: '', notes: '', fecha: '' };
 
 /* ── Utilidades ── */
 const iCol = v => v <= 3 ? 'var(--accent5)' : v <= 6 ? 'var(--accent4)' : v <= 8 ? '#ff9f43' : 'var(--accent3)';
@@ -122,6 +131,7 @@ export default function Rutinas() {
         const datos = {
             nombre: form.name.trim(),
             tipo: form.type,
+            nivel: form.nivel,
             objetivo: form.objetivo.trim() || null,
             notas: form.notes.trim() || null,
             horaInicio: `${dosDig(hh)}:${dosDig(mm)}`,
@@ -151,7 +161,7 @@ export default function Rutinas() {
         }
         const [hh, mm] = (r.horaInicio ?? '08:00').split(':');
         setForm({
-            athlete: String(r.atleta.id), type: r.tipo ?? '', name: r.nombre, hour: hh, min: mm,
+            athlete: String(r.atleta.id), type: r.tipo ?? '', nivel: r.nivel ?? 'intermedio', name: r.nombre, hour: hh, min: mm,
             intensity: r.intensidad ?? 6, objetivo: r.objetivo ?? '', notes: r.notas ?? '', fecha: r.fechaProgramada ?? isoLocal(),
         });
         setExs(r.ejercicios.map(e => ({ nombre: e.nombre, series: e.series, repeticiones: e.repeticiones })));
@@ -297,6 +307,15 @@ export default function Rutinas() {
                                             <option value="">Seleccionar...</option>
                                             {Object.keys(EXERCISES).map(t => <option key={t}>{t}</option>)}
                                         </select>
+                                    </div>
+                                </div>
+                                <div className="field" style={{ marginBottom: '10px' }}>
+                                    <label className="field-label">Nivel de la rutina</label>
+                                    <div className="duration-pills" role="group" aria-label="Nivel de la rutina">
+                                        {NIVELES.map(n => (
+                                            <button type="button" key={n.v} className={`dur-pill ${form.nivel === n.v ? 'selected' : ''}`}
+                                                aria-pressed={form.nivel === n.v} onClick={() => setForm(f => ({ ...f, nivel: n.v }))}>{n.t}</button>
+                                        ))}
                                     </div>
                                 </div>
                                 <div className="field" style={{ marginBottom: '10px' }}>
@@ -485,6 +504,7 @@ export default function Rutinas() {
                                             <div className="meta-item">⏰ {r.horaInicio ?? '—'}</div>
                                             <div className="meta-item">⏱ {durTexto(r.duracionMin)}</div>
                                             <div className="meta-item">⚡ {r.intensidad ?? '—'}/10</div>
+                                            <div className="meta-item">🎚 {nombreNivel(r.nivel)}</div>
                                         </div>
                                         <div className="routine-exercises">
                                             {r.ejercicios.slice(0, 4).map(e => <span key={e.id} className={`re-tag ${e.completado ? 'done' : ''}`}>{e.completado ? '✔ ' : ''}{e.nombre}</span>)}

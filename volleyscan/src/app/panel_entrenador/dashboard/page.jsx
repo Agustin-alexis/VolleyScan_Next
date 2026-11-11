@@ -50,7 +50,6 @@ export default function Dashboard() {
     const [toast, setToast] = useState('');
     const [toastVisible, setToastVisible] = useState(false);
     const [modal, setModal] = useState(false);
-    const [dateLabel, setDateLabel] = useState('Próximos 7 días');
     const [dateDropdown, setDateDropdown] = useState(false);
 
     const [sessionTitle, setSessionTitle] = useState('Entrenamiento general');
@@ -235,29 +234,13 @@ export default function Dashboard() {
                     </section>
                     <section className={styles['topbar-actions']}>
                         <div className={styles['date-picker']} onClick={() => setDateDropdown((d) => !d)}>
-                            <span>{dateLabel}</span> ▾
                             {dateDropdown && (
                                 <div className={`${styles['date-dropdown']} ${styles.open}`}>
-                                    {['Próximos 7 días', 'Este mes', 'Temporada actual'].map((d) => (
-                                        <button
-                                            key={d}
-                                            className={styles['date-option']}
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setDateLabel(d);
-                                                setDateDropdown(false);
-                                                showToast(`Vista: ${d}`);
-                                            }}
-                                        >
-                                            {d}
-                                        </button>
-                                    ))}
+                                    
                                 </div>
                             )}
                         </div>
-                        <button className={styles['btn-new-session']} onClick={() => setModal(true)}>
-                            Nueva sesión
-                        </button>
+                        
                     </section>
                 </header>
 

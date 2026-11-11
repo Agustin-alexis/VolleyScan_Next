@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { cerrarSesionCompleta, getUsuario, urlFoto } from '@/lib/api';
+import { cerrarSesion, getUsuario } from '@/lib/api';
 import { useApi } from '@/lib/UseApi';
 import './SidebarUsuario.css';
 import Image from 'next/image';
@@ -18,7 +18,7 @@ import {
     FaSignOutAlt,
 } from 'react-icons/fa';
 import {
-    FaDumbbell, FaFileLines, FaGear, FaBars, FaXmark, FaPeopleGroup, FaCalendarDays,
+    FaDumbbell, FaFileLines, FaGear, FaBars, FaXmark, FaPeopleGroup, FaCalendarDays, FaTrophy, FaMedal,
 } from 'react-icons/fa6';
 
 const nav = [
@@ -29,11 +29,13 @@ const nav = [
             { to: '/usuario/entrenador', icon: FaUserTie, label: 'Mi entrenador' },
             { to: '/usuario/equipos', icon: FaPeopleGroup, label: 'Mis equipos' },
             { to: '/usuario/horario', icon: FaCalendarDays, label: 'Horario' },
+            { to: '/usuario/partidos', icon: FaTrophy, label: 'Mis partidos' },
         ]
     },
     {
         group: 'Entrenamiento', items: [
             { to: '/usuario/rutinas', icon: FaDumbbell, label: 'Rutinas' },
+            { to: '/usuario/mi-nivel', icon: FaMedal, label: 'Mi nivel' },
             { to: '/usuario/historial', icon: FaFileLines, label: 'Historial' },
             { to: '/usuario/contenido', icon: FaMicrochip, label: 'Contenido' },
         ]
@@ -72,10 +74,7 @@ export default function SidebarUsuario() {
 
     // Carga los datos del deportista logueado
     useEffect(() => {
-        const cargar = () => setUsuario(getUsuario());
-        cargar();
-        window.addEventListener('usuario:cambio', cargar);
-        return () => window.removeEventListener('usuario:cambio', cargar);
+        setUsuario(getUsuario());
     }, []);
 
     // Cierra el menú al cambiar de página
@@ -84,8 +83,8 @@ export default function SidebarUsuario() {
     }, [pathname]);
 
     // Función para cerrar sesión y mandar al login
-    async function handleLogout() {
-        await cerrarSesionCompleta();
+    function handleLogout() {
+        cerrarSesion();
         router.replace('/login');
     }
 
@@ -160,10 +159,7 @@ export default function SidebarUsuario() {
                 </nav>
 
                 <div className="sb-footer">
-                    <div className="sb-avatar">{usuario?.foto_url
-                        ? <img src={urlFoto(usuario.foto_url)} alt=""
-                            style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
-                        : iniciales}</div>
+                    <div className="sb-avatar">{iniciales}</div>
                     <div className="sb-foot-info">
                         <div className="sb-foot-name">{nombreCompleto}</div>
                         <div className="sb-foot-role">{usuario?.rol || 'atleta'}</div>
@@ -191,4 +187,4 @@ export default function SidebarUsuario() {
             </aside>
         </>
     );
-} 
+}

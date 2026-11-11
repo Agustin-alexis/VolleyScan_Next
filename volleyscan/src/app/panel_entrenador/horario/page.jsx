@@ -3,6 +3,7 @@
 import './Horario.css'
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import Link from 'next/link';
 import { listarEquipos } from '@/lib/equipos/api';
 import { asistenciaDeEvento, borrarEvento, crearEvento, editarEvento, fechaISO, guardarAsistencia, listarEventos, mensajeDeError } from '@/lib/horario/api';
 import { listarDeportistas } from '@/lib/vinculos/api';
@@ -555,6 +556,11 @@ export default function Horario() {
                                 <button className="btn-ghost" disabled={guardando} onClick={abrirAsistencia}>
                                     <i className="fa-solid fa-clipboard-user"></i> Asistencia
                                 </button>
+                            )}
+                            {editingId && form.tipo === 'partido' && form.para.startsWith('equipo:') && form.estado !== 'cancelado' && form.fecha <= fechaISO(new Date()) && (
+                                <Link className="btn-ghost" href={`/panel_entrenador/partidos?nuevo=1&equipo=${form.para.split(':')[1]}&horario=${editingId}`}>
+                                    <i className="fa-solid fa-trophy"></i> Registrar resultado
+                                </Link>
                             )}
                             <button className="btn-ghost" disabled={guardando} onClick={() => setModal(false)}>Cancelar</button>
                             <button className="btn-primary" disabled={guardando} onClick={saveEvent}>{guardando ? 'Guardando…' : 'Guardar'}</button>

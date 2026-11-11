@@ -15,6 +15,8 @@ import { useEffect, useRef, useState } from "react";
 import { GoogleLogin, GoogleOAuthProvider } from "@react-oauth/google";
 import { useRouter } from "next/navigation";
 import { api, guardarSesion, ApiError } from "@/lib/api";
+import React from 'react';
+import { useGoogleLogin } from '@react-oauth/google';
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
@@ -32,7 +34,6 @@ function GoogleAuthButton({ onError }) {
     const caja = useRef(null);
     const [ancho, setAncho] = useState(320);
 
-<<<<<<< HEAD
     // Google exige el ancho en píxeles (máx. 400): se ajusta al de la tarjeta de login
     useEffect(() => {
         const medir = () => caja.current && setAncho(Math.max(200, Math.min(400, Math.floor(caja.current.clientWidth))));
@@ -55,7 +56,6 @@ function GoogleAuthButton({ onError }) {
             else onError?.("No se pudo conectar con el servidor. Revisa que esté encendido y CORS.");
         }
     }
-=======
     const login = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
             try {
@@ -82,7 +82,6 @@ function GoogleAuthButton({ onError }) {
         },
         onError: () => onError?.("Google canceló el inicio de sesión."),
     });
->>>>>>> 60248a05bb151d70397b31feb4d471e068ffd05c
 
     return (
         <div ref={caja} style={{ width: "100%", display: "flex", justifyContent: "center" }}>

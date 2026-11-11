@@ -19,9 +19,11 @@ import { api } from "@/lib/api";
 import "./rutinas.css"; // tu CSS global (se conserva tal cual)
 import s from "./rutinas.module.css"; // estilos del rediseño
 
-const NIVELES = ["principiante", "intermedio", "avanzado"];
+const NIVELES = ["principiante", "intermedio", "avanzado", "profesional"];
 
 const capitalizar = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : "");
+/** "todos" = rutina pensada para cualquier nivel */
+const etiquetaNivel = (n) => (n === "todos" ? "Todos los niveles" : capitalizar(n));
 const cx = (...c) => c.filter(Boolean).join(" ");
 
 /** "2026-10-31" → "sáb, 31 oct" (en hora local, sin desfases de zona horaria) */
@@ -108,7 +110,7 @@ function Contenido({ onReintentar }) {
                                 >
                                     <span className={s.pickName}>{r.nombre}</span>
                                     <span className={s.pickMeta}>
-                                        <span>{capitalizar(r.nivel) || "Rutina"}</span>
+                                        <span>{etiquetaNivel(r.nivel) || "Rutina"}</span>
                                         {tiene && <span>{pct >= 100 ? "✔ Completada" : `${pct}%`}</span>}
                                     </span>
                                     {tiene && <span className={s.mini}><i style={{ width: `${Math.min(100, pct)}%` }} /></span>}
@@ -188,8 +190,9 @@ function RutinaDetalle({ id, onReintentar }) {
         );
     }
 
-    const nivel = NIVELES.includes(rutina.nivel) ? rutina.nivel : "intermedio";
-    const idxNivel = NIVELES.indexOf(nivel);
+    const paraTodos = rutina.nivel === "todos";
+    const nivel = paraTodos || NIVELES.includes(rutina.nivel) ? rutina.nivel : "intermedio";
+    const idxNivel = paraTodos ? NIVELES.length - 1 : NIVELES.indexOf(nivel);
     const ejercicios = rutina.ejercicios ?? [];
     const { total = 0, completados = 0, porcentaje = 0 } = rutina.progreso ?? {};
     const completa = total > 0 && completados >= total;
@@ -214,7 +217,7 @@ function RutinaDetalle({ id, onReintentar }) {
             <section className={cx(s.hero, completa && s.done)} aria-label={`Rutina ${rutina.nombre}`}>
                 <div className={s.heroMain}>
                     <div className={s.badges}>
-                        <span className={cx(s.badge, s[`lvl${idxNivel}`])}>{capitalizar(nivel)}</span>
+                        <span className={cx(s.badge, s[`lvl${idxNivel}`])}>{etiquetaNivel(nivel)}</span>
                         {rutina.tipo && <span className={cx(s.badge, s.tipo)}>{rutina.tipo}</span>}
                     </div>
 
@@ -331,7 +334,7 @@ function RutinaDetalle({ id, onReintentar }) {
                         <div className={s.stat}><strong><FaDumbbell style={{ fontSize: ".95rem", verticalAlign: "-1px" }} aria-hidden="true" /> {ejercicios.length}</strong><span>Ejercicios</span></div>
                     </div>
 
-                    <div className={s.barLabel}><span>Dificultad</span><b>{nivel}</b></div>
+                    <div className={s.barLabel}><span>Dificultad</span><b>{paraTodos ? "para todos los niveles" : nivel}</b></div>
                     <div className={s.bars} aria-hidden="true">
                         {NIVELES.map((_, i) => (
                             <span key={i} className={cx(s.bar, i <= idxNivel && s[`b${i}`])} />
