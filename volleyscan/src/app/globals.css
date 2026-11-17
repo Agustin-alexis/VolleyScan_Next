@@ -1,6 +1,5 @@
 :root {
     /* Colores */
-    --bg-base: #0b0f1a;
     --bg-surface: #131929;
     --bg-card: #1a2235;
     --bg-card-hover: #222d46;
@@ -52,14 +51,6 @@
     box-sizing: border-box;
 }
 
-html,
-body {
-    width: 100%;
-    min-height: 100%;
-    background: var(--bg-base);
-    color: var(--text-primary);
-    font-family: var(--font-body);
-}
 
 /* Agregar esto UNA sola vez en globals.css, no en Perfil.css ni en ningún otro CSS de página */
 
@@ -98,6 +89,6 @@ html {
 }
 
 body {
-    background: var(--bg-deep);
+    background: linear-gradient(135deg, #0B1023 0%, #111A3A 50%, #050814 100%) fixed;
     color: var(--text-1);
 }

@@ -1,0 +1,8 @@
+.usuario-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+main {
+    background: linear-gradient(135deg, #0B1023 0%, #111A3A 50%, #050814 100%) fixed;
+}

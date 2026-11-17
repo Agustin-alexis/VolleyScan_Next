@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { getToken, getUsuario } from "@/lib/api";
 import SidebarUsuario from "../components/SidebarUsuario";
 import CampanaAvisos from "../components/avisos/CampanaAvisos";
+import "./usuario.css"
 
 export default function UsuarioLayout({ children }) {
     const router = useRouter();
@@ -35,13 +36,13 @@ export default function UsuarioLayout({ children }) {
     if (!listo) return null;
 
     return (
-        <div style={{ display: "flex", minHeight: "100vh" }}>
+        <div className="usuario-shell">
             <SidebarUsuario />
 
             {/* Campana de avisos: flotante arriba a la derecha */}
             <CampanaAvisos />
 
-            <main style={{ flex: 1, overflow: "auto" }}>
+            <main style={{ flex: 1, minWidth: 0, overflow: "auto" }}>
                 {children}
             </main>
         </div>

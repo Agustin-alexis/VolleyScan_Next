@@ -483,16 +483,32 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
 /* ── Añadidos: la sección "Tu progreso" lleva sus propios estilos (mi-progreso.module.css) ── */
 .btn-notification:focus-visible,
 .quick-btn:focus-visible,
-.btn:focus-visible { outline: 2px solid var(--accent-blue); outline-offset: 2px; }
+.btn:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+}
 
 @media (max-width: 480px) {
-  .main-content { padding: 18px 14px; }
-  .welcome__title { font-size: 1.35rem; }
+  .main-content {
+    padding: 18px 14px;
+  }
+
+  .welcome__title {
+    font-size: 1.35rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .stat-card, .btn, .quick-btn, .toast { transition: none; animation: none; }
+
+  .stat-card,
+  .btn,
+  .quick-btn,
+  .toast {
+    transition: none;
+    animation: none;
+  }
 }
