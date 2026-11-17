@@ -48,7 +48,7 @@ function destinoDeInvitacion() {
   return next && /^\/invitacion\/[A-Za-z0-9_-]{20,100}$/.test(next) ? next : null
 }
 
-const CAMPOS = ['nombre', 'apellido', 'email', 'password']
+const CAMPOS = ['nombre', 'apellido', 'email', 'password', 'confirmpassword']
 
 // Convierte la respuesta de error del servidor en { campo: 'mensaje' }
 function erroresDelServidor(datos) {
@@ -69,6 +69,7 @@ export default function RegistroPage() {
     apellido: '',
     email: '',
     password: '',
+    confirmpassword: '',
   })
 
   const [errors, setErrors] = useState({})
@@ -77,6 +78,7 @@ export default function RegistroPage() {
   const [siguiente, setSiguiente] = useState(null) // invitación a la que volver (se lee en el navegador)
   useEffect(() => { setSiguiente(destinoDeInvitacion()) }, [])
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   /* ── Toast ── */
   function showToast(message, type = 'success') {
@@ -106,7 +108,14 @@ export default function RegistroPage() {
     } else if (form.password.length < 8) {
       errs.password = 'Mínimo 8 caracteres.'
     }
+    if (!form.confirmpassword) {
+      errs.confirmPassword = 'Confirma tu contraseña.'
+    } else if (form.password !== form.confirmpassword) {
+      errs.confirmPassword = 'Las contraseñas no coinciden.'
+    }
     return errs
+
+
   }
 
   /* ── Submit ── */
@@ -244,6 +253,7 @@ export default function RegistroPage() {
                   minLength={8}
                   maxLength={72}
                 />
+
                 <button
                   type="button"
                   className="boton-ojo"
@@ -252,8 +262,35 @@ export default function RegistroPage() {
                 >
                   {showPassword ? <IconoOjoTachado /> : <IconoOjo />}
                 </button>
+                {errors.password && <p className="field-error-msg">{errors.password}</p>}
               </div>
-              {errors.password && <p className="field-error-msg">{errors.password}</p>}
+              {/* Confirmar contraseña */}
+              <div className="grupo-input">
+                <label htmlFor="confirmPassword">Confirmar contraseña</label>
+                <div className="input-password">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    id="confirmPassword"
+                    placeholder="••••••••"
+                    value={form.confirmPassword}
+                    onChange={handleChange}
+                    className={errors.confirmPassword ? 'input-error' : ''}
+                    autoComplete="new-password"
+                    minLength={8}
+                    maxLength={72}
+                  />
+                  <button
+                    type="button"
+                    className="boton-ojo"
+                    onClick={() => setShowConfirmPassword(prev => !prev)}
+                    aria-label={showConfirmPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  >
+                    {showConfirmPassword ? <IconoOjoTachado /> : <IconoOjo />}
+                  </button>
+                </div>
+                {errors.confirmPassword && <p className="field-error-msg">{errors.confirmPassword}</p>}
+              </div>
+
             </div>
             <button type="submit" className="boton-principal" disabled={loading}>
               {loading ? 'Creando cuenta…' : 'Completar registro'}
