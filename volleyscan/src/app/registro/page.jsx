@@ -69,7 +69,7 @@ export default function RegistroPage() {
     apellido: '',
     email: '',
     password: '',
-    confirmpassword: '',
+    confirmPassword: '',
   })
 
   const [errors, setErrors] = useState({})
@@ -108,9 +108,9 @@ export default function RegistroPage() {
     } else if (form.password.length < 8) {
       errs.password = 'Mínimo 8 caracteres.'
     }
-    if (!form.confirmpassword) {
+    if (!form.confirmPassword) {
       errs.confirmPassword = 'Confirma tu contraseña.'
-    } else if (form.password !== form.confirmpassword) {
+    } else if (form.password !== form.confirmPassword) {
       errs.confirmPassword = 'Las contraseñas no coinciden.'
     }
     return errs
@@ -139,7 +139,7 @@ export default function RegistroPage() {
       setTimeout(() => navigate.push(destinoDeInvitacion() ?? '/usuario/dashboard'), 1500)
     } catch (error) {
       // Queda en la consola del navegador (F12) para poder ver la causa real
-      console.error('Registro falló:', error?.status, error?.datos ?? error)
+      console.warn('Registro falló:', error?.status, error?.datos ?? error)
 
       if (error?.status === 400 || error?.status === 409) {
         const errs = erroresDelServidor(error.datos)
