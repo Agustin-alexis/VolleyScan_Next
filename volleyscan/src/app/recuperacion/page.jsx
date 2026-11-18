@@ -119,8 +119,7 @@ export default function RecuperarPage() {
               </div>
               <h1 className="sent-state__title">Revisa tu correo</h1>
               <p className="sent-state__msg">
-                Si <strong>{email.trim()}</strong> está registrado, recibirás un enlace para
-                restablecer tu contraseña. El enlace vale 30 minutos.
+                Si <strong>{email.trim()}</strong> El enlace solo dura 20 minutos y solo se puede utilizar una vez
               </p>
               <button
                 className="btn-login"
