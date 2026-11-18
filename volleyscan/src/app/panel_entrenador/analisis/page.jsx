@@ -198,33 +198,20 @@ export default function Analisis() {
                 ></textarea>
             </div>
 
-            <div className="ai-composer-bar">
-                <div className="ai-composer-tools">
-                    <button type="button" className="ai-round-btn" aria-label="Adjuntar archivo" title="Adjuntar">
-                        <Icono nombre="plus" />
-                    </button>
-                    <button type="button" className="ai-pill-btn">
-                        <Icono nombre="sliders" /> Ajustes <Icono nombre="chevron" />
-                    </button>
-                    <button type="button" className="ai-pill-btn">
-                        <Icono nombre="grid" /> Opciones <Icono nombre="chevron" />
-                    </button>
-                </div>
-
-                <div className="ai-composer-end">
-                    <output htmlFor={inputId} className="ai-char-count">
-                        {entrada.length}/{MAX_CARACTERES}
-                    </output>
-                    <button
-                        className="ai-composer-send"
-                        type="submit"
-                        disabled={escribiendo || !entrada.trim()}
-                        aria-label="Enviar mensaje"
-                    >
-                        <Icono nombre="send" />
-                    </button>
-                </div>
+            <div className="ai-composer-end">
+                <output htmlFor={inputId} className="ai-char-count">
+                    {entrada.length}/{MAX_CARACTERES}
+                </output>
+                <button
+                    className="ai-composer-send"
+                    type="submit"
+                    disabled={escribiendo || !entrada.trim()}
+                    aria-label="Enviar mensaje"
+                >
+                    <Icono nombre="send" />
+                </button>
             </div>
+
         </form>
     );
 
@@ -238,7 +225,7 @@ export default function Analisis() {
             {vacio ? (
                 /* ============ VISTA DE BIENVENIDA ============ */
                 <section className="ai-welcome" aria-label="Bienvenida">
-                    <div className="ai-orb" aria-hidden="true"></div>
+
                     <p className="ai-eyebrow">Entrenador virtual de voleibol</p>
                     <h2 className="ai-welcome-title">¿Listo para entrenar hoy?</h2>
 
