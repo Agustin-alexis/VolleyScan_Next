@@ -52,11 +52,11 @@ function aEvento(e) {
         tipo: e.tipo,
         estado: e.estado,
         marcados: e.asistenciaMarcada || 0,
-        conLista: Boolean(e.equipo || e.deportista),
+        conLista: Boolean(e.equipo || (e.deportistas?.length ?? 0) > 0 || e.deportista),
         place: e.ubicacion || '',
         notes: e.notas || '',
         equipo: e.equipo,
-        deportista: e.deportista,
+        deportistas: e.deportistas ?? (e.deportista ? [e.deportista] : []),
         start: new Date(`${e.fecha}T${e.horaInicio}`),
         end: new Date(`${e.fecha}T${e.horaFin}`),
     };
@@ -71,9 +71,10 @@ const ASISTENCIA = [
 
 const claseTipo = (tipo) => 'tipo-' + (tipo || 'otro');
 const claseEstado = (estado) => (estado === 'cancelado' ? 'est-cancelado' : estado === 'completado' ? 'est-completado' : '');
-const paraQuien = (ev) => (ev.equipo ? ev.equipo.nombre : ev.deportista ? ev.deportista.nombre : '');
+const paraQuien = (ev) => (ev.equipo ? ev.equipo.nombre : ev.deportistas.length === 1 ? ev.deportistas[0].nombre : ev.deportistas.length > 1 ? `${ev.deportistas.length} deportistas` : '');
+const iniciales = (nombre) => (nombre || '?').split(' ').filter(Boolean).slice(0, 2).map((p) => p[0]).join('').toUpperCase();
 
-const EMPTY_FORM = { title: '', tipo: 'entrenamiento', place: '', fecha: '', horaI: '09:00', horaF: '11:00', notes: '', para: 'personal', estado: 'programado' };
+const EMPTY_FORM = { title: '', tipo: 'entrenamiento', place: '', fecha: '', horaI: '09:00', horaF: '11:00', notes: '', para: 'personal', estado: 'programado', citados: [] };
 
 export default function Horario() {
     const [view, setView] = useState('semana');
@@ -90,6 +91,7 @@ export default function Horario() {
     const [editingId, setEditingId] = useState(null);
     const [form, setForm] = useState(EMPTY_FORM);
     const [guardando, setGuardando] = useState(false);
+    const [busqueda, setBusqueda] = useState('');
     const [toast, setToast] = useState({ show: false, msg: '' });
     const [mpYear, setMpYear] = useState(new Date().getFullYear());
     // Asistencia
@@ -211,6 +213,7 @@ export default function Horario() {
         const hf = hour != null ? `${String(Math.min(hour + 2, 23)).padStart(2, '0')}:${hour + 2 > 23 ? '59' : '00'}` : '11:00';
         const para = equipos.length > 0 ? `equipo:${equipos[0].id}` : 'personal';
         setForm({ ...EMPTY_FORM, fecha: d, horaI: h, horaF: hf, para });
+        setBusqueda('');
         setEditingId(null);
         setModal(true);
     }
@@ -218,8 +221,9 @@ export default function Horario() {
     function openEdit(id) {
         const ev = events.find(e => e.id === id) || proximos.find(e => e.id === id);
         if (!ev) return;
-        const para = ev.equipo ? `equipo:${ev.equipo.id}` : ev.deportista ? `deportista:${ev.deportista.id}` : 'personal';
-        setForm({ title: ev.title, tipo: ev.tipo, place: ev.place, fecha: fmtDate(ev.start), horaI: fmtTime(ev.start), horaF: fmtTime(ev.end), notes: ev.notes, para, estado: ev.estado });
+        const para = ev.equipo ? `equipo:${ev.equipo.id}` : ev.deportistas.length > 0 ? 'deportistas' : 'personal';
+        setForm({ title: ev.title, tipo: ev.tipo, place: ev.place, fecha: fmtDate(ev.start), horaI: fmtTime(ev.start), horaF: fmtTime(ev.end), notes: ev.notes, para, estado: ev.estado, citados: ev.deportistas });
+        setBusqueda('');
         setEditingId(id);
         setModal(true);
     }
@@ -230,11 +234,12 @@ export default function Horario() {
         if (!form.fecha || !form.horaI || !form.horaF) { showToast('Completa fecha y horarios'); return; }
         if (form.horaF <= form.horaI) { showToast('La hora fin debe ser posterior'); return; }
         const [tipoPara, idPara] = form.para.split(':');
+        if (form.para === 'deportistas' && form.citados.length === 0) { showToast('Elige al menos un deportista'); return; }
         const cuerpo = {
             titulo: form.title.trim(), tipo: form.tipo, fecha: form.fecha, horaInicio: form.horaI, horaFin: form.horaF,
             ubicacion: form.place, notas: form.notes, estado: form.estado,
             equipoId: tipoPara === 'equipo' ? Number(idPara) : null,
-            deportistaId: tipoPara === 'deportista' ? Number(idPara) : null,
+            deportistaIds: form.para === 'deportistas' ? form.citados.map((c) => c.id) : [],
         };
         setGuardando(true);
         const r = editingId ? await editarEvento(editingId, cuerpo) : await crearEvento(cuerpo);
@@ -308,10 +313,33 @@ export default function Horario() {
     // Fila de la semana donde se dibuja el evento (los de antes de las 6:00 se dibujan en la primera fila)
     const filaDe = (ev) => Math.min(23, Math.max(6, ev.start.getHours()));
 
+    const citadosIds = new Set(form.citados.map((c) => c.id));
+    const nombreDe = (d) => `${d.nombre} ${d.apellido}`.trim();
+    const q = busqueda.trim().toLowerCase();
+    const visibles = deportistas.filter((d) => !q || nombreDe(d).toLowerCase().includes(q));
+    const todosVisiblesMarcados = visibles.length > 0 && visibles.every((d) => citadosIds.has(d.id));
+
+    function alternarCitado(d) {
+        setForm((f) => (f.citados.some((c) => c.id === d.id)
+            ? { ...f, citados: f.citados.filter((c) => c.id !== d.id) }
+            : { ...f, citados: [...f.citados, { id: d.id, nombre: nombreDe(d) }] }));
+    }
+    function marcarVisibles() {
+        setForm((f) => {
+            if (todosVisiblesMarcados) {
+                const fuera = new Set(visibles.map((d) => d.id));
+                return { ...f, citados: f.citados.filter((c) => !fuera.has(c.id)) };
+            }
+            const ya = new Set(f.citados.map((c) => c.id));
+            return { ...f, citados: [...f.citados, ...visibles.filter((d) => !ya.has(d.id)).map((d) => ({ id: d.id, nombre: nombreDe(d) }))] };
+        });
+    }
+
+    const nCit = form.citados.length;
     const avisoPara = form.para.startsWith('equipo:')
         ? 'Los deportistas del equipo verán este evento y recibirán un aviso.'
-        : form.para.startsWith('deportista:')
-            ? 'Solo ese deportista lo verá y recibirá un aviso.'
+        : form.para === 'deportistas'
+            ? (nCit === 0 ? 'Marca a quién quieres citar.' : nCit === 1 ? 'Solo ese deportista lo verá y recibirá un aviso.' : `Solo los ${nCit} citados lo verán y cada uno recibirá un aviso.`)
             : 'Solo tú verás este evento.';
 
     return (
@@ -506,15 +534,51 @@ export default function Horario() {
                                             {equipos.map(eq => <option key={eq.id} value={`equipo:${eq.id}`}>{eq.nombre}</option>)}
                                         </optgroup>
                                     )}
-                                    {deportistas.length > 0 && (
-                                        <optgroup label="Un deportista">
-                                            {deportistas.map(d => <option key={d.id} value={`deportista:${d.id}`}>{d.nombre} {d.apellido}</option>)}
-                                        </optgroup>
-                                    )}
+                                    {(deportistas.length > 0 || form.citados.length > 0) && <option value="deportistas">Deportistas elegidos (uno o varios)</option>}
                                     <option value="personal">Solo para mí</option>
                                 </select>
                                 <span className="field-hint">{avisoPara}</span>
                             </label>
+                            {form.para === 'deportistas' && (
+                                <div className="field form-full cit">
+                                    <span className="field-label">Citar a <b className="cit-n">{nCit}</b></span>
+                                    {nCit > 0 && (
+                                        <ul className="cit-chips" aria-label="Deportistas citados">
+                                            {form.citados.map((c) => (
+                                                <li key={c.id} className="cit-chip">
+                                                    <span className="cit-av">{iniciales(c.nombre)}</span>
+                                                    <span className="cit-nom">{c.nombre}</span>
+                                                    <button type="button" aria-label={`Quitar a ${c.nombre}`} onClick={() => setForm((f) => ({ ...f, citados: f.citados.filter((x) => x.id !== c.id) }))}>
+                                                        <i className="fa-solid fa-xmark"></i>
+                                                    </button>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                    <div className="cit-barra">
+                                        <input className="field-inp" type="search" value={busqueda} onChange={(e) => setBusqueda(e.target.value)} placeholder="Buscar deportista…" aria-label="Buscar deportista" />
+                                        <button type="button" className="cit-todos" onClick={marcarVisibles} disabled={visibles.length === 0}>
+                                            {todosVisiblesMarcados ? 'Quitar a todos' : q ? 'Marcar los encontrados' : 'Marcar a todos'}
+                                        </button>
+                                    </div>
+                                    <ul className="cit-lista" role="listbox" aria-multiselectable="true" aria-label="Tus deportistas">
+                                        {visibles.length === 0 && <li className="cit-vacio">{deportistas.length === 0 ? 'Aún no tienes deportistas vinculados.' : 'Nadie coincide con la búsqueda.'}</li>}
+                                        {visibles.map((d) => {
+                                            const on = citadosIds.has(d.id);
+                                            return (
+                                                <li key={d.id} role="option" aria-selected={on}>
+                                                    <button type="button" className={`cit-fila ${on ? 'on' : ''}`} onClick={() => alternarCitado(d)}>
+                                                        <span className="cit-check">{on && <i className="fa-solid fa-check"></i>}</span>
+                                                        <span className="cit-av">{iniciales(nombreDe(d))}</span>
+                                                        <span className="cit-nom">{nombreDe(d)}</span>
+                                                        {d.posicion && <small>{d.posicion}</small>}
+                                                    </button>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                </div>
+                            )}
                             <label className="field">
                                 <span className="field-label">Tipo</span>
                                 <select className="field-sel" value={form.tipo} onChange={e => setForm(f => ({ ...f, tipo: e.target.value }))}>
@@ -581,7 +645,7 @@ export default function Horario() {
                             <>
                                 <p className="as-sub">
                                     {eventoAsis.evento.fecha.split('-').reverse().join('/')} · {eventoAsis.evento.horaInicio} – {eventoAsis.evento.horaFin}
-                                    {eventoAsis.evento.equipo ? ` · ${eventoAsis.evento.equipo.nombre}` : ''}
+                                    {eventoAsis.evento.equipo ? ` · ${eventoAsis.evento.equipo.nombre}` : eventoAsis.evento.deportistas?.length ? ` · ${eventoAsis.evento.deportistas.length === 1 ? '1 citado' : `${eventoAsis.evento.deportistas.length} citados`}` : ''}
                                 </p>
                                 {!eventoAsis.puedePasarLista && <div className="hor-estado mal" role="status">Solo puedes pasar lista de eventos que ya llegaron.</div>}
                                 {asisError && <div className="hor-estado mal" role="alert">{asisError}</div>}
@@ -603,7 +667,7 @@ export default function Horario() {
                                                     <span className="as-avatar">{`${d.nombre?.[0] ?? ''}${d.apellido?.[0] ?? ''}`.toUpperCase()}</span>
                                                     <div>
                                                         <strong>{d.nombre} {d.apellido}</strong>
-                                                        <small>{d.activo ? [d.posicion, d.numeroCamiseta != null && `N.º ${d.numeroCamiseta}`].filter(Boolean).join(' · ') || ' ' : 'Ya no está en el equipo'}</small>
+                                                        <small>{d.activo ? [d.posicion, d.numeroCamiseta != null && `N.º ${d.numeroCamiseta}`].filter(Boolean).join(' · ') || ' ' : 'Ya no está en este evento'}</small>
                                                     </div>
                                                 </div>
                                                 <div className="as-botones" role="group" aria-label={`Asistencia de ${d.nombre}`}>

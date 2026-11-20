@@ -38,6 +38,7 @@ function Evento({ e }) {
                 {cancelado && <span className={`${s.chip} ${s.chipCancelado}`}>Cancelado</span>}
                 {e.estado === "completado" && <span className={`${s.chip} ${s.chipHecho}`}>Realizado</span>}
                 {e.equipo && <span className={s.chip}>{e.equipo.nombre}</span>}
+                {!e.equipo && e.convocados > 0 && <span className={s.chip}>{e.convocados === 1 ? "Cita individual" : `Citación · ${e.convocados} deportistas`}</span>}
                 {e.miAsistencia && <span className={`${s.chip} ${s[ASISTENCIA[e.miAsistencia].clase]}`}>{ASISTENCIA[e.miAsistencia].texto}</span>}
             </div>
             <h3>{e.titulo}</h3>

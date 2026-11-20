@@ -796,3 +796,38 @@ html, body { height: 100%; font-family: 'Sora', sans-serif; background: var(--bg
   .as-botones { justify-content: flex-start; }
   .modal-lg { width: 100%; }
 }
+
+
+/* ═══════════════════════════════════════
+   AÑADIDO — Citar a varios deportistas
+═══════════════════════════════════════ */
+.cit { gap: 8px; }
+.cit-n { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 4px; border-radius: 99px; background: var(--purple-g); color: #fff; font-size: 10.5px; letter-spacing: 0; vertical-align: 1px; }
+.cit-chips { list-style: none; display: flex; flex-wrap: wrap; gap: 6px; max-height: 84px; overflow-y: auto; padding: 2px 0; }
+.cit-chip { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 3px 4px 3px 4px; border-radius: 99px; background: rgba(139,92,246,.14); border: 1px solid rgba(139,92,246,.35); animation: cit-in .16s ease-out; }
+.cit-chip .cit-nom { font-size: 11.5px; font-weight: 600; color: var(--t1); }
+.cit-chip button { width: 20px; height: 20px; border: 0; border-radius: 50%; background: transparent; color: var(--t2); cursor: pointer; display: grid; place-items: center; font-size: 10px; transition: var(--trans); }
+.cit-chip button:hover { background: rgba(248,113,113,.2); color: #f87171; }
+@keyframes cit-in { from { opacity: 0; transform: scale(.92); } to { opacity: 1; transform: none; } }
+.cit-av { width: 22px; height: 22px; border-radius: 50%; flex: none; display: grid; place-items: center; font-size: 9px; font-weight: 800; color: #fff; background: var(--purple-g); }
+.cit-barra { display: flex; gap: 8px; }
+.cit-barra .field-inp { flex: 1; min-width: 0; }
+.cit-todos { flex: none; border: 1px solid var(--border2); background: transparent; color: var(--t1); border-radius: var(--radius-sm); padding: 0 12px; font: inherit; font-size: 11.5px; font-weight: 600; cursor: pointer; transition: var(--trans); white-space: nowrap; }
+.cit-todos:hover:not(:disabled) { border-color: var(--blue); background: rgba(59,130,246,.08); }
+.cit-todos:disabled { opacity: .4; cursor: default; }
+.cit-lista { list-style: none; display: grid; gap: 4px; max-height: 190px; overflow-y: auto; padding: 4px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; }
+.cit-vacio { text-align: center; color: var(--t3); font-size: 12px; padding: 16px 8px; }
+.cit-fila { width: 100%; display: flex; align-items: center; gap: 10px; padding: 7px 9px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--t1); font: inherit; font-size: 12.5px; text-align: left; cursor: pointer; transition: var(--trans); }
+.cit-fila:hover { background: var(--hover); }
+.cit-fila.on { background: rgba(139,92,246,.12); border-color: rgba(139,92,246,.3); }
+.cit-fila .cit-nom { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.cit-fila small { font-size: 10.5px; color: var(--t3); flex: none; }
+.cit-check { width: 18px; height: 18px; flex: none; border-radius: 6px; border: 1.5px solid var(--border2); display: grid; place-items: center; font-size: 10px; color: #fff; transition: var(--trans); }
+.cit-fila.on .cit-check { background: var(--purple-g); border-color: transparent; }
+.cit-fila:focus-visible, .cit-todos:focus-visible, .cit-chip button:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+@media (max-width: 640px) { .cit-barra { flex-direction: column; } .cit-todos { padding: 8px 12px; } }
+@media (max-width: 640px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .field, .field-inp, .field-sel, .field-ta { min-width: 0; max-width: 100%; }
+  .modal { overflow-x: hidden; }
+}
