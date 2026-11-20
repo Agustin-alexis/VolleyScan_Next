@@ -1,0 +1,1556 @@
+/* ==========================================================================
+   VolleyScan AI - Dark Tech & Cyberpunk Sports Theme (AsistenteOriginal.css)
+   Port exacto de styles.css + layout.css + layout_grid.css + componentes.css
+   ========================================================================== */
+
+.vs-original-root {
+    --bg-main: #070a12;
+    --bg-card: #0f172a;
+    --bg-card-hover: #162038;
+    --bg-panel: #131b2e;
+    --border-color: rgba(255, 255, 255, 0.08);
+    --border-cyan: rgba(0, 240, 255, 0.35);
+
+    --neon-cyan: #00F0FF;
+    --neon-yellow: #FEE500;
+    --neon-green: #00FF99;
+    --neon-red: #FF3366;
+    --neon-amber: #FFB800;
+    --neon-purple: #A855F7;
+
+    --text-primary: #F8FAFC;
+    --text-secondary: #94A3B8;
+    --text-muted: #64748B;
+
+    --glow-cyan: 0 0 20px rgba(0, 240, 255, 0.3);
+    --glow-yellow: 0 0 20px rgba(254, 229, 0, 0.3);
+    --glow-green: 0 0 20px rgba(0, 255, 153, 0.3);
+    --glow-red: 0 0 20px rgba(255, 51, 102, 0.3);
+
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    min-height: 100vh;
+    width: 100%;
+    overflow-x: hidden;
+    line-height: 1.5;
+    padding-bottom: 3rem;
+}
+
+.vs-original-root * {
+    box-sizing: border-box;
+}
+
+/* ==================== NAVBAR ==================== */
+.vs-navbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: rgba(10, 14, 23, 0.88);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.85rem 1.75rem;
+}
+
+.vs-navbar-inner {
+    max-width: 1520px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.vs-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    text-decoration: none;
+    font-weight: 800;
+    font-size: 1.25rem;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+}
+
+.vs-logo-icon {
+    font-size: 1.45rem;
+}
+
+.vs-logo-ai {
+    color: var(--neon-cyan);
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.6);
+}
+
+.vs-nav-links {
+    display: flex;
+    gap: 1rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex-wrap: wrap;
+}
+
+.vs-nav-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+}
+
+.vs-nav-links a:hover,
+.vs-nav-links a.active {
+    color: var(--neon-cyan);
+    background: rgba(0, 240, 255, 0.08);
+}
+
+.vs-nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+/* ==================== BOTONES CYBER / SPORTS ==================== */
+.btn-primary-cyan {
+    background: linear-gradient(135deg, #00F0FF, #0099FF);
+    color: #050a14;
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 0.55rem 1.15rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(0, 240, 255, 0.25);
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.btn-primary-cyan:hover:not(:disabled) {
+    box-shadow: 0 4px 22px rgba(0, 240, 255, 0.5);
+    transform: translateY(-1px);
+}
+
+.btn-primary-cyan:disabled {
+    opacity: 0.65;
+    cursor: progress;
+}
+
+.btn-pill-outline {
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    font-weight: 600;
+    font-size: 0.82rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.btn-pill-outline:hover {
+    border-color: var(--neon-cyan);
+    color: var(--neon-cyan);
+    background: rgba(0, 240, 255, 0.05);
+}
+
+.btn-pill-outline.active {
+    border-color: var(--neon-green);
+    color: var(--neon-green);
+    background: rgba(0, 255, 153, 0.1);
+}
+
+.btn-danger-pdf {
+    background: linear-gradient(135deg, #FF3366, #DC2626);
+    color: #FFFFFF;
+    font-weight: 800;
+    font-size: 0.84rem;
+    padding: 0.55rem 1.15rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(255, 51, 102, 0.35);
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.btn-danger-pdf:hover {
+    box-shadow: 0 4px 24px rgba(255, 51, 102, 0.65);
+    transform: translateY(-1px);
+}
+
+/* ==================== HERO CIENTÍFICO ==================== */
+.vs-hero {
+    max-width: 1520px;
+    margin: 1.5rem auto;
+    padding: 0 2rem;
+    text-align: center;
+}
+
+.vs-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(0, 240, 255, 0.08);
+    border: 1px solid var(--border-cyan);
+    padding: 0.35rem 1rem;
+    border-radius: 9999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--neon-cyan);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    margin-bottom: 0.85rem;
+}
+
+.vs-hero-title {
+    font-size: clamp(1.5rem, 2.5vw, 2.2rem);
+    font-weight: 900;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+    margin-bottom: 0.65rem;
+}
+
+.highlight-cyan {
+    color: var(--neon-cyan);
+    text-shadow: 0 0 25px rgba(0, 240, 255, 0.4);
+}
+
+.highlight-yellow {
+    color: var(--neon-yellow);
+    text-shadow: 0 0 25px rgba(254, 229, 0, 0.4);
+}
+
+.highlight-green {
+    color: var(--neon-green);
+}
+
+.vs-hero-subtitle {
+    max-width: 860px;
+    margin: 0 auto 1rem auto;
+    color: var(--text-secondary);
+    font-size: 0.94rem;
+}
+
+/* ==================== CONTENEDOR PRINCIPAL ==================== */
+.vs-container {
+    max-width: 1520px;
+    margin: 0 auto;
+    padding: 0 2rem 3rem;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+}
+
+.vs-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 1.5rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    position: relative;
+    overflow: hidden;
+}
+
+.vs-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.vs-card-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+}
+
+/* Barra de controles */
+.vs-controls-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.vs-control-group {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.vs-select,
+.vs-input {
+    background: #090e1a;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 0.45rem 0.85rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.vs-select:focus,
+.vs-input:focus {
+    border-color: var(--neon-cyan);
+}
+
+/* ==================== STAGE DE CÁMARA + TELEMETRÍA LATERAL ==================== */
+.top-dashboard,
+.vs-stage-grid,
+.vs-replay-body-layout {
+    display: grid;
+    grid-template-columns: minmax(300px, 640px) 1fr;
+    gap: 2rem;
+    align-items: stretch;
+}
+
+.vs-camera-stage-centered {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    background: radial-gradient(circle at center, rgba(15, 23, 42, 0.92), rgba(6, 9, 19, 0.98));
+    border: 1px solid rgba(0, 240, 255, 0.22);
+    border-radius: 16px;
+    padding: 1rem;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.vs-viewport-wrap,
+.vs-replay-player-col {
+    position: relative;
+    width: 100%;
+    max-width: 640px;
+    min-width: 300px;
+    margin: 0 auto;
+}
+
+.vs-viewport-wrap {
+    aspect-ratio: 4 / 3;
+    background: #050811;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.vs-video-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.vs-canvas-main {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    background: #050811;
+}
+
+.vs-hud-overlay {
+    position: absolute;
+    top: 0.85rem;
+    left: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.vs-hud-pill {
+    background: rgba(9, 14, 26, 0.85);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border-color);
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.vs-hud-pill.highlight {
+    border-color: var(--neon-cyan);
+    color: var(--neon-cyan);
+}
+
+.vs-hud-status-badge {
+    position: absolute;
+    top: 0.85rem;
+    right: 0.85rem;
+    z-index: 10;
+    background: rgba(9, 14, 26, 0.88);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--neon-cyan);
+    color: var(--neon-cyan);
+    padding: 0.38rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.76rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    box-shadow: var(--glow-cyan);
+    max-width: 62%;
+    text-align: right;
+}
+
+/* Overlay Calibración Posición 'T' */
+.vs-calibration-overlay {
+    position: absolute;
+    top: 56px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    width: 90%;
+    max-width: 440px;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.vs-calibration-overlay.hidden {
+    display: none;
+}
+
+.vs-calibration-box {
+    width: 100%;
+    background: rgba(4, 8, 18, 0.78);
+    backdrop-filter: blur(6px);
+    border: 1px solid var(--neon-yellow);
+    border-radius: 10px;
+    padding: 0.6rem 0.9rem;
+    text-align: center;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.55);
+}
+
+.vs-calibration-box.calibracion-exito {
+    border-color: var(--neon-green);
+    box-shadow: 0 0 18px rgba(0, 255, 153, 0.35);
+}
+
+.vs-calibration-box.calibracion-error {
+    border-color: var(--neon-red);
+    box-shadow: 0 0 18px rgba(255, 51, 102, 0.35);
+}
+
+.vs-calibration-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: rgba(254, 229, 0, 0.14);
+    border: 1px solid rgba(254, 229, 0, 0.45);
+    color: var(--neon-yellow);
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    margin-bottom: 0.3rem;
+    text-transform: uppercase;
+}
+
+.vs-calibration-msg {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #f8fafc;
+    line-height: 1.3;
+    margin-bottom: 0.35rem;
+}
+
+.vs-calibration-alert {
+    background: rgba(255, 51, 102, 0.2);
+    border: 1px solid rgba(255, 51, 102, 0.55);
+    color: #fecdd3;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    margin-bottom: 0.35rem;
+}
+
+.vs-calibration-progress-wrap {
+    margin-top: 0.2rem;
+}
+
+.vs-calibration-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(30, 41, 59, 0.75);
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.vs-calibration-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--neon-cyan), var(--neon-green));
+    border-radius: 999px;
+    transition: width 0.1s linear;
+}
+
+.vs-calibration-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.28rem;
+    font-size: 0.66rem;
+    font-weight: 700;
+    color: #cbd5e1;
+}
+
+.vs-skip-calib-btn {
+    margin-top: 0.4rem;
+    padding: 0.22rem 0.65rem;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(15, 23, 42, 0.8);
+    color: #e2e8f0;
+    font-size: 0.68rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.vs-skip-calib-btn:hover {
+    border-color: var(--neon-cyan);
+    color: var(--neon-cyan);
+}
+
+/* Barra del Búfer Circular */
+.vs-buffer-bar-wrap {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(9, 14, 26, 0.92);
+    padding: 0.45rem 0.85rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: #cbd5e1;
+    z-index: 10;
+}
+
+.vs-buffer-progress {
+    flex: 1;
+    height: 6px;
+    background: #1e293b;
+    border-radius: 3px;
+    margin: 0 0.75rem;
+    overflow: hidden;
+}
+
+.vs-buffer-progress-inner {
+    height: 100%;
+    background: linear-gradient(90deg, #00F0FF, #00FF99);
+    transition: width 0.1s;
+}
+
+/* Panel Lateral de 3 Métricas Hero */
+.vs-telemetry-panel,
+.vs-replay-info-col {
+    width: 100%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.vs-metric-card-pro {
+    position: relative;
+    background: linear-gradient(160deg, rgba(19, 27, 46, 0.96) 0%, rgba(10, 15, 29, 0.98) 100%);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    border-radius: 16px;
+    padding: 1.15rem 1.35rem;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.65rem;
+    transition: transform 0.2s ease;
+}
+
+.vs-metric-card-pro:hover {
+    transform: translateY(-2px);
+}
+
+.vs-card-jump-hero {
+    border-left: 4px solid var(--neon-cyan);
+    background: linear-gradient(145deg, rgba(0, 240, 255, 0.09) 0%, rgba(15, 23, 42, 0.96) 65%);
+}
+
+.vs-card-gesture-hero {
+    border-left: 4px solid var(--neon-green);
+    background: linear-gradient(145deg, rgba(0, 255, 153, 0.08) 0%, rgba(15, 23, 42, 0.96) 65%);
+}
+
+.vs-card-posture-hero {
+    border-left: 4px solid var(--neon-amber);
+    background: linear-gradient(145deg, rgba(255, 184, 0, 0.08) 0%, rgba(15, 23, 42, 0.96) 65%);
+}
+
+.vs-metric-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.vs-metric-card-label {
+    font-size: 0.78rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #cbd5e1;
+}
+
+.vs-metric-pill-cyan,
+.vs-metric-pill-emerald,
+.vs-metric-pill-amber {
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 0.22rem 0.7rem;
+    border-radius: 999px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.vs-metric-pill-cyan {
+    background: rgba(0, 240, 255, 0.14);
+    color: var(--neon-cyan);
+    border: 1px solid rgba(0, 240, 255, 0.4);
+}
+
+.vs-metric-pill-emerald {
+    background: rgba(0, 255, 153, 0.15);
+    color: var(--neon-green);
+    border: 1px solid rgba(0, 255, 153, 0.45);
+}
+
+.vs-metric-pill-amber {
+    background: rgba(255, 184, 0, 0.15);
+    color: var(--neon-amber);
+    border: 1px solid rgba(255, 184, 0, 0.4);
+}
+
+.vs-metric-jump-display {
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+}
+
+.vs-metric-number-giant {
+    font-size: 3.1rem;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: #ffffff;
+    text-shadow: 0 0 24px rgba(0, 240, 255, 0.45);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.vs-metric-unit-giant {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--neon-cyan);
+    text-transform: uppercase;
+}
+
+.vs-gesture-main-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.vs-gesture-title-giant {
+    font-size: 1.75rem;
+    font-weight: 900;
+    line-height: 1.15;
+    color: #ffffff;
+}
+
+.vs-gesture-score-box {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    background: rgba(6, 10, 21, 0.72);
+    border: 1px solid rgba(0, 255, 153, 0.32);
+    border-radius: 10px;
+    padding: 0.35rem 0.75rem;
+    min-width: 88px;
+}
+
+.vs-gesture-score-caption {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+    font-weight: 700;
+}
+
+.vs-gesture-score-val {
+    font-size: 1.35rem;
+    font-weight: 900;
+    color: var(--neon-green);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.vs-posture-status-title {
+    font-size: 1.18rem;
+    font-weight: 800;
+    line-height: 1.25;
+}
+
+.vs-posture-detail-text {
+    font-size: 0.85rem;
+    color: #e2e8f0;
+    line-height: 1.45;
+    margin: 0;
+}
+
+.vs-voice-coach-callout {
+    background: rgba(254, 229, 0, 0.07);
+    border: 1px solid rgba(254, 229, 0, 0.3);
+    border-radius: 10px;
+    padding: 0.6rem 0.85rem;
+}
+
+.vs-voice-coach-tag {
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--neon-yellow);
+    margin-bottom: 0.2rem;
+}
+
+.vs-voice-coach-quote {
+    font-size: 0.82rem;
+    font-style: italic;
+    color: #fef08a;
+    line-height: 1.38;
+    margin: 0;
+}
+
+.vs-metric-card-footer {
+    font-size: 0.76rem;
+    color: #94a3b8;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    padding-top: 0.5rem;
+}
+
+/* ==================== TIMELINE DE SESIÓN ==================== */
+.vs-timeline-scroll {
+    width: 100%;
+    overflow-x: auto;
+    padding: 0.65rem 0.25rem 0.9rem;
+    scrollbar-width: thin;
+    scrollbar-color: var(--neon-cyan) rgba(10, 16, 30, 0.6);
+}
+
+.vs-timeline-empty {
+    border: 1px dashed rgba(255, 255, 255, 0.14);
+    border-radius: 8px;
+    padding: 1.6rem 1rem;
+    text-align: center;
+    background: rgba(10, 16, 30, 0.35);
+}
+
+.vs-timeline-cards-track {
+    display: flex;
+    gap: 0.95rem;
+    align-items: stretch;
+    min-width: min-content;
+}
+
+.vs-rep-card {
+    min-width: 170px;
+    max-width: 190px;
+    flex-shrink: 0;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 9px;
+    padding: 0.85rem;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    color: var(--text-primary);
+    text-align: left;
+}
+
+.vs-rep-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--neon-cyan);
+    box-shadow: 0 6px 20px rgba(0, 240, 255, 0.25);
+}
+
+.vs-rep-card.active-rep-card {
+    border-color: var(--neon-yellow) !important;
+    background: rgba(254, 229, 0, 0.08) !important;
+    box-shadow: 0 0 20px rgba(254, 229, 0, 0.35) !important;
+}
+
+.vs-rep-card.rep-green {
+    border-top: 3px solid var(--neon-green);
+}
+
+.vs-rep-card.rep-yellow {
+    border-top: 3px solid var(--neon-yellow);
+}
+
+.vs-rep-card.rep-red {
+    border-top: 3px solid var(--neon-red);
+}
+
+.vs-rep-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.35rem;
+}
+
+.vs-rep-badge-num {
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #fff;
+}
+
+.vs-rep-time {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    font-family: ui-monospace, monospace;
+}
+
+.vs-rep-gesto {
+    font-size: 0.74rem;
+    font-weight: 800;
+    color: var(--neon-cyan);
+    margin-bottom: 0.4rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.vs-rep-score-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+}
+
+.vs-rep-score-val {
+    font-size: 1.25rem;
+    font-weight: 900;
+}
+
+.vs-rep-tag {
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+}
+
+.vs-rep-tag.rep-green {
+    background: rgba(0, 255, 153, 0.15);
+    color: var(--neon-green);
+    border: 0;
+}
+
+.vs-rep-tag.rep-yellow {
+    background: rgba(254, 229, 0, 0.15);
+    color: var(--neon-yellow);
+    border: 0;
+}
+
+.vs-rep-tag.rep-red {
+    background: rgba(255, 51, 102, 0.15);
+    color: var(--neon-red);
+    border: 0;
+}
+
+.btn-live {
+    background: rgba(255, 51, 102, 0.18);
+    border: 1px solid var(--neon-red);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.78rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.btn-live:hover {
+    background: var(--neon-red);
+    color: #050a14;
+}
+
+.live-pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--neon-red);
+    display: inline-block;
+    animation: pulseLiveDot 1.2s infinite ease-in-out;
+}
+
+@keyframes pulseLiveDot {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.3; transform: scale(1.35); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+.vs-fatiga-banner {
+    background: rgba(254, 229, 0, 0.12);
+    border: 1px solid rgba(254, 229, 0, 0.45);
+    border-radius: 8px;
+    padding: 0.7rem 1.15rem;
+    margin-bottom: 0.85rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.btn-dismiss-fatiga {
+    background: transparent;
+    border: none;
+    color: #fef08a;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* ==================== REPLAY CINEMÁTICO + 4 FASES ==================== */
+.vs-replay-wrapper {
+    background: #080c18;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.2rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.vs-replay-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.vs-replay-title {
+    font-size: 0.98rem;
+    font-weight: 800;
+    color: #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.vs-replay-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+}
+
+.vs-replay-body-layout {
+    padding: 0.5rem 0;
+}
+
+.vs-replay-screen {
+    width: 100%;
+    max-width: 640px;
+    margin: 0 auto;
+    aspect-ratio: 4 / 3;
+    background: #040711;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(0, 240, 255, 0.4);
+    box-shadow: 0 0 25px rgba(0, 240, 255, 0.15), inset 0 0 20px rgba(0, 0, 0, 0.8);
+}
+
+.vs-replay-video-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    background: #040711;
+}
+
+.vs-replay-placeholder-box {
+    padding: 2rem 1.5rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.vs-replay-placeholder-icon {
+    font-size: 2.8rem;
+    margin-bottom: 0.6rem;
+    animation: floatIcon 3s infinite ease-in-out;
+}
+
+@keyframes floatIcon {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+}
+
+.vs-replay-placeholder-title {
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: #cbd5e1;
+    margin-bottom: 0.35rem;
+}
+
+.vs-replay-placeholder-desc {
+    font-size: 0.78rem;
+    color: #64748b;
+    max-width: 340px;
+    line-height: 1.4;
+}
+
+.vs-jump-badge-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    flex-wrap: wrap;
+}
+
+.vs-jump-badge-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.18), rgba(0, 255, 153, 0.18));
+    border: 2px solid var(--neon-cyan);
+    color: var(--neon-cyan);
+    font-size: 1.25rem;
+    font-weight: 900;
+    padding: 0.4rem 1.2rem;
+    border-radius: 999px;
+    box-shadow: 0 0 20px rgba(0, 240, 255, 0.28);
+}
+
+.vs-jump-badge-sub {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(254, 229, 0, 0.45);
+    color: var(--neon-yellow);
+    font-size: 0.85rem;
+    font-weight: 800;
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;
+}
+
+.vs-causa-raiz-box {
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.05), rgba(168, 85, 247, 0.05));
+    border: 1px solid var(--border-cyan);
+    border-radius: 12px;
+    padding: 1.25rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    flex: 1;
+}
+
+.vs-causa-icon {
+    font-size: 1.8rem;
+}
+
+.vs-causa-content h4 {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--neon-cyan);
+    margin: 0 0 0.35rem;
+}
+
+.vs-causa-content p {
+    font-size: 0.88rem;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+/* 4 Fases Grid */
+.vs-fases-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+    margin-top: 1rem;
+}
+
+.vs-fase-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.vs-fase-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--neon-cyan);
+}
+
+.vs-fase-card.t0-critical {
+    border-color: var(--neon-yellow);
+    box-shadow: 0 0 15px rgba(254, 229, 0, 0.2);
+}
+
+.vs-fase-image-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background: #060913;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.vs-fase-canvas {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.vs-fase-pill-tag {
+    position: absolute;
+    top: 0.65rem;
+    left: 0.65rem;
+    background: rgba(9, 14, 26, 0.85);
+    border: 1px solid var(--border-color);
+    padding: 0.25rem 0.55rem;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 800;
+}
+
+.vs-fase-score-tag {
+    position: absolute;
+    top: 0.65rem;
+    right: 0.65rem;
+    font-size: 0.8rem;
+    font-weight: 900;
+    padding: 0.25rem 0.55rem;
+    border-radius: 4px;
+}
+
+.score-optimo {
+    background: rgba(0, 255, 153, 0.2);
+    color: var(--neon-green);
+    border: 1px solid var(--neon-green);
+}
+
+.score-advertencia {
+    background: rgba(255, 184, 0, 0.2);
+    color: var(--neon-amber);
+    border: 1px solid var(--neon-amber);
+}
+
+.score-deficiente {
+    background: rgba(255, 51, 102, 0.2);
+    color: var(--neon-red);
+    border: 1px solid var(--neon-red);
+}
+
+.vs-fase-body {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 0.5rem;
+}
+
+.vs-fase-title {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.vs-fase-subtitle {
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.vs-fase-metrics-list {
+    background: rgba(9, 14, 26, 0.6);
+    border-radius: 6px;
+    padding: 0.5rem 0.65rem;
+    font-size: 0.78rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.vs-fase-diagnostic-text {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    line-height: 1.35;
+    margin: auto 0 0;
+}
+
+/* ==================== FATIGA & ABLACIÓN ==================== */
+.vs-ablacion-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.vs-ablacion-summary-card {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 1rem;
+    text-align: center;
+}
+
+.vs-ablacion-summary-card .val {
+    font-size: 1.65rem;
+    font-weight: 900;
+    font-family: ui-monospace, monospace;
+}
+
+.val-cyan { color: var(--neon-cyan); }
+.val-green { color: var(--neon-green); }
+.val-yellow { color: var(--neon-yellow); }
+.val-purple { color: var(--neon-purple); }
+
+.vs-ablacion-summary-card .lbl {
+    font-size: 0.74rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-top: 0.25rem;
+}
+
+.vs-fatigue-chart-container {
+    position: relative;
+    width: 100%;
+    height: 320px;
+    background: #080d1a;
+    border: 1px solid rgba(0, 240, 255, 0.22);
+    border-radius: 12px;
+    padding: 1rem;
+    margin-top: 0.75rem;
+}
+
+.vs-fatigue-clinical-alert {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    background: rgba(255, 51, 102, 0.14);
+    border: 1px solid rgba(255, 51, 102, 0.55);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    color: #fecdd3;
+    font-size: 0.84rem;
+    font-weight: 700;
+}
+
+.vs-table-container {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: #090e1a;
+}
+
+.vs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    text-align: left;
+}
+
+.vs-table th {
+    background: #111827;
+    color: var(--text-muted);
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.vs-table td {
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+.vs-table tr.highlight-row td {
+    background: rgba(0, 240, 255, 0.05);
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.vs-table tr.highlight-row {
+    border-left: 3px solid var(--neon-cyan);
+}
+
+.badge-tag {
+    display: inline-block;
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.badge-green { background: rgba(0, 255, 153, 0.15); color: var(--neon-green); }
+.badge-yellow { background: rgba(254, 229, 0, 0.15); color: var(--neon-yellow); }
+.badge-red { background: rgba(255, 51, 102, 0.15); color: var(--neon-red); }
+.badge-cyan { background: rgba(0, 240, 255, 0.15); color: var(--neon-cyan); }
+.badge-purple { background: rgba(168, 85, 247, 0.18); color: #d8b4fe; }
+
+.vs-conclusion-box {
+    margin-top: 1.25rem;
+    background: rgba(0, 255, 153, 0.05);
+    border: 1px solid rgba(0, 255, 153, 0.3);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    font-size: 0.88rem;
+    color: #e2e8f0;
+    line-height: 1.5;
+}
+
+/* ==================== INSPECTOR & VECTOR PROBABILIDAD ==================== */
+.vs-inspector-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+    margin-top: 1rem;
+}
+
+.vs-inspector-col {
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.vs-inspector-title {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: var(--neon-cyan);
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.45rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.vs-telemetry-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    gap: 0.5rem;
+}
+
+.vs-telemetry-val {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-weight: 700;
+    color: var(--text-primary);
+    background: rgba(9, 14, 26, 0.6);
+    padding: 0.2rem 0.45rem;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.vs-telemetry-val.highlight-cyan { color: var(--neon-cyan); }
+.vs-telemetry-val.highlight-green { color: var(--neon-green); }
+.vs-telemetry-val.highlight-yellow { color: var(--neon-yellow); }
+
+.vs-prob-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.vs-prob-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.vs-prob-bar {
+    width: 100%;
+    height: 7px;
+    background: #090e1a;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.vs-prob-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.15s ease-out;
+}
+
+.fill-atk { background: linear-gradient(90deg, #FF3366, #FF9900); }
+.fill-rec { background: linear-gradient(90deg, #00FF99, #00F0FF); }
+.fill-set { background: linear-gradient(90deg, #00F0FF, #0099FF); }
+.fill-blk { background: linear-gradient(90deg, #FEE500, #FFB800); }
+.fill-srv { background: linear-gradient(90deg, #A855F7, #EC4899); }
+
+.btn-export-json {
+    background: rgba(0, 240, 255, 0.12);
+    border: 1px solid var(--border-cyan);
+    color: var(--neon-cyan);
+    font-weight: 700;
+    font-size: 0.8rem;
+    padding: 0.45rem 0.95rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.btn-export-json:hover {
+    background: var(--neon-cyan);
+    color: #050a14;
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
+}
+
+/* ==================== AUDIO COACH BAR & TOAST ==================== */
+.vs-coach-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 0.75rem 1.25rem;
+}
+
+.vs-coach-phrase {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--neon-yellow);
+    font-style: italic;
+}
+
+.vs-toast-notification {
+    position: fixed;
+    bottom: 1.75rem;
+    right: 1.75rem;
+    z-index: 9999;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.65rem;
+    background: linear-gradient(135deg, rgba(11, 20, 38, 0.96), rgba(15, 29, 54, 0.96));
+    border: 1px solid var(--neon-green);
+    color: #e2e8f0;
+    padding: 0.85rem 1.25rem;
+    border-radius: 10px;
+    font-size: 0.86rem;
+    font-weight: 700;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), 0 0 18px rgba(0, 255, 153, 0.25);
+    backdrop-filter: blur(8px);
+}
+
+.vs-toast-text {
+    color: var(--neon-green);
+}
+
+/* ==================== RESPONSIVE BREAKPOINTS ==================== */
+@media (max-width: 1200px) {
+    .vs-fases-grid,
+    .vs-ablacion-summary-grid,
+    .vs-inspector-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 1024px) {
+    .top-dashboard,
+    .vs-stage-grid,
+    .vs-replay-body-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .vs-viewport-wrap,
+    .vs-replay-player-col {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 640px) {
+    .vs-fases-grid,
+    .vs-ablacion-summary-grid,
+    .vs-inspector-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .vs-container {
+        padding: 0 1rem 2.5rem;
+    }
+}

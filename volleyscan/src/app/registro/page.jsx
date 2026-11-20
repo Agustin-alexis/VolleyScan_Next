@@ -4,10 +4,11 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Logo from "@/app/public/img/Logo.VS.jpg"
-import facebook from "@/app/public/img/facebook.jpg"
-import google from "@/app/public/img/google.jpg"
 import Image from 'next/image'
-import { registrarAtleta } from '@/app/services/panelApi'
+import {
+  registrarUsuarioSupabase,
+  iniciarConOAuthSupabase,
+} from '@/lib/supabase'
 import "./registro.css"
 import BotonGoogle from '../components/BotonGoogle'
 
@@ -31,10 +32,8 @@ function IconoOjoTachado() {
   )
 }
 
-// Campos del formulario que el servidor puede marcar con error
 const CAMPOS = ['nombre', 'apellido', 'email', 'password']
 
-// Convierte la respuesta de error del servidor en { campo: 'mensaje' }
 function erroresDelServidor(datos) {
   const errs = {}
   if (datos && typeof datos === 'object') {
@@ -60,20 +59,17 @@ export default function RegistroPage() {
   const [toast, setToast] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
 
-  /* ── Toast ── */
   function showToast(message, type = 'success') {
     setToast({ message, type })
     setTimeout(() => setToast(null), 3500)
   }
 
-  /* ── Actualizar campo ── */
   function handleChange(e) {
     const { id, value } = e.target
     setForm(prev => ({ ...prev, [id]: value }))
     setErrors(prev => ({ ...prev, [id]: '' }))
   }
 
-  /* ── Validación ── */
   function validate() {
     const errs = {}
     if (!form.nombre.trim()) errs.nombre = 'El nombre es obligatorio.'
@@ -91,7 +87,7 @@ export default function RegistroPage() {
     return errs
   }
 
-  /* ── Submit ── */
+  /* ── Submit conectado a Supabase Auth (Sign Up) ── */
   async function handleSubmit(e) {
     e.preventDefault()
     const errs = validate()
@@ -101,40 +97,35 @@ export default function RegistroPage() {
     setErrors({})
 
     try {
-      // Registro real: el servidor crea siempre un ATLETA y deja la sesión iniciada
-      const usuario = await registrarAtleta({
+      const { usuario } = await registrarUsuarioSupabase({
         nombre: form.nombre.trim(),
         apellido: form.apellido.trim(),
         email: form.email.trim(),
         password: form.password,
+        rol: 'atleta',
       })
-      showToast(`✓ ¡Bienvenido/a, ${usuario.nombre}! Redirigiendo…`, 'success')
-      setTimeout(() => navigate.push('/usuario'), 1500)
+      showToast(`✓ ¡Cuenta creada en Supabase, ${usuario.nombre}! Redirigiendo…`, 'success')
+      setTimeout(() => navigate.push('/usuario/analisis'), 1100)
     } catch (error) {
       if (error.status === 400 || error.status === 409) {
         setErrors(erroresDelServidor(error.datos))
-        showToast('Revisa los datos del formulario.', 'error')
-      } else if (error.status === 429) {
-        showToast('Demasiados intentos. Inténtalo de nuevo más tarde.', 'error')
+        showToast(error.message || 'Revisa los datos del formulario.', 'error')
       } else {
-        showToast('No se pudo conectar con el servidor. Inténtalo más tarde.', 'error')
+        showToast(error.message || 'No se pudo completar el registro.', 'error')
       }
     } finally {
       setLoading(false)
     }
   }
 
-  function handleSocial(provider) {
-
-    if (provider === 'Google') {
-      window.location.href = 'https://accounts.google.com/';
+  async function handleSocial(provider) {
+    try {
+      await iniciarConOAuthSupabase(provider)
+    } catch {
+      showToast(`No se pudo conectar con ${provider} en Supabase.`, 'error')
     }
-
-    if (provider === 'Facebook') {
-      window.location.href = 'https://www.facebook.com/';
-    }
-
   }
+
   const toastColors = { success: '#22c55e', error: '#ef4444', info: '#3b82f6' }
 
   return (
@@ -152,7 +143,7 @@ export default function RegistroPage() {
               <h2>VolleyScan</h2>
             </div>
             <h1 id="tituloRegistro">Crear ID de atleta</h1>
-            <p className="subtitulo">Únete para analizar y mejorar tu técnica</p>
+            <p className="subtitulo">Únete con Supabase Auth para analizar y guardar tu técnica en 3D</p>
           </header>
 
           <form className="formulario-registro" onSubmit={handleSubmit} noValidate>
@@ -228,7 +219,7 @@ export default function RegistroPage() {
               {errors.password && <p className="field-error-msg">{errors.password}</p>}
             </div>
             <button type="submit" className="boton-principal" disabled={loading}>
-              {loading ? 'Creando cuenta…' : 'Completar registro'}
+              {loading ? 'Creando cuenta en Supabase…' : 'Completar registro'}
             </button>
           </form>
 
@@ -239,15 +230,22 @@ export default function RegistroPage() {
             <p>¿Ya tienes cuenta? <Link className="enlace-primario" href="/login">Inicia sesión aquí</Link></p>
           </div>
 
-          {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && (
-            <>
-              <div className="separador"><span>O REGÍSTRATE CON</span></div>
+          <div className="separador"><span>O REGÍSTRATE CON</span></div>
 
-              <div className="social-buttons">
-                <BotonGoogle onError={(m) => showToast(m, 'error')} />
-              </div>
-            </>
-          )}
+          <div className="social-buttons">
+            {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ? (
+              <BotonGoogle onError={(m) => showToast(m, 'error')} />
+            ) : (
+              <button
+                type="button"
+                className="boton-principal"
+                style={{ background: '#1e293b', border: '1px solid #334155', marginTop: '4px' }}
+                onClick={() => handleSocial('google')}
+              >
+                Continuar con Google (Supabase OAuth)
+              </button>
+            )}
+          </div>
 
         </article>
       </section>

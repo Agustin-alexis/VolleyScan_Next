@@ -1,11 +1,11 @@
 'use client';
 
-
 import { useEffect, useState } from 'react';
 import { REMATE } from '@/lib/movimientos/remate';
+import { generarVozCoachRep, speakCoachFeedback } from '@/lib/voice/voiceCoach';
 import styles from './RepResultCard.module.css';
 
-const VISIBLE_MS = 15000;
+const VISIBLE_MS = 18000;
 const RADIO = 34;
 const CIRCUNFERENCIA = 2 * Math.PI * RADIO;
 
@@ -21,7 +21,6 @@ const lista = (items) => items.map((i) => i.nombre.toLowerCase()).join(', ');
 export default function RepResultCard({ rep, numero, comparacion, onVerTecnica }) {
     const [visible, setVisible] = useState(false);
 
-    // Cada remate nuevo vuelve a mostrar la tarjeta y reinicia el temporizador
     useEffect(() => {
         if (!rep) return undefined;
         setVisible(true);
@@ -30,6 +29,11 @@ export default function RepResultCard({ rep, numero, comparacion, onVerTecnica }
     }, [rep]);
 
     if (!rep || !visible) return null;
+
+    const nombreGesto =
+        rep.movimientoNombre ??
+        (rep.movimiento ? rep.movimiento.charAt(0).toUpperCase() + rep.movimiento.slice(1) : 'Remate');
+    const vozTexto = rep.vozCoach || generarVozCoachRep(rep);
 
     const cerrar = (
         <button
@@ -42,12 +46,13 @@ export default function RepResultCard({ rep, numero, comparacion, onVerTecnica }
         </button>
     );
 
-    // Remate que no se pudo evaluar: se explica por qué
     if (!rep.valida) {
         return (
             <div className={styles.card} role="status" aria-live="polite">
                 {cerrar}
-                <h3 className={styles.title}>Remate {numero}</h3>
+                <h3 className={styles.title}>
+                    {nombreGesto} #{numero}
+                </h3>
                 <p className={styles.sub}>No pudimos evaluarlo</p>
                 <p className={styles.motivo}>{rep.motivo}</p>
             </div>
@@ -84,14 +89,34 @@ export default function RepResultCard({ rep, numero, comparacion, onVerTecnica }
                 </div>
 
                 <div>
-                    <h3 className={styles.title}>Remate {numero}</h3>
+                    <h3 className={styles.title}>
+                        {nombreGesto} #{numero}
+                    </h3>
                     <p className={styles.sub}>
-                        Brazo {rep.brazo}
+                        {rep.brazo === 'ambos brazos' ? 'Ambos brazos' : `Brazo ${rep.brazo}`}
                         {nivel ? ` · ${nivel}` : ''}
                     </p>
+                    <div className={styles.metaBadges}>
+                        {rep.saltoVerticalCm > 0 && (
+                            <span className={styles.jumpPill}>Salto: {rep.saltoVerticalCm} cm</span>
+                        )}
+                        {rep.velocidadPicoMs > 0 && (
+                            <span className={styles.speedPill}>{rep.velocidadPicoMs} m/s</span>
+                        )}
+                        <button
+                            type="button"
+                            className={styles.speakMiniBtn}
+                            onClick={() => speakCoachFeedback(vozTexto)}
+                            title="Escuchar feedback del Coach IA"
+                        >
+                            🔊 Voz
+                        </button>
+                    </div>
                     {signo && (
                         <span className={styles.delta} data-signo={signo}>
-                            {signo === 'igual' ? 'Igual que el anterior' : `${delta > 0 ? '+' : '−'}${Math.abs(delta)} vs el anterior`}
+                            {signo === 'igual'
+                                ? 'Igual que el anterior'
+                                : `${delta > 0 ? '+' : '−'}${Math.abs(delta)} vs el anterior`}
                         </span>
                     )}
                 </div>
@@ -145,6 +170,12 @@ export default function RepResultCard({ rep, numero, comparacion, onVerTecnica }
                 </>
             )}
 
+            {!principal && rep.diagnosticoCausaRaiz && (
+                <div className={styles.principal} data-tipo="media">
+                    <p className={styles.principalTexto}>{rep.diagnosticoCausaRaiz}</p>
+                </div>
+            )}
+
             {comparacion && (comparacion.mejoras.length > 0 || comparacion.retrocesos.length > 0) && (
                 <div className={styles.cambios}>
                     {comparacion.mejoras.length > 0 && (
@@ -160,10 +191,20 @@ export default function RepResultCard({ rep, numero, comparacion, onVerTecnica }
                 </div>
             )}
 
-            {rep.claves && onVerTecnica && (
-                <button type="button" className={styles.btnFoto} onClick={onVerTecnica}>
-                    Ver mi técnica
-                </button>
+            {(rep.claves || rep.ablacion || rep.videoReplayBase64) && onVerTecnica && (
+                <div className={styles.btnRow}>
+                    <button type="button" className={styles.btnFoto} onClick={() => onVerTecnica('fases')}>
+                        🔬 Ver 4 Fases
+                    </button>
+                    <button type="button" className={styles.btn3d} onClick={() => onVerTecnica('3d')}>
+                        🧊 Replay 3D
+                    </button>
+                    {(rep.ablacion || rep.videoReplayBase64) && (
+                        <button type="button" className={styles.btn3d} onClick={() => onVerTecnica('ablacion')}>
+                            📊 Ablación
+                        </button>
+                    )}
+                </div>
             )}
         </div>
     );

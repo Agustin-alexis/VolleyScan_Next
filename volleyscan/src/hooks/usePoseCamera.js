@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import { createRepAnalyzer } from '@/lib/engine/repAnalyzer';
+import { adaptarEvaluacionBackendARep, createBackendBridge } from '@/lib/engine/backendBridge';
 import { assessFraming, measureAngles } from '@/lib/pose/geometry';
 import { REMATE } from '@/lib/movimientos/remate';
 import { createRenderer } from '@/lib/pose/renderer';
@@ -18,8 +19,38 @@ const MODEL_URLS = {
 const PANEL_INTERVAL_MS = 100;
 const HISTORIA_PUNTOS = 50; // 5 s de historia para el panel de diagnóstico
 const DEFAULT_LAYERS = { skeleton: true, angles: true, trails: true, diagnostico: false };
+const INITIAL_CALIBRATION = {
+    estado: 'IDLE', // 'IDLE' | 'CALIBRANDO' | 'ACTIVO'
+    tipo: null,
+    progresoPct: 0,
+    framesCalibrados: 0,
+    framesRequeridos: 30,
+    mensaje: '',
+    iluminacionValida: true,
+    posturaTValida: false,
+    anguloBrazoIzq: null,
+    anguloBrazoDer: null,
+};
+
 const INITIAL_LIVE = {
     angles: {},
+    angulos8: [],
+    saltoVerticalCm: 0,
+    velocidadPicoMs: 0,
+    backendConnected: false,
+    backendSesionId: null,
+    calibration: INITIAL_CALIBRATION,
+    backendBuffer: {
+        estadoBuffer: 'ESCUCHANDO',
+        motivoBloqueo: null,
+        ratioVisibilidad: null,
+        framesEnBuffer: 0,
+    },
+    backend3DBuffer: [],
+    fasesEnVivo: null,
+    diagnosticoVivo: '',
+    gestoEnVivo: null,
+    discardNotice: null,
     ranges: {},
     framing: { status: 'none', hint: '' },
     fps: 0,
@@ -118,6 +149,30 @@ export function usePoseCamera({ model = 'full', targetFps = 60, standard = REMAT
     const phaseRef = useRef('sin_cuerpo');
     const repsRef = useRef([]);
     const onRepRef = useRef(onRep);
+    const standardRef = useRef(standard);
+    const nivelRef = useRef(nivel);
+    const bridgeRef = useRef(null);
+    const backend3DBufferRef = useRef([]);
+    const backendTelemetryRef = useRef({
+        connected: false,
+        sesionId: null,
+        angulos8: [],
+        angulos: {},
+        faseDetectada: null,
+        saltoVerticalCm: 0,
+        velocidadPicoMs: 0,
+        fasesEnVivo: null,
+        diagnosticoVivo: '',
+        gestoEnVivo: null,
+        calibration: INITIAL_CALIBRATION,
+        backendBuffer: {
+            estadoBuffer: 'ESCUCHANDO',
+            motivoBloqueo: null,
+            ratioVisibilidad: null,
+            framesEnBuffer: 0,
+        },
+        discardNotice: null,
+    });
 
     const [lifecycle, dispatch] = useReducer(lifecycleReducer, { status: 'idle', error: '' });
     const [live, setLive] = useState(INITIAL_LIVE);
@@ -126,6 +181,128 @@ export function usePoseCamera({ model = 'full', targetFps = 60, standard = REMAT
     const [camera, setCamera] = useState(null); // { width, height, frameRate } reales
     const [phase, setPhase] = useState('sin_cuerpo');
     const [reps, setReps] = useState([]);
+
+    const appendBackend3DFrame = useCallback((frameObj) => {
+        if (!frameObj?.puntos) return;
+        const prev = backend3DBufferRef.current;
+        const nextIdx = prev.length ? prev[prev.length - 1].idx + 1 : 0;
+        const entry = {
+            ...frameObj,
+            idx: nextIdx,
+            fromBackend: true,
+        };
+        backend3DBufferRef.current = [...prev.slice(-59), entry];
+    }, []);
+
+    if (!bridgeRef.current) {
+        bridgeRef.current = createBackendBridge({
+            onStatusChange: ({ connected, sesionId }) => {
+                backendTelemetryRef.current.connected = connected;
+                backendTelemetryRef.current.sesionId = sesionId;
+                if (!connected) {
+                    backendTelemetryRef.current.calibration = INITIAL_CALIBRATION;
+                    backend3DBufferRef.current = [];
+                }
+            },
+            onCalibration: (cal) => {
+                backendTelemetryRef.current.calibration = {
+                    estado: cal.estado || 'CALIBRANDO',
+                    tipo: cal.tipo,
+                    progresoPct: cal.progresoPct ?? 0,
+                    framesCalibrados: cal.framesCalibrados ?? 0,
+                    framesRequeridos: cal.framesRequeridos ?? 30,
+                    mensaje: cal.mensaje || '',
+                    iluminacionValida: cal.iluminacionValida !== false,
+                    posturaTValida: Boolean(cal.posturaTValida),
+                    anguloBrazoIzq: cal.anguloBrazoIzq ?? null,
+                    anguloBrazoDer: cal.anguloBrazoDer ?? null,
+                };
+                if (cal.angulos8?.length === 8) {
+                    backendTelemetryRef.current.angulos8 = cal.angulos8;
+                    backendTelemetryRef.current.angulos = cal.angulos || {};
+                }
+                if (cal.skeleton3d) {
+                    appendBackend3DFrame({
+                        frameId: Date.now(),
+                        t: Math.round(performance.now()),
+                        fase: 'preparacion',
+                        puntos: cal.skeleton3d,
+                        angulos: cal.angulos || {},
+                        speed: 0,
+                        lift: 0,
+                    });
+                }
+            },
+            onTelemetry: (tel) => {
+                backendTelemetryRef.current = {
+                    ...backendTelemetryRef.current,
+                    angulos8: tel.angulos8 || [],
+                    angulos: tel.angulos || {},
+                    faseDetectada: tel.faseDetectada || null,
+                    saltoVerticalCm: tel.saltoVerticalCm ?? 0,
+                    velocidadPicoMs: tel.velocidadPicoMs ?? 0,
+                    fasesEnVivo: tel.fasesEnVivo || null,
+                    diagnosticoVivo: tel.diagnosticoVivo || '',
+                    gestoEnVivo: tel.gestoEnVivo || null,
+                    calibration: {
+                        ...backendTelemetryRef.current.calibration,
+                        estado: 'ACTIVO',
+                        progresoPct: 100,
+                    },
+                    backendBuffer: {
+                        estadoBuffer: tel.estadoBuffer || 'ESCUCHANDO',
+                        motivoBloqueo: tel.motivoBloqueo || null,
+                        ratioVisibilidad: tel.ratioVisibilidad ?? null,
+                        framesEnBuffer: tel.framesEnBuffer ?? 0,
+                    },
+                };
+                if (tel.skeleton3d) {
+                    const fMap = {
+                        carga: 'carga',
+                        preparacion: 'carga',
+                        vuelo: 'armado',
+                        golpeo: 'contacto',
+                        caida: 'caida',
+                    };
+                    appendBackend3DFrame({
+                        frameId: tel.frameId,
+                        t: Math.round(performance.now()),
+                        fase: fMap[tel.faseDetectada] || 'carga',
+                        puntos: tel.skeleton3d,
+                        angulos: tel.angulos || {},
+                        speed: tel.velocidadPicoMs ?? 0,
+                        lift: Math.min(0.6, (tel.saltoVerticalCm ?? 0) / 100),
+                    });
+                }
+            },
+            onSequenceDiscarded: (desc) => {
+                backendTelemetryRef.current.discardNotice = {
+                    motivo: desc.motivo,
+                    detalle: desc.detalle,
+                    ts: performance.now(),
+                };
+            },
+            onSequenceEvaluated: (datosBackend) => {
+                const ahora = performance.now();
+                const ult = repsRef.current[repsRef.current.length - 1];
+                const esCercana = ult && ahora - (ult.fin ?? 0) < 2200;
+                const nuevaRep = adaptarEvaluacionBackendARep(
+                    datosBackend,
+                    nivelRef.current,
+                    esCercana ? ult : null,
+                );
+                if (!nuevaRep) return;
+
+                if (esCercana) {
+                    repsRef.current = [...repsRef.current.slice(0, -1), nuevaRep];
+                } else {
+                    repsRef.current = [...repsRef.current, nuevaRep];
+                }
+                setReps(repsRef.current);
+                onRepRef.current?.(nuevaRep);
+            },
+        });
+    }
 
     // El bucle lee las capas y el callback desde refs para no depender de re-renders
     useEffect(() => {
@@ -136,10 +313,16 @@ export function usePoseCamera({ model = 'full', targetFps = 60, standard = REMAT
         onRepRef.current = onRep;
     }, [onRep]);
 
-    // Cambiar el nivel afecta a los remates siguientes, sin reiniciar nada
+    // Cambiar el nivel o el gesto técnico afecta a las repeticiones siguientes, sin reiniciar la cámara
     useEffect(() => {
+        nivelRef.current = nivel;
         analyzerRef.current.setNivel(nivel);
     }, [nivel]);
+
+    useEffect(() => {
+        standardRef.current = standard;
+        analyzerRef.current.setStandard?.(standard);
+    }, [standard]);
 
     // ── Programación de cuadros ─────────────────────────────
     // requestVideoFrameCallback se dispara una vez por cada cuadro REAL del
@@ -214,8 +397,15 @@ export function usePoseCamera({ model = 'full', targetFps = 60, standard = REMAT
         let historia = []; // últimos 5 s de elevación de pies y velocidad de muñeca
 
         const publish = (pts, angles, w, h) => {
-            for (const [id, deg] of Object.entries(angles)) {
-                if (deg === null) continue;
+            const bt = backendTelemetryRef.current;
+            // Fusionar los 8 ángulos cinemáticos recibidos desde el motor Python (puerto 8000) con la medición local
+            const mergedAngles = {
+                ...angles,
+                ...(bt.connected && bt.angulos ? bt.angulos : {}),
+            };
+
+            for (const [id, deg] of Object.entries(mergedAngles)) {
+                if (deg === null || deg === undefined) continue;
                 const r = rangesRef.current[id];
                 rangesRef.current[id] = r
                     ? { min: Math.min(r.min, deg), max: Math.max(r.max, deg) }
@@ -229,8 +419,39 @@ export function usePoseCamera({ model = 'full', targetFps = 60, standard = REMAT
                 ];
             }
 
+            const ang8 =
+                bt.angulos8?.length === 8
+                    ? bt.angulos8
+                    : [
+                          mergedAngles.codoI ?? 0,
+                          mergedAngles.codoD ?? 0,
+                          mergedAngles.hombroI ?? 0,
+                          mergedAngles.hombroD ?? 0,
+                          mergedAngles.rodillaI ?? 0,
+                          mergedAngles.rodillaD ?? 0,
+                          mergedAngles.caderaI ?? 0,
+                          mergedAngles.caderaD ?? 0,
+                      ].map((v) => Math.round((Number(v) || 0) * 10) / 10);
+
+            const discardNotice =
+                bt.discardNotice && performance.now() - bt.discardNotice.ts < 4000
+                    ? bt.discardNotice
+                    : null;
+
             setLive({
-                angles,
+                angles: mergedAngles,
+                angulos8: ang8,
+                saltoVerticalCm: bt.saltoVerticalCm || 0,
+                velocidadPicoMs: bt.velocidadPicoMs || 0,
+                backendConnected: bt.connected,
+                backendSesionId: bt.sesionId,
+                calibration: bt.calibration || INITIAL_CALIBRATION,
+                backendBuffer: bt.backendBuffer,
+                backend3DBuffer: backend3DBufferRef.current,
+                fasesEnVivo: bt.fasesEnVivo || null,
+                diagnosticoVivo: bt.diagnosticoVivo || '',
+                gestoEnVivo: bt.gestoEnVivo || null,
+                discardNotice,
                 ranges: { ...rangesRef.current },
                 framing: assessFraming(pts, w, h),
                 fps,
@@ -267,6 +488,7 @@ export function usePoseCamera({ model = 'full', targetFps = 60, standard = REMAT
                     const rawWorld = result.worldLandmarks?.[0];
 
                     let pts = null;
+                    let worldPts = null;
                     let angles = {};
 
                     if (rawImage) {
@@ -277,10 +499,19 @@ export function usePoseCamera({ model = 'full', targetFps = 60, standard = REMAT
 
                         // Mundo: suavizar en 3D (metros) y medir con eso. La visibilidad
                         // se toma de la imagen para que ambos juegos coincidan.
-                        const measured = rawWorld
+                        worldPts = rawWorld
                             ? worldSmootherRef.current.apply(rawWorld, t1).map((p, i) => ({ ...p, v: pts[i].v }))
-                            : pts; // respaldo: si faltara el 3D, se mide en 2D
+                            : null;
+                        const measured = worldPts ?? pts; // respaldo: si faltara el 3D, se mide en 2D
                         angles = measureAngles(measured);
+
+                        // Enviar fotograma al motor biomecánico de Python (FastAPI puerto 8000) por WebSocket
+                        bridgeRef.current?.sendFrame({
+                            t: t1,
+                            rawImage,
+                            rawWorld,
+                            gestoId: standardRef.current?.id,
+                        });
                     } else {
                         imageSmootherRef.current.reset();
                         worldSmootherRef.current.reset();
@@ -296,13 +527,16 @@ export function usePoseCamera({ model = 'full', targetFps = 60, standard = REMAT
                         layers: layersRef.current,
                     });
 
-                    // Motor de repeticiones: fase en vivo y, al terminar, el remate calificado.
-                    // La fase solo toca React cuando CAMBIA (unas pocas veces por remate).
-                    const out = analyzerRef.current.push({ t: t1, pts, angles });
+                    // Motor de repeticiones: fase en vivo y, al terminar, el gesto calificado.
+                    const out = analyzerRef.current.push({ t: t1, pts, worldPts, angles });
                     debug = out.debug;
-                    if (out.phase !== phaseRef.current) {
-                        phaseRef.current = out.phase;
-                        setPhase(out.phase);
+                    const faseEfectiva =
+                        out.phase !== 'preparacion'
+                            ? out.phase
+                            : backendTelemetryRef.current.faseDetectada || out.phase;
+                    if (faseEfectiva !== phaseRef.current) {
+                        phaseRef.current = faseEfectiva;
+                        setPhase(faseEfectiva);
                     }
                     if (out.rep) {
                         repsRef.current = [...repsRef.current, out.rep];
@@ -335,6 +569,7 @@ export function usePoseCamera({ model = 'full', targetFps = 60, standard = REMAT
         worldSmootherRef.current.reset();
         rendererRef.current.reset();
         analyzerRef.current.reset();
+        backend3DBufferRef.current = [];
         phaseRef.current = 'sin_cuerpo';
         setPhase('sin_cuerpo');
     }, []);
@@ -344,6 +579,7 @@ export function usePoseCamera({ model = 'full', targetFps = 60, standard = REMAT
         runningRef.current = false;
         cancelFrame();
         stopStream();
+        bridgeRef.current?.disconnect();
 
         const canvas = canvasRef.current;
         if (canvas) canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
@@ -361,6 +597,7 @@ export function usePoseCamera({ model = 'full', targetFps = 60, standard = REMAT
             runningRef.current = false;
             cancelFrame();
             stopStream();
+            bridgeRef.current?.disconnect();
             setCamera(null);
             dispatch({ type: 'ERROR', error: friendlyError(err) });
         },
@@ -375,6 +612,9 @@ export function usePoseCamera({ model = 'full', targetFps = 60, standard = REMAT
             // El modelo se carga solo la primera vez y solo cuando el usuario lo pide
             if (!landmarkerRef.current) landmarkerRef.current = await createLandmarker(model);
             await openStream(facingRef.current);
+
+            // Conectar el puente WebSocket al motor biomecánico en Python (puerto 8000)
+            bridgeRef.current?.connect();
 
             // Sesión nueva: rangos y remates en cero
             rangesRef.current = {};
@@ -418,6 +658,14 @@ export function usePoseCamera({ model = 'full', targetFps = 60, standard = REMAT
         setLive((prev) => ({ ...prev, ranges: {} }));
     }, []);
 
+    const saltarCalibracion = useCallback(() => {
+        bridgeRef.current?.sendAction('saltar_calibracion');
+    }, []);
+
+    const reiniciarCalibracion = useCallback(() => {
+        bridgeRef.current?.sendAction('reiniciar_calibracion');
+    }, []);
+
     // Si el usuario cambia de pestaña, pausamos el bucle (ahorra batería)
     useEffect(() => {
         const onVisibility = () => {
@@ -434,6 +682,7 @@ export function usePoseCamera({ model = 'full', targetFps = 60, standard = REMAT
         return () => {
             runningRef.current = false;
             cancelFrame();
+            bridgeRef.current?.disconnect();
             streamRef.current?.getTracks().forEach((t) => t.stop());
             landmarkerRef.current?.close();
             landmarkerRef.current = null;
@@ -457,5 +706,7 @@ export function usePoseCamera({ model = 'full', targetFps = 60, standard = REMAT
         switchCamera,
         toggleLayer,
         resetRanges,
+        saltarCalibracion,
+        reiniciarCalibracion,
     };
 }

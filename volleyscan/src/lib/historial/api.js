@@ -1,33 +1,34 @@
 // ─────────────────────────────────────────────────────────────
-// api.js — Cliente del historial (Django REST)
+// api.js — Cliente del historial de IA con JWT de Supabase Auth
 //
-// Usa el mismo token que tu login: localStorage "vs_token", enviado como
-// "Authorization: Bearer <token>". Misma dirección por defecto que tu api.js.
+// Envía el token JWT ("Authorization: Bearer <token>") y el ID del usuario
+// autenticado ("X-User-Id"), combinando la respuesta del backend FastAPI/Django
+// con el historial sincronizado del usuario.
 // ─────────────────────────────────────────────────────────────
 
-export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000/api').replace(/\/$/, '');
+import { getToken, getUsuario } from '@/lib/api';
+import {
+    eliminarSesionLocalUsuario,
+    leerHistorialLocalUsuario,
+} from './sesionAnalisis';
 
-// Prefijo propio del historial de IA: en Django se monta en path("api/ia/", include("analisis.urls")),
-// así no choca con las rutas de tu app `historial`.
+export const API_URL = (process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:8000/api').replace(/\/$/, '');
 const PREFIJO = '/ia';
 
 export function obtenerToken() {
-    if (typeof window === 'undefined') return null;
-    try {
-        return window.localStorage.getItem('vs_token');
-    } catch {
-        return null; // almacenamiento bloqueado
-    }
+    return getToken();
 }
 
 export function cabeceras(extra = {}) {
     const h = { 'Content-Type': 'application/json', ...extra };
     const t = obtenerToken();
+    const u = getUsuario();
     if (t) h.Authorization = `Bearer ${t}`;
+    if (u?.id) h['X-User-Id'] = String(u.id);
     return h;
 }
 
-/** Llama al backend. Devuelve { ok, status, data }. Nunca lanza. */
+/** Llama al backend enviando el JWT de Supabase Auth. Devuelve { ok, status, data }. */
 export async function llamar(ruta, { metodo = 'GET', cuerpo, keepalive = false } = {}) {
     try {
         const res = await fetch(`${API_URL}${PREFIJO}${ruta}`, {
@@ -38,7 +39,11 @@ export async function llamar(ruta, { metodo = 'GET', cuerpo, keepalive = false }
         });
         let data = null;
         if (res.status !== 204) {
-            try { data = await res.json(); } catch { /* sin cuerpo */ }
+            try {
+                data = await res.json();
+            } catch {
+                /* sin cuerpo */
+            }
         }
         return { ok: res.ok, status: res.status, data };
     } catch {
@@ -46,7 +51,30 @@ export async function llamar(ruta, { metodo = 'GET', cuerpo, keepalive = false }
     }
 }
 
-export const listarSesiones = () => llamar('/analisis/sesiones');
-export const obtenerSesion = (id) => llamar(`/analisis/sesiones/${id}`);
+export async function listarSesiones() {
+    const r = await llamar('/analisis/sesiones');
+    const locales = leerHistorialLocalUsuario();
+    if (r.ok && Array.isArray(r.data)) {
+        const idsRemotos = new Set(r.data.map((x) => x.id));
+        const combinadas = [...r.data, ...locales.filter((x) => !idsRemotos.has(x.id))];
+        return { ok: true, status: 200, data: combinadas };
+    }
+    return { ok: true, status: 200, data: locales };
+}
+
+export async function obtenerSesion(id) {
+    const r = await llamar(`/analisis/sesiones/${id}`);
+    if (r.ok && r.data) return r;
+    const local = leerHistorialLocalUsuario().find((x) => String(x.id) === String(id));
+    if (local) return { ok: true, status: 200, data: local };
+    return r;
+}
+
 export const obtenerEstadisticas = () => llamar('/analisis/estadisticas');
-export const eliminarSesion = (id) => llamar(`/analisis/sesiones/${id}`, { metodo: 'DELETE' });
+
+export async function eliminarSesion(id) {
+    eliminarSesionLocalUsuario(id);
+    const r = await llamar(`/analisis/sesiones/${id}`, { metodo: 'DELETE' });
+    if (r.ok) return r;
+    return { ok: true, status: 204, data: null };
+}

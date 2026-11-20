@@ -1,7 +1,13 @@
+import {
+    cerrarSesionSupabase,
+    sincronizarSesionCliente,
+} from '@/lib/supabase';
+
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000/api";
 
 export function getToken() {
-    return typeof window === "undefined" ? null : localStorage.getItem("vs_token");
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem("vs_token") || sessionStorage.getItem("vs_token");
 }
 
 export function getUsuario() {
@@ -14,13 +20,11 @@ export function getUsuario() {
 }
 
 export function guardarSesion({ access, usuario }) {
-    localStorage.setItem("vs_token", access);
-    localStorage.setItem("vs_usuario", JSON.stringify(usuario));
+    sincronizarSesionCliente({ access, usuario });
 }
 
 export function cerrarSesion() {
-    localStorage.removeItem("vs_token");
-    localStorage.removeItem("vs_usuario");
+    cerrarSesionSupabase();
 }
 
 export class ApiError extends Error {
@@ -38,14 +42,15 @@ export async function api(ruta, { method = "GET", body, params } = {}) {
     });
 
     const token = getToken();
+    const usuario = getUsuario();
     const esForm = typeof FormData !== "undefined" && body instanceof FormData;
     const res = await fetch(url, {
         method,
         headers: {
             ...(body && !esForm ? { "Content-Type": "application/json" } : {}),
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(usuario?.id ? { "X-User-Id": String(usuario.id) } : {}),
         },
-        // 👇 AQUÍ ESTABA EL DETALLE: si es FormData, se envía tal cual
         body: body ? (esForm ? body : JSON.stringify(body)) : undefined,
     });
 
@@ -53,7 +58,6 @@ export async function api(ruta, { method = "GET", body, params } = {}) {
     const data = await res.json().catch(() => null);
 
     if (res.status === 401 && token) {
-        // token vencido o inválido
         cerrarSesion();
         window.location.href = "/login";
     }
@@ -63,16 +67,15 @@ export async function api(ruta, { method = "GET", body, params } = {}) {
 
 const ORIGEN = new URL(API).origin;
 
-// La base guarda "/media/fotos/x.jpg"; hay que apuntarla al backend, no al front
 export function urlFoto(ruta) {
     if (!ruta) return null;
     return /^https?:\/\//.test(ruta) ? ruta : `${ORIGEN}${ruta}`;
 }
 
-// Actualiza el usuario guardado al iniciar sesión y avisa al Sidebar
 export function actualizarUsuario(parcial) {
     const actual = getUsuario();
     if (!actual) return;
-    localStorage.setItem("vs_usuario", JSON.stringify({ ...actual, ...parcial }));
+    const actualizado = { ...actual, ...parcial };
+    localStorage.setItem("vs_usuario", JSON.stringify(actualizado));
     window.dispatchEvent(new Event("usuario:cambio"));
 }

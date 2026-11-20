@@ -1,18 +1,23 @@
 /* ── SIDEBAR shared styles ── */
 .sidebar {
-    width: 230px;
-    min-width: 230px;
-    background: #0c1020;
-    border-right: 1px solid rgba(255, 255, 255, 0.07);
+    box-sizing: border-box;
+    width: 256px;
+    min-width: 256px;
+    flex-shrink: 0;
+    background: #0c1322;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
     display: flex;
     flex-direction: column;
     position: sticky;
     top: 0;
+    left: 0;
     z-index: 30;
     height: 100vh;
+    overflow-x: hidden;
 }
 
 .sb-logo {
+    box-sizing: border-box;
     display: flex;
     align-items: center;
     gap: 12px;
@@ -47,12 +52,14 @@
 }
 
 .sb-nav {
+    box-sizing: border-box;
     flex: 1;
-    padding: 16px 10px;
+    padding: 16px 14px;
     display: flex;
     flex-direction: column;
     gap: 2px;
     overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .sb-nav::-webkit-scrollbar {
@@ -65,14 +72,15 @@
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: #4a5568;
-    padding: 12px 10px 6px;
+    padding: 12px 12px 6px;
 }
 
 .nav-item {
+    box-sizing: border-box;
     display: flex;
     align-items: center;
     gap: 11px;
-    padding: 10px 12px;
+    padding: 10px 14px;
     border-radius: 9px;
     color: #8892b0;
     font-size: 13px;
@@ -83,11 +91,18 @@
     overflow: hidden;
 }
 
-.nav-item i {
+.nav-item i,
+.nav-item svg {
     width: 16px;
     text-align: center;
     font-size: 13px;
     flex-shrink: 0;
+}
+
+.nav-item span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .nav-item:hover {
@@ -97,17 +112,18 @@
 
 .nav-item.active {
     background: linear-gradient(90deg,
-            rgba(79, 110, 247, 0.22) 0%,
-            rgba(79, 110, 247, 0.04) 100%);
-    color: #e8eaf6;
+            rgba(16, 226, 247, 0.16) 0%,
+            rgba(59, 130, 246, 0.05) 100%);
+    color: #ffffff;
     font-weight: 700;
-    border-left: 2.5px solid #7c3aed;
-    padding-left: 10px;
-    box-shadow: inset 0 0 20px rgba(79, 110, 247, 0.08);
+    border-left: 3px solid #10e2f7;
+    padding-left: 11px;
+    box-shadow: inset 0 0 20px rgba(16, 226, 247, 0.08);
 }
 
-.nav-item.active i {
-    color: #7c3aed;
+.nav-item.active i,
+.nav-item.active svg {
+    color: #10e2f7;
 }
 
 .nav-badge {
@@ -184,7 +200,7 @@
     display: none;
 }
 
-@media (max-width: 899px) {
+@media (max-width: 767px) {
     aside.sidebar {
         position: fixed;
         top: 0;

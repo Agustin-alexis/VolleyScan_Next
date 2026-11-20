@@ -1,0 +1,286 @@
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    border-radius: 20px;
+    border: 1px solid rgba(34, 211, 238, 0.25);
+    background: linear-gradient(165deg, rgba(17, 24, 39, 0.96), rgba(9, 13, 24, 0.98));
+    min-height: 0;
+}
+
+.cardCompact {
+    height: 100%;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.titleBlock {
+    min-width: 0;
+}
+
+.eyebrow {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #38bdf8;
+}
+
+.title {
+    margin: 2px 0 0;
+    font-size: 1rem;
+    font-weight: 800;
+    color: #f8fafc;
+}
+
+.modeTabs {
+    display: inline-flex;
+    gap: 4px;
+    padding: 3px;
+    border-radius: 10px;
+    border: 1px solid #1f2634;
+    background: rgba(7, 11, 20, 0.85);
+}
+
+.modeTab {
+    padding: 5px 10px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #94a3b8;
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.modeTab:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.modeTab[aria-selected='true'] {
+    background: #0284c7;
+    color: #ffffff;
+}
+
+.canvasWrap {
+    position: relative;
+    flex: 1;
+    min-height: 220px;
+    border-radius: 14px;
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    background: #070b14;
+    overflow: hidden;
+    cursor: grab;
+    user-select: none;
+}
+
+.canvasWrap:active {
+    cursor: grabbing;
+}
+
+.canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.hudTop {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.badge3d,
+.framePill {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(7, 11, 20, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #e2e8f0;
+    font-variant-numeric: tabular-nums;
+}
+
+.badge3d {
+    color: #67e8f9;
+    border-color: rgba(34, 211, 238, 0.4);
+}
+
+.emptyOverlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
+    pointer-events: none;
+}
+
+.emptyTitle {
+    margin: 0 0 4px;
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: #cbd5e1;
+}
+
+.emptyDesc {
+    margin: 0;
+    max-width: 34ch;
+    font-size: 0.76rem;
+    color: #94a3b8;
+    line-height: 1.4;
+}
+
+.zoomControls {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    display: flex;
+    gap: 5px;
+}
+
+.zoomBtn {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: rgba(11, 15, 26, 0.85);
+    color: #f8fafc;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.zoomBtn:hover {
+    border-color: #38bdf8;
+    color: #7dd3fc;
+}
+
+.controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ctrlBtn {
+    padding: 5px 11px;
+    border-radius: 9px;
+    border: 1px solid #1f2634;
+    background: rgba(30, 41, 59, 0.75);
+    color: #e2e8f0;
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.ctrlBtn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.ctrlBtnActive {
+    border-color: rgba(34, 211, 238, 0.55);
+    background: rgba(6, 182, 212, 0.2);
+    color: #67e8f9;
+}
+
+.scrubber {
+    flex: 1;
+    min-width: 0;
+    accent-color: #38bdf8;
+    cursor: pointer;
+}
+
+.phaseJumpRow {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.phaseBtn {
+    padding: 5px 6px;
+    border-radius: 8px;
+    border: 1px solid #1f2634;
+    background: rgba(15, 23, 42, 0.85);
+    color: #94a3b8;
+    font: inherit;
+    font-size: 0.7rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.phaseBtn:hover {
+    border-color: #60a5fa;
+    color: #f8fafc;
+}
+
+.phaseBtnHighlight {
+    border-color: rgba(251, 191, 36, 0.55);
+    color: #fcd34d;
+}
+
+.telemetryGrid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.telemetryCell {
+    padding: 6px 8px;
+    border-radius: 10px;
+    border: 1px solid #1f2634;
+    background: rgba(7, 11, 20, 0.75);
+    text-align: center;
+}
+
+.telemetryCell span {
+    display: block;
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #94a3b8;
+}
+
+.telemetryCell strong {
+    font-size: 0.84rem;
+    color: #f8fafc;
+    font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+    .phaseJumpRow,
+    .telemetryGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

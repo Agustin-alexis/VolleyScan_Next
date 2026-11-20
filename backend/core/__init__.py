@@ -1,0 +1,47 @@
+"""
+Capa Core: Configuraciones globales y constantes de VolleyScan AI.
+"""
+
+from .config import (
+    APP_DESCRIPTION,
+    APP_TITLE,
+    APP_VERSION,
+    BASE_DIR,
+    BUFFER_MAXLEN,
+    COOLDOWN_SEGUNDOS,
+    CORS_ALLOW_CREDENTIALS,
+    CORS_ALLOW_HEADERS,
+    CORS_ALLOW_METHODS,
+    CORS_ORIGINS,
+    DEBUG,
+    FRONTEND_DIR,
+    POST_FRAMES,
+    PRE_FRAMES,
+    SERVER_HOST,
+    SERVER_PORT,
+    SUPABASE_KEY,
+    SUPABASE_URL,
+    TOTAL_VENTANA_FRAMES,
+)
+
+__all__ = [
+    "BASE_DIR",
+    "FRONTEND_DIR",
+    "SUPABASE_URL",
+    "SUPABASE_KEY",
+    "SERVER_HOST",
+    "SERVER_PORT",
+    "DEBUG",
+    "CORS_ORIGINS",
+    "CORS_ALLOW_CREDENTIALS",
+    "CORS_ALLOW_METHODS",
+    "CORS_ALLOW_HEADERS",
+    "BUFFER_MAXLEN",
+    "PRE_FRAMES",
+    "POST_FRAMES",
+    "TOTAL_VENTANA_FRAMES",
+    "COOLDOWN_SEGUNDOS",
+    "APP_TITLE",
+    "APP_DESCRIPTION",
+    "APP_VERSION",
+]

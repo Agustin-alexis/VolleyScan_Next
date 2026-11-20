@@ -1,10 +1,10 @@
 /* ─────────────────────────────────────────────────────────────
-   TecnicaFoto.module.css — "Mi técnica" (esqueleto congelado)
+   TecnicaFoto.module.css — Visor 4 Fases + Gemelo Digital 3D (VolleyScan AI)
    Misma paleta del dashboard del usuario; la tipografía se hereda.
    ───────────────────────────────────────────────────────────── */
 
 .panel {
-    --card: rgba(17, 24, 39, 0.97);
+    --card: rgba(15, 23, 42, 0.98);
     --bg: #0b0f1a;
     --border: #1f2634;
     --text: #ffffff;
@@ -13,25 +13,28 @@
     --faint: #475569;
     --blue: #3b82f6;
     --blue-lite: #60a5fa;
+    --cyan: #22d3ee;
     --green: #22c55e;
+    --amber: #fbbf24;
     --orange: #f97316;
 
     position: absolute;
-    inset: 16px;
-    z-index: 4;
+    inset: 14px;
+    z-index: 5;
     display: grid;
-    grid-template-rows: auto minmax(0, 1fr);
-    gap: 16px;
-    padding: 18px 20px 20px;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    gap: 12px;
+    padding: 16px 18px 18px;
     border: 1px solid var(--border);
     border-radius: 22px;
     background: var(--card);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     color: var(--text);
     font-family: inherit;
     line-height: 1.4;
-    animation: enter 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+    animation: enter 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    overflow: hidden;
 }
 
 .panel *,
@@ -45,7 +48,6 @@
         opacity: 0;
         transform: scale(0.98);
     }
-
     to {
         opacity: 1;
         transform: scale(1);
@@ -56,27 +58,61 @@
 .top {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 14px;
 }
 
-.top>div:first-child {
+.top > div:first-child {
     min-width: 0;
     flex: 1;
 }
 
+.titleRow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
 .title {
     margin: 0;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
+    font-weight: 800;
+}
+
+.JumpBadge {
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: rgba(34, 197, 94, 0.16);
+    border: 1px solid rgba(34, 197, 94, 0.4);
+    color: #4ade80;
+    font-size: 0.74rem;
     font-weight: 700;
 }
 
-.sub {
-    margin: 2px 0 0;
-    color: var(--muted);
-    font-size: 0.85rem;
+.voiceBtn {
+    padding: 4px 11px;
+    border-radius: 999px;
+    border: 1px solid rgba(34, 211, 238, 0.45);
+    background: rgba(34, 211, 238, 0.12);
+    color: #67e8f9;
+    font: inherit;
+    font-size: 0.76rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.1s ease;
 }
 
-.tabs {
+.voiceBtn:hover {
+    background: rgba(34, 211, 238, 0.24);
+}
+
+.sub {
+    margin: 3px 0 0;
+    color: var(--muted);
+    font-size: 0.8rem;
+}
+
+.modeSwitch {
     display: flex;
     flex: none;
     gap: 4px;
@@ -86,45 +122,39 @@
     background: var(--bg);
 }
 
-.tab {
-    padding: 7px 16px;
+.modeBtn {
+    padding: 6px 14px;
     border: 0;
     border-radius: 999px;
     background: transparent;
     color: var(--muted);
     font: inherit;
-    font-size: 0.85rem;
-    font-weight: 600;
+    font-size: 0.8rem;
+    font-weight: 700;
     cursor: pointer;
     transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.tab:hover {
+.modeBtn:hover {
     color: var(--text);
 }
 
-.tab[aria-selected='true'] {
+.modeBtn[aria-selected='true'] {
     background: var(--blue);
     color: #fff;
 }
 
-.tab:focus-visible,
-.close:focus-visible {
-    outline: 3px solid var(--blue-lite);
-    outline-offset: 2px;
-}
-
 .close {
     flex: none;
-    width: 34px;
-    height: 34px;
+    width: 32px;
+    height: 32px;
     padding: 0;
     border: 0;
     border-radius: 10px;
     background: transparent;
     color: var(--muted);
     font: inherit;
-    font-size: 1.5rem;
+    font-size: 1.45rem;
     line-height: 1;
     cursor: pointer;
     transition: background-color 0.15s ease, color 0.15s ease;
@@ -135,11 +165,100 @@
     color: var(--text);
 }
 
-/* ── Cuerpo: figura y medidas ──────────────────────────────── */
+/* ── Tarjetas de las 4 Fases Biomecánicas ──────────────────── */
+.fasesGrid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.faseCard {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 9px 11px;
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    background: rgba(11, 15, 26, 0.72);
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.1s ease;
+}
+
+.faseCard:hover {
+    border-color: rgba(96, 165, 250, 0.55);
+}
+
+.faseCardVertice {
+    border-color: rgba(251, 191, 36, 0.45);
+}
+
+.faseCardActiva {
+    border-color: var(--cyan);
+    background: rgba(6, 182, 212, 0.12);
+    box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.35);
+}
+
+.faseCardHead {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.faseNum {
+    font-size: 0.66rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+}
+
+.faseScore {
+    padding: 1px 6px;
+    border-radius: 6px;
+    font-size: 0.66rem;
+    font-weight: 700;
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--blue-lite);
+}
+
+.faseScore[data-estado='Óptimo'] {
+    background: rgba(34, 197, 94, 0.16);
+    color: #4ade80;
+}
+
+.faseScore[data-estado='Deficiente'] {
+    background: rgba(249, 115, 22, 0.18);
+    color: #fb923c;
+}
+
+.faseTitle {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.faseMetrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    font-size: 0.7rem;
+    color: var(--muted);
+}
+
+.faseMetrics b {
+    color: var(--text-2);
+}
+
+/* ── Cuerpo: figura 2D y medidas ───────────────────────────── */
 .body {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 18px;
+    gap: 14px;
     min-height: 0;
 }
 
@@ -180,16 +299,29 @@
 .medidas {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 12px;
     min-height: 0;
     padding-right: 4px;
     overflow-y: auto;
 }
 
+.diagFaseBox {
+    padding: 10px 12px;
+    border-radius: 12px;
+    border: 1px solid rgba(34, 211, 238, 0.3);
+    background: rgba(6, 182, 212, 0.09);
+    color: var(--text-2);
+    font-size: 0.8rem;
+}
+
+.diagFaseBox strong {
+    color: #67e8f9;
+}
+
 .medida {
-    padding: 14px 16px;
+    padding: 12px 14px;
     border: 1px solid var(--border);
-    border-radius: 16px;
+    border-radius: 14px;
     background: rgba(11, 15, 26, 0.6);
 }
 
@@ -202,13 +334,13 @@
 
 .medidaNombre {
     color: var(--text-2);
-    font-size: 0.9rem;
+    font-size: 0.86rem;
     font-weight: 600;
 }
 
 .medidaValor {
     flex: none;
-    font-size: 1.15rem;
+    font-size: 1.05rem;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
 }
@@ -229,11 +361,10 @@
     color: var(--muted);
 }
 
-/* Barra: banda verde = rango ideal; punto = tu valor */
 .barra {
     position: relative;
     height: 8px;
-    margin: 12px 0 8px;
+    margin: 10px 0 6px;
     border-radius: 999px;
     background: var(--border);
 }
@@ -249,8 +380,8 @@
 .marca {
     position: absolute;
     top: 50%;
-    width: 16px;
-    height: 16px;
+    width: 15px;
+    height: 15px;
     border: 3px solid var(--bg);
     border-radius: 50%;
     background: var(--muted);
@@ -272,32 +403,385 @@
 .rango {
     margin: 0;
     color: var(--muted);
-    font-size: 0.78rem;
+    font-size: 0.75rem;
 }
 
-@media (max-width: 760px) {
+/* ── Gemelo Digital 3D & Replay ────────────────────────────── */
+.gemeloWrap {
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 10px;
+    min-height: 0;
+}
+
+.canvas3dContainer {
+    position: relative;
+    min-height: 0;
+    border: 1px solid rgba(34, 211, 238, 0.35);
+    border-radius: 16px;
+    background: #070b14;
+    overflow: hidden;
+    cursor: grab;
+    user-select: none;
+}
+
+.canvas3dContainer:active {
+    cursor: grabbing;
+}
+
+.canvas3d {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: contain;
+}
+
+.hud3dTop {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    pointer-events: none;
+}
+
+.badge3d,
+.frameCounter {
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.86);
+    border: 1px solid rgba(51, 65, 85, 0.8);
+    font-size: 0.73rem;
+    font-weight: 700;
+    color: #e2e8f0;
+}
+
+.frameCounter {
+    color: #22d3ee;
+    font-variant-numeric: tabular-nums;
+}
+
+.zoomControls {
+    position: absolute;
+    bottom: 10px;
+    right: 12px;
+    display: flex;
+    gap: 5px;
+}
+
+.zoomBtn {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: rgba(15, 23, 42, 0.88);
+    color: var(--text);
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.zoomBtn:hover {
+    border-color: var(--cyan);
+}
+
+.replayControls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: rgba(11, 15, 26, 0.82);
+}
+
+.replayBar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.playBtn {
+    padding: 6px 14px;
+    border: 0;
+    border-radius: 10px;
+    background: #22d3ee;
+    color: #082f49;
+    font: inherit;
+    font-size: 0.78rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.speedBtn {
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #111827;
+    color: var(--text-2);
+    font: inherit;
+    font-size: 0.76rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.speedBtnActive {
+    border-color: var(--amber);
+    background: rgba(251, 191, 36, 0.16);
+    color: #fde68a;
+}
+
+.scrubber {
+    flex: 1;
+    accent-color: #22d3ee;
+    cursor: pointer;
+}
+
+.phaseJumpRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.phaseJumpBtn {
+    padding: 4px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: rgba(17, 24, 39, 0.85);
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.phaseJumpBtn:hover {
+    color: var(--text);
+    border-color: var(--blue-lite);
+}
+
+.phaseJumpHighlight {
+    border-color: rgba(251, 191, 36, 0.5);
+    color: #fcd34d;
+}
+
+.telemetryGrid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.telemetryItem {
+    padding: 6px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: rgba(17, 24, 39, 0.75);
+    text-align: center;
+}
+
+.telemetryItem span {
+    display: block;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.telemetryItem strong {
+    font-size: 0.86rem;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ── Ablación Científica y Replay GIF del Backend Python ───── */
+.ablationWrap {
+    display: grid;
+    grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.35fr);
+    gap: 14px;
+    min-height: 0;
+    overflow: auto;
+    padding-right: 2px;
+}
+
+.ablationReplayCol,
+.ablationTableCol {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+}
+
+.replayCard,
+.probsCard {
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: rgba(17, 24, 39, 0.78);
+}
+
+.replayHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+    font-size: 0.86rem;
+    color: var(--text);
+}
+
+.jumpInline {
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: rgba(34, 197, 94, 0.16);
+    border: 1px solid rgba(34, 197, 94, 0.45);
+    color: #86efac;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.replayGif {
+    display: block;
+    width: 100%;
+    max-height: 290px;
+    object-fit: contain;
+    border-radius: 10px;
+    background: #070b14;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.subCardTitle {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.8rem;
+    color: var(--text);
+}
+
+.probsList {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.probItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: rgba(7, 11, 20, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.78rem;
+    color: var(--text-2);
+    text-transform: capitalize;
+}
+
+.probItem b {
+    color: var(--blue-lite);
+}
+
+.ablationHighlights {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.ablationKpi {
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    background: rgba(14, 165, 233, 0.08);
+    text-align: center;
+}
+
+.ablationKpi span {
+    display: block;
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-bottom: 2px;
+}
+
+.ablationKpi strong {
+    font-size: 0.92rem;
+    color: #7dd3fc;
+}
+
+.ablationTableScroll {
+    overflow-x: auto;
+}
+
+.ablationTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.76rem;
+}
+
+.ablationTable th,
+.ablationTable td {
+    padding: 8px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    vertical-align: top;
+}
+
+.ablationTable th {
+    color: var(--muted);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.ablationTable td strong {
+    display: block;
+    color: var(--text);
+}
+
+.ablationTable td small {
+    color: var(--muted);
+    font-size: 0.7rem;
+}
+
+.ablationRowBest {
+    background: rgba(34, 197, 94, 0.09);
+}
+
+.ablationConclusion {
+    margin: 10px 0 0;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(34, 197, 94, 0.32);
+    background: rgba(34, 197, 94, 0.08);
+    color: #bbf7d0;
+    font-size: 0.8rem;
+    line-height: 1.45;
+}
+
+@media (max-width: 860px) {
     .panel {
         inset: 8px;
-        padding: 14px;
+        padding: 12px;
     }
 
     .top {
         flex-wrap: wrap;
     }
 
+    .fasesGrid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .body {
         grid-template-columns: minmax(0, 1fr);
         grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
     }
-}
 
-@media (prefers-reduced-motion: reduce) {
-    .panel {
-        animation: none;
+    .ablationWrap {
+        grid-template-columns: minmax(0, 1fr);
     }
 
-    .tab,
-    .close {
-        transition: none;
+    .telemetryGrid,
+    .ablationHighlights {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }

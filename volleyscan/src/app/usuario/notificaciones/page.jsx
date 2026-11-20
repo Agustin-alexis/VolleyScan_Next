@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from 'react';
-import Link from 'next/link';
-import './notificaciones.css'
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useApi } from "@/lib/UseApi";
+import { api } from "@/lib/api";
+import "./notificaciones.css";
 import {
     FaBell,
     FaTrophy,
@@ -15,24 +17,32 @@ import {
     FaClock,
     FaCheck,
     FaArrowRight,
-} from 'react-icons/fa'
-import { FaTrashCan, FaXmark } from 'react-icons/fa6';
+} from "react-icons/fa";
+import { FaTrashCan, FaXmark } from "react-icons/fa6";
 
-/* ── Datos ── */
-const INITIAL_NOTIFICATIONS = [
-    { id: 1, type: 'logro', unread: true, title: '¡Buen trabajo! 🏆', msg: 'Has mejorado tu puntuación promedio en un 15% esta semana.', time: 'Hace 2 horas' },
-    { id: 2, type: 'rutina', unread: true, title: 'Nueva rutina disponible', msg: 'Tu entrenador ha creado una nueva rutina para ti.', time: 'Hace 1 día' },
-    { id: 3, type: 'racha', unread: true, title: 'Racha en progreso 🔥', msg: 'Llevas 5 días entrenando seguidos. ¡Sigue así!', time: 'Hace 1 día' },
-    { id: 4, type: 'recordatorio', unread: false, title: 'Recordatorio', msg: 'No olvides realizar tu rutina diaria.', time: 'Hace 2 días' },
-    { id: 5, type: 'analisis', unread: false, title: 'Análisis completado ⚡', msg: 'Tu análisis de "Remate por zona 4" ya está listo. Puntuación: 85/100.', time: 'Hace 3 días' },
-    { id: 6, type: 'logro', unread: false, title: 'Nuevo logro desbloqueado 🎖️', msg: 'Has completado 10 sesiones de análisis. ¡Eres constante!', time: 'Hace 4 días' },
-]
-
-const RECOMMENDATIONS = [
-    { id: 1, title: 'Enfócate en tu salto', desc: 'Mejora la altura y la explosividad.', img: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=75', link: '/usuario/rutinas' },
-    { id: 2, title: 'Trabaja tu recepción', desc: 'Practica la plataforma más baja.', img: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400&q=75', link: '/usuario/rutinas' },
-    { id: 3, title: 'Analiza tu saque', desc: 'Detecta errores con la IA en tiempo real.', img: 'https://images.unsplash.com/photo-1547347298-4074fc3086f0?w=400&q=75', link: '/usuario/analisis' },
-]
+const DEFAULT_RECOMMENDATIONS = [
+    {
+        id: 1,
+        title: "Enfócate en tu salto vertical",
+        desc: "Mejora la altura por Tiempo de Vuelo y la explosividad en Fase 1.",
+        img: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&q=75",
+        link: "/usuario/rutinas",
+    },
+    {
+        id: 2,
+        title: "Revisa tus 4 Fases en Historial IA",
+        desc: "Audita cada gesto y sus correcciones técnicas específicas.",
+        img: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=400&q=75",
+        link: "/usuario/histtrial",
+    },
+    {
+        id: 3,
+        title: "Analiza tu técnica en vivo",
+        desc: "Detecta errores con MediaPipe 3D en el puerto 8000 en tiempo real.",
+        img: "https://images.unsplash.com/photo-1547347298-4074fc3086f0?w=400&q=75",
+        link: "/usuario/analisis",
+    },
+];
 
 const ICONS = {
     logro: FaTrophy,
@@ -40,94 +50,139 @@ const ICONS = {
     racha: FaFire,
     recordatorio: FaLock,
     analisis: FaBolt,
-}
+};
 
 const FILTERS = [
-    { value: 'all', label: 'Todas' },
-    { value: 'unread', label: 'Sin leer' },
-    { value: 'logro', label: 'Logros' },
-    { value: 'rutina', label: 'Rutinas' },
-    { value: 'racha', label: 'Rachas' },
-    { value: 'recordatorio', label: 'Recordatorios' },
-]
+    { value: "all", label: "Todas" },
+    { value: "unread", label: "Sin leer" },
+    { value: "analisis", label: "Análisis IA" },
+    { value: "logro", label: "Logros" },
+    { value: "rutina", label: "Rutinas" },
+    { value: "racha", label: "Rachas" },
+    { value: "recordatorio", label: "Recordatorios" },
+];
 
 export default function Notificaciones() {
-    const [notifications, setNotifications] = useState(
-        INITIAL_NOTIFICATIONS.map(n => ({ ...n }))
-    )
-    const [currentFilter, setCurrentFilter] = useState('all')
-    const [toast, setToast] = useState(null)
-    const [dismissing, setDismissing] = useState(new Set())
+    const { data, cargando, recargar } = useApi("/usuario/notificaciones");
+    const [notifications, setNotifications] = useState([]);
+    const [recommendations, setRecommendations] = useState(DEFAULT_RECOMMENDATIONS);
+    const [currentFilter, setCurrentFilter] = useState("all");
+    const [toast, setToast] = useState(null);
+    const [dismissing, setDismissing] = useState(new Set());
 
-    /* ── Toast ── */
-    function showToast(message, type = 'success') {
-        setToast({ message, type })
-        setTimeout(() => setToast(null), 3000)
+    useEffect(() => {
+        if (data?.notificaciones) {
+            setNotifications(data.notificaciones);
+        }
+        if (Array.isArray(data?.recomendaciones) && data.recomendaciones.length > 0) {
+            setRecommendations(data.recomendaciones);
+        }
+    }, [data]);
+
+    function notificarSidebar() {
+        if (typeof window !== "undefined") {
+            window.dispatchEvent(new Event("notificaciones:cambio"));
+        }
     }
 
-    /* ── Filtrado ── */
+    function showToast(message, type = "success") {
+        setToast({ message, type });
+        setTimeout(() => setToast(null), 3000);
+    }
+
     function getFiltered() {
-        if (currentFilter === 'all') return notifications
-        if (currentFilter === 'unread') return notifications.filter(n => n.unread)
-        return notifications.filter(n => n.type === currentFilter)
+        if (currentFilter === "all") return notifications;
+        if (currentFilter === "unread") return notifications.filter((n) => n.unread);
+        return notifications.filter((n) => n.type === currentFilter);
     }
 
-    const filtered = getFiltered()
-    const unreadCount = notifications.filter(n => n.unread).length
+    const filtered = getFiltered();
+    const unreadCount = notifications.filter((n) => n.unread).length;
 
-    /* ── Marcar como leída ── */
-    function markAsRead(id) {
-        const notif = notifications.find(n => n.id === id)
-        if (!notif || !notif.unread) return
-        setNotifications(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n))
-        showToast('Notificación marcada como leída.', 'info')
+    async function markAsRead(id) {
+        const notif = notifications.find((n) => n.id === id);
+        if (!notif || !notif.unread) return;
+        setNotifications((prev) =>
+            prev.map((n) => (n.id === id ? { ...n, unread: false, leida: true } : n)),
+        );
+        try {
+            await api(`/usuario/notificaciones/${id}/leer`, { method: "PUT" });
+            notificarSidebar();
+        } catch {
+            /* ignore */
+        }
+        showToast("Notificación marcada como leída.", "info");
     }
 
-    /* ── Eliminar ── */
-    function dismissNotif(id) {
-        setDismissing(prev => new Set([...prev, id]))
+    async function dismissNotif(id) {
+        setDismissing((prev) => new Set([...prev, id]));
+        try {
+            await api(`/usuario/notificaciones/${id}`, { method: "DELETE" });
+            notificarSidebar();
+        } catch {
+            /* ignore */
+        }
         setTimeout(() => {
-            setNotifications(prev => prev.filter(n => n.id !== id))
-            setDismissing(prev => { const s = new Set(prev); s.delete(id); return s })
-        }, 320)
+            setNotifications((prev) => prev.filter((n) => n.id !== id));
+            setDismissing((prev) => {
+                const s = new Set(prev);
+                s.delete(id);
+                return s;
+            });
+        }, 280);
     }
 
-    /* ── Marcar todas como leídas ── */
-    function markAllRead() {
-        const unread = notifications.filter(n => n.unread)
-        if (unread.length === 0) { showToast('No hay notificaciones sin leer.', 'info'); return }
-        setNotifications(prev => prev.map(n => ({ ...n, unread: false })))
-        const c = unread.length
-        showToast(`✓ ${c} notificación${c > 1 ? 'es' : ''} marcada${c > 1 ? 's' : ''} como leída${c > 1 ? 's' : ''}.`, 'success')
+    async function markAllRead() {
+        const unread = notifications.filter((n) => n.unread);
+        if (unread.length === 0) {
+            showToast("No hay notificaciones sin leer.", "info");
+            return;
+        }
+        setNotifications((prev) => prev.map((n) => ({ ...n, unread: false, leida: true })));
+        try {
+            await api("/usuario/notificaciones/leer-todas", { method: "PUT" });
+            notificarSidebar();
+            await recargar();
+        } catch {
+            /* ignore */
+        }
+        const c = unread.length;
+        showToast(
+            `✓ ${c} notificación${c > 1 ? "es" : ""} marcada${c > 1 ? "s" : ""} como leída${c > 1 ? "s" : ""}.`,
+            "success",
+        );
     }
 
-    /* ── Limpiar todas ── */
-    function clearAll() {
-        if (notifications.length === 0) { showToast('No hay notificaciones que limpiar.', 'info'); return }
-        const ids = new Set(notifications.map(n => n.id))
-        setDismissing(ids)
+    async function clearAll() {
+        if (notifications.length === 0) {
+            showToast("No hay notificaciones que limpiar.", "info");
+            return;
+        }
+        const ids = new Set(notifications.map((n) => n.id));
+        setDismissing(ids);
+        try {
+            await api("/usuario/notificaciones/limpiar", { method: "DELETE" });
+            notificarSidebar();
+        } catch {
+            /* ignore */
+        }
         setTimeout(() => {
-            setNotifications([])
-            setDismissing(new Set())
-            showToast('Todas las notificaciones eliminadas.', 'success')
-        }, 340)
+            setNotifications([]);
+            setDismissing(new Set());
+            showToast("Todas las notificaciones eliminadas.", "success");
+        }, 300);
     }
 
-    const toastColors = { success: '#22c55e', error: '#ef4444', info: '#3b82f6' }
+    const toastColors = { success: "#22c55e", error: "#ef4444", info: "#3b82f6" };
 
     return (
         <main className="main-content">
-
             <header className="page-header">
                 <h1 className="page-header__title">Notificaciones y Feedback</h1>
             </header>
 
             <div className="notif-layout">
-
-                {/* ── Columna izquierda ── */}
                 <section className="notif-panel" aria-label="Notificaciones">
-
-                    {/* Header */}
                     <div className="notif-panel__header">
                         <h2 className="notif-panel__title">
                             Notificaciones
@@ -139,18 +194,27 @@ export default function Notificaciones() {
                             <button className="btn-text" type="button" onClick={markAllRead}>
                                 <FaCheckDouble /> Marcar todas como leídas
                             </button>
-                            <button className="btn-text btn-text--danger" type="button" onClick={clearAll}>
+                            <button
+                                className="btn-text btn-text--danger"
+                                type="button"
+                                onClick={clearAll}
+                            >
                                 <FaTrashCan /> Limpiar
                             </button>
                         </div>
                     </div>
 
-                    {/* Filtros */}
-                    <div className="notif-filters" role="group" aria-label="Filtrar notificaciones">
-                        {FILTERS.map(f => (
+                    <div
+                        className="notif-filters"
+                        role="group"
+                        aria-label="Filtrar notificaciones"
+                    >
+                        {FILTERS.map((f) => (
                             <button
                                 key={f.value}
-                                className={`filter-chip${currentFilter === f.value ? ' filter-chip--active' : ''}`}
+                                className={`filter-chip${
+                                    currentFilter === f.value ? " filter-chip--active" : ""
+                                }`}
                                 type="button"
                                 onClick={() => setCurrentFilter(f.value)}
                             >
@@ -159,8 +223,11 @@ export default function Notificaciones() {
                         ))}
                     </div>
 
-                    {/* Lista */}
-                    {filtered.length === 0 ? (
+                    {cargando && notifications.length === 0 ? (
+                        <p style={{ color: "#94a3b8", padding: "1rem 0" }}>
+                            Sincronizando alertas de progreso y rutinas…
+                        </p>
+                    ) : filtered.length === 0 ? (
                         <div className="empty-state">
                             <FaBellSlash />
                             <p>No hay notificaciones aquí.</p>
@@ -170,11 +237,18 @@ export default function Notificaciones() {
                             {filtered.map((notif, i) => (
                                 <li
                                     key={notif.id}
-                                    className={`notif-item ${notif.unread ? 'unread' : 'read'}${dismissing.has(notif.id) ? ' dismissing' : ''}`}
+                                    className={`notif-item ${notif.unread ? "unread" : "read"}${
+                                        dismissing.has(notif.id) ? " dismissing" : ""
+                                    }`}
                                     style={{ animationDelay: `${i * 50}ms` }}
-                                    onClick={() => { if (notif.unread) markAsRead(notif.id) }}
+                                    onClick={() => {
+                                        if (notif.unread) markAsRead(notif.id);
+                                    }}
                                 >
-                                    <div className={`notif-icon notif-icon--${notif.type}`} aria-hidden="true">
+                                    <div
+                                        className={`notif-icon notif-icon--${notif.type}`}
+                                        aria-hidden="true"
+                                    >
                                         {(() => {
                                             const Icon = ICONS[notif.type] ?? FaBell;
                                             return <Icon size={22} />;
@@ -189,17 +263,29 @@ export default function Notificaciones() {
                                     </div>
                                     <div className="notif-item__actions">
                                         {notif.unread && (
-                                            <button className="btn-icon btn-icon--read" type="button"
+                                            <button
+                                                className="btn-icon btn-icon--read"
+                                                type="button"
                                                 title="Marcar como leída"
                                                 aria-label="Marcar como leída"
-                                                onClick={e => { e.stopPropagation(); markAsRead(notif.id) }}>
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    markAsRead(notif.id);
+                                                }}
+                                            >
                                                 <FaCheck />
                                             </button>
                                         )}
-                                        <button className="btn-icon btn-icon--delete" type="button"
+                                        <button
+                                            className="btn-icon btn-icon--delete"
+                                            type="button"
                                             title="Eliminar"
                                             aria-label="Eliminar notificación"
-                                            onClick={e => { e.stopPropagation(); dismissNotif(notif.id) }}>
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                dismissNotif(notif.id);
+                                            }}
+                                        >
                                             <FaXmark />
                                         </button>
                                     </div>
@@ -207,38 +293,47 @@ export default function Notificaciones() {
                             ))}
                         </ol>
                     )}
-
                 </section>
 
-                {/* ── Columna derecha: recomendaciones ── */}
-                <aside className="recommendations-panel" aria-label="Recomendaciones personalizadas">
-                    <h2 className="recommendations-panel__title">Recomendaciones para ti</h2>
+                <aside
+                    className="recommendations-panel"
+                    aria-label="Recomendaciones personalizadas"
+                >
+                    <h2 className="recommendations-panel__title">
+                        Recomendaciones para ti
+                    </h2>
                     <ul className="rec-list">
-                        {RECOMMENDATIONS.map(rec => (
+                        {recommendations.map((rec) => (
                             <li key={rec.id} className="rec-item">
-                                <img className="rec-item__thumb" src={rec.img} alt={rec.title} loading="lazy" />
+                                <img
+                                    className="rec-item__thumb"
+                                    src={rec.img}
+                                    alt={rec.title}
+                                    loading="lazy"
+                                />
                                 <div className="rec-item__body">
                                     <p className="rec-item__title">{rec.title}</p>
                                     <p className="rec-item__desc">{rec.desc}</p>
                                     <Link className="rec-item__link" href={rec.link}>
-                                        Ver ejercicios <FaArrowRight />
+                                        Ir ahora <FaArrowRight />
                                     </Link>
                                 </div>
                             </li>
                         ))}
                     </ul>
                 </aside>
-
             </div>
 
-            {/* Toast */}
             {toast && (
-                <div className="toast" role="status" aria-live="polite"
-                    style={{ borderColor: toastColors[toast.type] }}>
+                <div
+                    className="toast"
+                    role="status"
+                    aria-live="polite"
+                    style={{ borderColor: toastColors[toast.type] }}
+                >
                     {toast.message}
                 </div>
             )}
-
         </main>
-    )
+    );
 }

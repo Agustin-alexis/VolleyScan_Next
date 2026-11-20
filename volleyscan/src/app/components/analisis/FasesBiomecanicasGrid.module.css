@@ -1,0 +1,246 @@
+.wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 20px;
+    border: 1px solid #1f2634;
+    background: #111827;
+}
+
+.topBar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.diagBlock {
+    flex: 1;
+    min-width: 240px;
+}
+
+.badgesRow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.gestureBadge {
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(59, 130, 246, 0.16);
+    border: 1px solid rgba(59, 130, 246, 0.45);
+    color: #93c5fd;
+    font-size: 0.76rem;
+    font-weight: 800;
+}
+
+.bufferBadge {
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(249, 115, 22, 0.14);
+    border: 1px solid rgba(249, 115, 22, 0.38);
+    color: #fdba74;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+.bufferBadge[data-online='true'] {
+    background: rgba(34, 197, 94, 0.14);
+    border-color: rgba(34, 197, 94, 0.42);
+    color: #86efac;
+}
+
+.jumpBadge {
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: rgba(6, 182, 212, 0.16);
+    border: 1px solid rgba(34, 211, 238, 0.45);
+    color: #67e8f9;
+    font-size: 0.74rem;
+    font-weight: 800;
+}
+
+.diagText {
+    margin: 0;
+    color: #cbd5e1;
+    font-size: 0.82rem;
+    line-height: 1.35;
+}
+
+.barActions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.actionBtn,
+.actionBtnPrimary {
+    padding: 6px 11px;
+    border-radius: 10px;
+    font: inherit;
+    font-size: 0.76rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.actionBtn {
+    border: 1px solid #1f2634;
+    background: rgba(30, 41, 59, 0.85);
+    color: #e2e8f0;
+}
+
+.actionBtn:hover {
+    border-color: #60a5fa;
+}
+
+.actionBtnPrimary {
+    border: 1px solid rgba(34, 211, 238, 0.5);
+    background: rgba(6, 182, 212, 0.16);
+    color: #67e8f9;
+}
+
+.actionBtnPrimary:hover {
+    background: rgba(6, 182, 212, 0.28);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 10px 11px;
+    border-radius: 14px;
+    border: 1px solid #1f2634;
+    background: rgba(15, 23, 42, 0.88);
+    color: #f8fafc;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.15s ease;
+}
+
+.card:disabled {
+    cursor: default;
+}
+
+.card:not(:disabled):hover {
+    border-color: #38bdf8;
+    transform: translateY(-1px);
+}
+
+.cardVertice {
+    border-color: rgba(251, 191, 36, 0.38);
+}
+
+.cardActive {
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 1px rgba(56, 189, 248, 0.45), 0 8px 20px rgba(14, 165, 233, 0.18);
+    background: linear-gradient(160deg, rgba(14, 165, 233, 0.12), rgba(15, 23, 42, 0.94));
+}
+
+.cardHead {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.phaseNum {
+    font-size: 0.64rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+}
+
+.statePill {
+    padding: 2px 7px;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 800;
+    background: rgba(148, 163, 184, 0.14);
+    color: #cbd5e1;
+}
+
+.statePill[data-estado='Óptimo'] {
+    background: rgba(34, 197, 94, 0.18);
+    color: #86efac;
+}
+
+.statePill[data-estado='En curso'] {
+    background: rgba(56, 189, 248, 0.22);
+    color: #7dd3fc;
+}
+
+.statePill[data-estado='Advertencia'] {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fde047;
+}
+
+.statePill[data-estado='Deficiente'] {
+    background: rgba(249, 115, 22, 0.22);
+    color: #fdba74;
+}
+
+.cardTitle {
+    margin: 0;
+    font-size: 0.84rem;
+    font-weight: 800;
+    color: #f8fafc;
+}
+
+.cardSub {
+    margin: 0;
+    font-size: 0.7rem;
+    color: #94a3b8;
+}
+
+.metricsRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 2px;
+}
+
+.metricTag {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: rgba(7, 11, 20, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.69rem;
+    color: #cbd5e1;
+    font-variant-numeric: tabular-nums;
+}
+
+.metricTag b {
+    color: #7dd3fc;
+}
+
+.cardDiag {
+    margin: 2px 0 0;
+    font-size: 0.73rem;
+    line-height: 1.32;
+    color: #cbd5e1;
+}
+
+@media (max-width: 1180px) {
+    .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}

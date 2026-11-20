@@ -1,14 +1,19 @@
-
 // Página del panel de USUARIO (deportista): /usuario/analisis
-// Reemplaza el page.jsx actual de esta carpeta (haz una copia antes si
-// quieres conservar el contenido anterior).
-// Es un Server Component a propósito: toda la lógica de cámara vive dentro
-// de GestureAnalyzer, que ya es un Client Component.
+// Server Component wrapper con Suspense para lectura segura de searchParams (?rutinaId=&gesto=)
 
-
+import { Suspense } from 'react';
 import GestureAnalyzer from '../../components/analisis/GestureAnalyzer';
 
-
 export default function AnalisisPage() {
-    return <GestureAnalyzer />;
+    return (
+        <Suspense
+            fallback={
+                <div className="min-h-screen bg-[#070a12] flex items-center justify-center text-slate-400 text-sm">
+                    Cargando Asistente IA en Vivo...
+                </div>
+            }
+        >
+            <GestureAnalyzer />
+        </Suspense>
+    );
 }

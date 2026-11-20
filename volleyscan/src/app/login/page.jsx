@@ -1,23 +1,25 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Logo from "@/app/public/img/Logo.VS.jpg"
 
-import { api, guardarSesion, ApiError } from '@/lib/api'
+import { api, guardarSesion } from '@/lib/api'
+import {
+  iniciarSesionSupabase,
+  iniciarConOAuthSupabase,
+} from '@/lib/supabase'
 import './page.css'
 import BotonGoogle from '../components/BotonGoogle'
 
-
 // A dónde va cada rol después de iniciar sesión
 const DESTINO_POR_ROL = {
-  atleta: '/usuario',
-  entrenador: '/panel_entrenador',
+  atleta: '/usuario/analisis',
+  entrenador: '/panel_entrenador/dashboard',
   admin: '/admin',
 }
-
 
 const IconEye = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
@@ -37,13 +39,15 @@ const IconEyeOff = () => (
   </svg>
 )
 
-export default function LoginPage() {
+function LoginFormContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const nextUrl = searchParams.get('next')
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
-  const [remember, setRemember] = useState(false)
+  const [remember, setRemember] = useState(true)
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState({})
   const [toast, setToast] = useState(null)
@@ -76,44 +80,50 @@ export default function LoginPage() {
     setLoading(true)
     setErrors({})
     try {
-      const data = await api('/auth/login', {
-        method: 'POST',
-        body: { email: email.trim(), password }
-      })
-      guardarSesion(data)
-      showToast(`✓ Bienvenido/a, ${data.usuario.nombre}. Redirigiendo…`, 'success')
-
-      // Usa tu constante DESTINO_POR_ROL (redirige a '/panel_entrenador' o '/usuario')
-      const destino = DESTINO_POR_ROL[data.usuario.rol] ?? '/usuario'
-      setTimeout(() => router.push(destino), 1000)
-    } catch (err) {
-      if (!(err instanceof ApiError)) {
-        showToast('No se pudo conectar con el servidor.', 'error')
-      } else if (err.status === 429) {
-        showToast('Demasiados intentos. Espera un minuto.', 'error')
-      } else {
-        setErrors({
-          email: 'Correo o contraseña incorrectos.',
-          password: 'Correo o contraseña incorrectos.',
+      // 1. Autenticación principal mediante Supabase Auth (genera JWT access_token)
+      let resultado = null
+      try {
+        resultado = await iniciarSesionSupabase({
+          email: email.trim(),
+          password,
         })
-        showToast('Credenciales incorrectas. Inténtalo de nuevo.', 'error')
-        setPassword('')
+      } catch (supaErr) {
+        // 2. Respaldo opcional contra API secundaria si la cuenta proviene del backend local
+        try {
+          const dataApi = await api('/auth/login', {
+            method: 'POST',
+            body: { email: email.trim(), password },
+          })
+          guardarSesion(dataApi)
+          resultado = dataApi
+        } catch {
+          throw supaErr
+        }
       }
+
+      const usuario = resultado.usuario
+      showToast(`✓ Bienvenido/a, ${usuario.nombre}. Redirigiendo…`, 'success')
+
+      const destino = nextUrl || DESTINO_POR_ROL[usuario.rol] || '/usuario/analisis'
+      setTimeout(() => router.push(destino), 800)
+    } catch {
+      setErrors({
+        email: 'Correo o contraseña incorrectos.',
+        password: 'Correo o contraseña incorrectos.',
+      })
+      showToast('Credenciales incorrectas. Verifica tu correo y contraseña.', 'error')
+      setPassword('')
     } finally {
       setLoading(false)
     }
   }
 
-  function handleSocial(provider) {
-
-    if (provider === 'Google') {
-      window.location.href = 'https://accounts.google.com/';
+  async function handleSocial(provider) {
+    try {
+      await iniciarConOAuthSupabase(provider)
+    } catch {
+      showToast(`No se pudo iniciar con ${provider} en Supabase.`, 'error')
     }
-
-    if (provider === 'Facebook') {
-      window.location.href = 'https://www.facebook.com/';
-    }
-
   }
 
   const toastColors = { success: '#22c55e', error: '#ef4444', info: '#3b82f6' }
@@ -134,7 +144,7 @@ export default function LoginPage() {
         <section className="login-container" aria-labelledby="tituloLogin">
 
           <h1 id="tituloLogin">Bienvenido</h1>
-          <p className="subtitle">Ingresa tus credenciales para continuar.</p>
+          <p className="subtitle">Ingresa con tu cuenta de Supabase para acceder al Visor 3D y Análisis IA.</p>
 
           <form onSubmit={handleSubmit} noValidate>
 
@@ -194,20 +204,26 @@ export default function LoginPage() {
             </div>
 
             <button type="submit" className="btn-login" disabled={loading}>
-              {loading ? 'VERIFICANDO…' : 'INGRESAR AHORA →'}
+              {loading ? 'AUTENTICANDO EN SUPABASE…' : 'INGRESAR AHORA →'}
             </button>
 
           </form>
 
-          {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID && (
-            <>
-              <div className="divider"><span>O CONTINÚA CON</span></div>
+          <div className="divider"><span>O CONTINÚA CON</span></div>
 
-              <div className="social-buttons">
-                <BotonGoogle onError={(m) => showToast(m, 'error')} />
-              </div>
-            </>
-          )}
+          <div className="social-buttons">
+            {process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ? (
+              <BotonGoogle onError={(m) => showToast(m, 'error')} />
+            ) : (
+              <button
+                type="button"
+                className="btn-social"
+                onClick={() => handleSocial('google')}
+              >
+                <span>Continuar con Google (Supabase OAuth)</span>
+              </button>
+            )}
+          </div>
 
           <footer className="register">
             <p>¿Aún no tienes cuenta?
@@ -226,5 +242,13 @@ export default function LoginPage() {
       )}
 
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginFormContent />
+    </Suspense>
   )
 }
